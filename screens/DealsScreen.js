@@ -597,7 +597,7 @@ const s = StyleSheet.create({
   reporterRow:{flexDirection:'row',alignItems:'center',gap:6},
   reporterAvatar:{width:22,height:22,borderRadius:11,backgroundColor:COLORS.primaryLight,alignItems:'center',justifyContent:'center'},
   reporterName:{fontSize:12,color:COLORS.text3},
-  actions:{flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:14,paddingVertical:12,borderTopWidth:0.5,borderTopColor:COLORS.border},
+  actions:{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:12,paddingVertical:10,borderTopWidth:0.5,borderTopColor:COLORS.border,flexWrap:'wrap'},
   voteGroup:{flexDirection:'row',alignItems:'center',borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,overflow:'hidden'},
   voteBtn:{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:14,paddingVertical:9},
   voteDivider:{width:1,height:'100%',backgroundColor:COLORS.border},

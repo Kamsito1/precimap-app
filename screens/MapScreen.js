@@ -448,6 +448,7 @@ export default function MapScreen() {
             initialRegion={CORDOBA}
             showsUserLocation
             showsMyLocationButton
+            mapPadding={{ bottom: 64, top: 0, left: 0, right: 0 }}
             onRegionChangeComplete={(region) => setMapRegion(region)}
           >
             {/* Community places */}
@@ -713,7 +714,12 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
       </View>
       <View style={lcs.info}>
         <Text style={lcs.name} numberOfLines={1}>{item.name||item.address}</Text>
-        <Text style={lcs.sub} numberOfLines={1}>{info.label}{item.address?` · ${item.address}`:''}</Text>
+        <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:1}}>
+          <View style={{backgroundColor:info.bg||COLORS.bg3,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>
+            <Text style={{fontSize:10,fontWeight:'700',color:info.text||COLORS.text2}}>{info.emoji} {info.label}</Text>
+          </View>
+          {item.city && <Text style={lcs.sub} numberOfLines={1}>📍 {item.city}</Text>}
+        </View>
         {item.bestFor ? <Text style={lcs.bestFor}>{item.bestFor}</Text> : null}
         {item.minPrice && (
           <View style={[lcs.pricePill,{backgroundColor:col?col.bg+'22':COLORS.warningLight}]}>
