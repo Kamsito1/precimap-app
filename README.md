@@ -137,6 +137,27 @@ JWT_SECRET=tu_jwt_secret_muy_largo
 AMAZON_AFFILIATE_TAG=juanantonioex-21
 ```
 
+## API Endpoints
+
+| Endpoint | Descripción |
+|----------|-------------|
+| `GET /api/health` | Estado del servidor y número de gasolineras |
+| `GET /api/gasolineras` | 12.213 estaciones (filtro lat/lng/radio/combustible) |
+| `GET /api/gasolineras/stats` | Min/avg/max por los 6 combustibles |
+| `GET /api/deals` | Chollos con temperatura Chollometro |
+| `GET /api/deals/trending` | Top 5 más calientes (últimos 7 días) |
+| `GET /api/events` | Eventos con filtros |
+| `GET /api/events/trending` | Top 5 más votados próximos |
+| `GET /api/tips` | 8 consejos de ahorro (filtro `?category=gasolina`) |
+| `GET /api/search?q=X` | Búsqueda global: deals + events + places |
+| `GET /api/leaderboard` | Ranking de usuarios (period: week/month/all) |
+| `GET /api/stats` | Estadísticas globales + gas_stats G95 en tiempo real |
+| `GET /api/places` | Lugares del mapa con precios |
+| `GET /api/banks` | 9 ofertas bancarias con TAE |
+| `GET /api/supermarkets/ranking` | Ranking OCU 2024 + productos |
+| `POST /api/auth/register` | Registro de usuario |
+| `POST /api/auth/login` | Login + JWT (30 días) |
+
 ## Despliegue en Railway
 
 ```bash
