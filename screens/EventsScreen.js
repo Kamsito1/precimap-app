@@ -41,6 +41,7 @@ export default function EventsScreen() {
   const [cat, setCat] = useState('all');
   const [sort, setSort] = useState('date');
   const [source, setSource] = useState('all');
+  const [priceFilter, setPriceFilter] = useState('all'); // 'all' | 'free' | 'paid'
   const [city, setCity] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -131,6 +132,14 @@ export default function EventsScreen() {
               <Text style={s.officialBadgeTxt}>🏛️ {ayuntamientoCount} oficiales</Text>
             </View>
           )}
+          {/* Price filter pills */}
+          {[['all','Todos'],['free','🆓 Gratis'],['paid','💰 De pago']].map(([key,label]) => (
+            <TouchableOpacity key={key}
+              style={[s.sourceBtn, priceFilter===key && s.sourceBtnOn]}
+              onPress={() => setPriceFilter(key)}>
+              <Text style={[s.sourceTxt, priceFilter===key && {color:'#fff'}]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
 
         {/* Category pills */}
@@ -177,7 +186,11 @@ export default function EventsScreen() {
 
       {loading ? <ActivityIndicator color={COLORS.purple} style={{marginTop:50}}/> : (
         <FlatList
-          data={events}
+          data={events.filter(e => {
+            if (priceFilter === 'free') return e.is_free;
+            if (priceFilter === 'paid') return !e.is_free;
+            return true;
+          })}
           keyExtractor={e => String(e.id)}
           contentContainerStyle={{padding:12,gap:10,paddingBottom:90}}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.purple}/>}
