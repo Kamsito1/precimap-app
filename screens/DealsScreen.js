@@ -398,12 +398,21 @@ export default function DealsScreen() {
           }}
           ListEmptyComponent={
             <View style={s.empty}>
-              <Text style={{fontSize:52,textAlign:'center',marginBottom:12}}>{search ? '🔍' : '🛍️'}</Text>
-              <Text style={s.emptyTitle}>{search ? `Sin resultados para "${search}"` : cat !== 'all' ? `Sin chollos en esta categoría` : 'Sin chollos aún'}</Text>
-              <Text style={s.emptyDesc}>
-                {search ? 'Prueba con otro término o borra la búsqueda.' : 'Sé el primero en publicar una oferta increíble para la comunidad.'}
+              <Text style={{fontSize:52,textAlign:'center',marginBottom:12}}>
+                {search ? '🔍' : minDiscount > 0 ? '🎯' : '🛍️'}
               </Text>
-              {!search && (
+              <Text style={s.emptyTitle}>
+                {search ? `Sin resultados para "${search}"` 
+                  : minDiscount > 0 ? `Sin chollos con ≥${minDiscount}% descuento`
+                  : cat !== 'all' ? `Sin chollos en esta categoría` 
+                  : 'Sin chollos aún'}
+              </Text>
+              <Text style={s.emptyDesc}>
+                {search ? 'Prueba con otro término o borra la búsqueda.'
+                  : minDiscount > 0 ? 'Prueba con un umbral de descuento menor.'
+                  : 'Sé el primero en publicar una oferta increíble para la comunidad.'}
+              </Text>
+              {!search && minDiscount === 0 && (
                 <TouchableOpacity style={s.emptyBtn} onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}>
                   <Text style={s.emptyBtnTxt}>Publicar chollo</Text>
                 </TouchableOpacity>

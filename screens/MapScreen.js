@@ -538,6 +538,12 @@ export default function MapScreen() {
           {/* Legend + fuel stats panel */}
           {(activeCat==='all'||activeCat==='gasolinera') && gasolineras.length > 0 && (
             <View style={ms.legend}>
+              {/* Visible count badge */}
+              <View style={{backgroundColor:'rgba(15,23,42,0.7)',borderRadius:8,paddingHorizontal:8,paddingVertical:3,marginRight:4}}>
+                <Text style={{fontSize:10,color:'#fff',fontWeight:'700'}}>
+                  {showFavsOnly ? `❤️ ${gasolineras.length}` : `⛽ ${gasolineras.length > 999 ? (gasolineras.length/1000).toFixed(1)+'K' : gasolineras.length}`}
+                </Text>
+              </View>
               {/* Color legend */}
               {[['#16A34A','Barato'],['#D97706','Medio'],['#DC2626','Caro']].map(([c,l])=>(
                 <View key={l} style={ms.legendItem}>

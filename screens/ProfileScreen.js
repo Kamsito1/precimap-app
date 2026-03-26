@@ -168,12 +168,18 @@ export default function ProfileScreen() {
   async function loadProfile() {
     setLoading(true);
     try {
-      const [data, deals] = await Promise.all([
+      const [data, deals, lb] = await Promise.all([
         apiGet('/api/users/me'),
-        apiGet('/api/users/me/deals'),  // dedicated endpoint — faster and accurate
+        apiGet('/api/users/me/deals'),
+        apiGet('/api/leaderboard?period=all'),
       ]);
       setProfile(data);
       setMyDeals(Array.isArray(deals) ? deals : []);
+      // Find rank position
+      if (Array.isArray(lb) && data?.id) {
+        const pos = lb.findIndex(u => u.id === data.id);
+        if (pos >= 0) setProfile(p => ({...p, _rankPos: pos + 1, _rankTotal: lb.length}));
+      }
       if ((data?.notifications||[]).some(n => !n.is_read)) {
         apiPost('/api/notifications/read', {}).catch(() => {});
       }
@@ -363,6 +369,14 @@ export default function ProfileScreen() {
               <Text style={{fontSize:15}}>🔥</Text>
               <Text style={s.streakTxt}>{u.streak} días de racha</Text>
             </View>
+            {profile?._rankPos && (
+              <View style={[s.streakBadge,{backgroundColor:'rgba(255,255,255,0.12)',marginTop:6}]}>
+                <Text style={{fontSize:13}}>🏆</Text>
+                <Text style={s.streakTxt}>
+                  Puesto #{profile._rankPos} de {profile._rankTotal} usuarios
+                </Text>
+              </View>
+            )}
           )}
 
           {/* Quick action buttons */}
