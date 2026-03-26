@@ -2,12 +2,12 @@
   "expo": {
     "name": "PreciMap",
     "slug": "precimap",
-    "version": "1.0.2",
+    "version": "1.2.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "description": "Compara precios de gasolina, supermercados y bancos en toda España. Ahorra dinero con la comunidad.",
+    "description": "Compara precios de gasolina, supermercados y bancos en toda Espa\u00f1a. Ahorra dinero con la comunidad.",
     "privacy": "public",
     "primaryColor": "#2563EB",
     "splash": {
@@ -18,14 +18,14 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "requireFullScreen": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "PreciMap usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",
-        "NSLocationAlwaysUsageDescription": "PreciMap usa tu ubicación para mostrarte precios cercanos.",
-        "NSCameraUsageDescription": "PreciMap necesita la cámara para fotografiar precios y chollos.",
-        "NSPhotoLibraryUsageDescription": "PreciMap necesita tu galería para subir fotos de chollos y tu avatar.",
-        "NSPhotoLibraryAddUsageDescription": "PreciMap guarda fotos de precios en tu galería.",
+        "NSLocationWhenInUseUsageDescription": "PreciMap usa tu ubicaci\u00f3n para mostrarte las gasolineras m\u00e1s baratas y lugares cercanos.",
+        "NSLocationAlwaysUsageDescription": "PreciMap usa tu ubicaci\u00f3n para mostrarte precios cercanos.",
+        "NSCameraUsageDescription": "PreciMap necesita la c\u00e1mara para fotografiar precios y chollos.",
+        "NSPhotoLibraryUsageDescription": "PreciMap necesita tu galer\u00eda para subir fotos de chollos y tu avatar.",
+        "NSPhotoLibraryAddUsageDescription": "PreciMap guarda fotos de precios en tu galer\u00eda.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -52,8 +52,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "PreciMap necesita acceso a tu galería para subir fotos de chollos.",
-          "cameraPermission": "PreciMap necesita acceso a la cámara para fotografiar precios."
+          "photosPermission": "PreciMap necesita acceso a tu galer\u00eda para subir fotos de chollos.",
+          "cameraPermission": "PreciMap necesita acceso a la c\u00e1mara para fotografiar precios."
         }
       ]
     ],

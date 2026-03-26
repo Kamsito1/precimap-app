@@ -2,7 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-export const API_BASE = 'http://192.168.18.139:3000';
+// Production: Railway URL | Development: local IP
+export const API_BASE = process.env.API_BASE || process.env.EXPO_PUBLIC_API_BASE || 'http://192.168.18.139:3000';
 
 // ─── COLORS — Static light theme (used in StyleSheet.create) ─────────────────
 // For dark mode support in individual components, use useThemeColors() hook
