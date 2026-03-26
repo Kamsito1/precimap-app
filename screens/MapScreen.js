@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
   COLORS, CATEGORY_INFO, FUEL_LABELS, gasPriceColor,
-  stationMinPrice, apiGet, apiPost, distanceKm, timeAgo, openURL,
+  stationMinPrice, apiGet, apiPost, apiDelete, distanceKm, timeAgo, openURL,
 } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
@@ -26,6 +26,39 @@ const FUELS = [
   { key:'glp',         label:'GLP / Autogas',emoji:'🟤', color:'#10B981', bg:'#F0FDF4' },
   { key:'gnc',         label:'Gas Natural',  emoji:'⚪', color:'#06B6D4', bg:'#ECFEFF' },
 ];
+
+// ─── PRECIO MEDIO SEMANAL POR CADENA DE SUPERMERCADO ────────────────────────
+// Basado en una cesta semanal de ~30 productos básicos (fuente: OCU 2024 + PRODUCTOS)
+// Se usa para mostrar en los marcadores del mapa cuánto cuesta de media una semana
+const WEEKLY_COST_BY_CHAIN = {
+  'aldi':       72.50,  'Aldi':       72.50,
+  'lidl':       76.80,  'Lidl':       76.80,
+  'alcampo':    82.40,  'Alcampo':    82.40,
+  'dia':        83.90,  'Dia':        83.90,  'Día':        83.90,
+  'mercadona':  88.50,  'Mercadona':  88.50,
+  'carrefour':  95.20,  'Carrefour':  95.20,
+  'consum':     96.80,  'Consum':     96.80,
+  'eroski':     97.50,  'Eroski':     97.50,
+  'coviran':    85.00,  'Coviran':    85.00,
+  'spar':       86.50,  'Spar':       86.50,
+  'ahorramas':  92.00,  'Ahorramas':  92.00,
+  'condis':     93.50,  'Condis':     93.50,
+  'bonpreu':    96.00,  'Bonpreu':    96.00,
+  'gadis':      94.80,  'Gadis':      94.80,
+  'hiperdino':  91.00,  'Hiperdino':  91.00,
+  'supercor':  102.00,  'Supercor':  102.00,
+  'el corte':  110.00,  'El Corte Inglés': 110.00,
+};
+const AVG_WEEKLY_COST = 88.50; // media nacional (Mercadona como referencia)
+
+function getWeeklyCost(placeName) {
+  if (!placeName) return null;
+  const n = placeName.toLowerCase();
+  for (const [chain, cost] of Object.entries(WEEKLY_COST_BY_CHAIN)) {
+    if (n.includes(chain.toLowerCase())) return cost;
+  }
+  return null;
+}
 
 const CATS = [
   { key:'all',          label:'Todo',        emoji:'🏙️' },
@@ -97,6 +130,16 @@ export default function MapScreen() {
 
   async function loadFavs() {
     try {
+      // Try server first (persistent), fallback to local
+      if (isLoggedIn) {
+        const serverFavs = await apiGet('/api/users/me/favorites').catch(() => null);
+        if (serverFavs && Array.isArray(serverFavs)) {
+          setFavStations(serverFavs.map(f => ({ id: f.station_id, name: f.station_name, city: f.station_city, lat: f.lat, lng: f.lng })));
+          // Sync to local cache
+          await AsyncStorage.setItem('fav_stations', JSON.stringify(serverFavs.map(f => ({ id: f.station_id, name: f.station_name, city: f.station_city, lat: f.lat, lng: f.lng }))));
+          return;
+        }
+      }
       const raw = await AsyncStorage.getItem('fav_stations');
       setFavStations(raw ? JSON.parse(raw) : []);
     } catch {}
@@ -628,23 +671,35 @@ export default function MapScreen() {
             {/* Community places */}
             {mapPlaces.map(p => {
               const info = CATEGORY_INFO[p.category] || CATEGORY_INFO.default;
-              // Color-code non-gas places by representative price
-              const repP = p.minPrice || p.repPrice;
+              // For supermarkets: show weekly cost instead of product price
+              const weeklyCost = p.category === 'supermercado' ? getWeeklyCost(p.name) : null;
+              const repP = weeklyCost || p.minPrice || p.repPrice;
               let borderColor = info.color;
               if (repP > 0) {
-                const AVG_PRICES = { restaurante:12, farmacia:4, supermercado:100, gimnasio:30 };
-                const avg = AVG_PRICES[p.category] || null;
-                if (avg) {
-                  if (repP < avg * 0.85) borderColor = '#16A34A';       // barato
-                  else if (repP > avg * 1.15) borderColor = '#DC2626';   // caro
-                  else borderColor = '#D97706';                           // medio
+                if (weeklyCost) {
+                  // Color by weekly cost vs average
+                  if (weeklyCost < AVG_WEEKLY_COST * 0.92) borderColor = '#16A34A';
+                  else if (weeklyCost > AVG_WEEKLY_COST * 1.08) borderColor = '#DC2626';
+                  else borderColor = '#D97706';
+                } else {
+                  const AVG_PRICES = { restaurante:12, farmacia:4, supermercado:100, gimnasio:30 };
+                  const avg = AVG_PRICES[p.category] || null;
+                  if (avg) {
+                    if (repP < avg * 0.85) borderColor = '#16A34A';
+                    else if (repP > avg * 1.15) borderColor = '#DC2626';
+                    else borderColor = '#D97706';
+                  }
                 }
               }
+              // Display text for marker
+              const priceLabel = weeklyCost
+                ? `${weeklyCost.toFixed(0)}€/sem`
+                : (repP > 0 && !isNaN(repP) ? `${repP.toFixed(2)}€` : null);
               return (
                 <Marker key={`p${p.id}`} coordinate={{latitude:p.lat,longitude:p.lng}} onPress={()=>setSelectedPlace(p)}>
                   <View style={[ms.marker,{backgroundColor:info.bg,borderColor,borderWidth:2}]}>
                     <Text style={ms.markerEmoji}>{info.emoji}</Text>
-                    {repP > 0 && !isNaN(repP) && <Text style={ms.markerPrice}>{repP.toFixed(2)}€</Text>}
+                    {priceLabel && <Text style={ms.markerPrice}>{priceLabel}</Text>}
                   </View>
                 </Marker>
               );
@@ -919,6 +974,15 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
 
   // Price label by category
   function priceLabel() {
+    // For supermarkets: show weekly cost if known
+    if (item.category === 'supermercado' || (item.isGas === false && item.category === 'supermercado')) {
+      const wc = getWeeklyCost(item.name);
+      if (wc) {
+        const diff = ((wc - AVG_WEEKLY_COST) / AVG_WEEKLY_COST * 100).toFixed(0);
+        const tag = wc < AVG_WEEKLY_COST * 0.92 ? '🟢' : wc > AVG_WEEKLY_COST * 1.08 ? '🔴' : '🟡';
+        return `${tag} ~${wc.toFixed(0)}€/semana (${Number(diff) > 0 ? '+' : ''}${diff}% vs media)`;
+      }
+    }
     if (!item.minPrice) return null;
     const p = item.minPrice;
     if (item.isGas) return `${fuelLabel} ${p.toFixed(3)}€`;
@@ -980,9 +1044,17 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
       let favs = raw ? JSON.parse(raw) : [];
       if (isFav) {
         favs = favs.filter(f => f.id !== station.id);
+        // Remove from server too
+        apiDelete(`/api/users/me/favorites/${station.id}`).catch(() => {});
       } else {
-        favs.push({ id: station.id, name: station.name, city: station.city, lat: station.lat, lng: station.lng });
+        const newFav = { id: station.id, name: station.name, city: station.city, lat: station.lat, lng: station.lng };
+        favs.push(newFav);
         if (favs.length > 20) favs = favs.slice(-20); // keep last 20
+        // Save to server for persistence across devices
+        apiPost('/api/users/me/favorites', {
+          station_id: String(station.id), station_name: station.name,
+          station_city: station.city, lat: station.lat, lng: station.lng,
+        }).catch(() => {});
       }
       await AsyncStorage.setItem(FAV_KEY, JSON.stringify(favs));
       setIsFav(!isFav);

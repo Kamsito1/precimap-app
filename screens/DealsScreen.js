@@ -69,6 +69,13 @@ export default function DealsScreen() {
     apiGet('/api/deals/trending').then(t => { if (Array.isArray(t)) setTrending(t); }).catch(()=>{});
   }, []);
 
+  // Load user's persistent votes on mount
+  useEffect(() => {
+    if (isLoggedIn) {
+      apiGet('/api/users/me/votes').then(v => { if (v && typeof v === 'object') setMyVotes(v); }).catch(() => {});
+    }
+  }, [isLoggedIn]);
+
   // Debounced search — skip on mount (initial load handled by the effect above)
   const isMounted = useRef(false);
   useEffect(() => {
