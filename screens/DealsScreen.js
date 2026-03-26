@@ -327,7 +327,7 @@ export default function DealsScreen() {
                 <View style={s.cardBody}>
                   {/* Store + category + age — compact single line */}
                   <View style={s.metaRow}>
-                    {deal.store && <View style={s.storeBadge}><Text style={s.storeTxt}>{deal.store}</Text></View>}
+                    {deal.store && <View style={s.storeBadge}><Text style={[s.storeTxt,{maxWidth:90}]} numberOfLines={1}>{deal.store}</Text></View>}
                     <View style={s.catTag}><Text style={s.catTagTxt}>{CATS.find(c=>c.key===deal.category)?.emoji} {deal.category}</Text></View>
                     {(() => {
                       const hoursOld = (Date.now() - new Date(deal.detected_at)) / 3600000;
@@ -335,7 +335,7 @@ export default function DealsScreen() {
                       return null;
                     })()}
                     {(deal.votes_up||0) >= 100 && <View style={{backgroundColor:'#DC2626',borderRadius:4,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,fontWeight:'800',color:'#fff'}}>🔥TOP</Text></View>}
-                    <Text style={[s.ageTag,{marginLeft:'auto'}]} numberOfLines={1}>{timeAgo(deal.detected_at)}</Text>
+                    <Text style={[s.ageTag,{flex:1,textAlign:'right'}]} numberOfLines={1}>{timeAgo(deal.detected_at)}</Text>
                   </View>
 
                   {/* Title — max 2 lines */}
@@ -597,7 +597,7 @@ const s = StyleSheet.create({
   ageTag:{fontSize:10,color:COLORS.text3},
   expiredBtn:{padding:6,borderRadius:6,backgroundColor:COLORS.bg3},
   expireTag:{fontSize:9,color:COLORS.danger,fontWeight:'700',backgroundColor:'#FEF2F2',borderRadius:99,paddingHorizontal:5,paddingVertical:1},
-  dealTitle:{fontSize:14,fontWeight:'700',color:COLORS.text,lineHeight:20,marginBottom:6,numberOfLines:2},
+  dealTitle:{fontSize:14,fontWeight:'700',color:COLORS.text,lineHeight:20,marginBottom:6},
   priceRow:{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8},
   dealPrice:{fontSize:20,fontWeight:'800',color:COLORS.danger},
   origPrice:{fontSize:13,color:COLORS.text3,textDecorationLine:'line-through'},

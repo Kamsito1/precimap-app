@@ -659,7 +659,7 @@ export default function MapScreen() {
               <FlatList
                 data={listData}
                 keyExtractor={(it,i)=>String(it.id||i)}
-                contentContainerStyle={{padding:12,gap:10,paddingBottom:80}}
+                contentContainerStyle={{padding:12,gap:10,paddingBottom:100}}
                 renderItem={({item})=>(
                   <ListCard item={item}
                     onPress={()=>item.isGas?setSelectedStation(item):setSelectedPlace(item)}

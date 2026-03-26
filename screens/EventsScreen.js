@@ -225,7 +225,7 @@ export default function EventsScreen() {
             return true;
           })}
           keyExtractor={e => String(e.id)}
-          contentContainerStyle={{padding:12,gap:10,paddingBottom:90}}
+          contentContainerStyle={{padding:12,gap:10,paddingBottom:100}}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.purple}/>}
           renderItem={({item}) => (
             <EventCard event={item} onAuthNeeded={() => setShowAuth(true)} isLoggedIn={isLoggedIn} onRefresh={loadEvents} user={user}/>
@@ -322,40 +322,36 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
       </View>
       <View style={ec.footer}>
         <TouchableOpacity style={ec.navBtn} onPress={openMaps}>
-          <Ionicons name="navigate-outline" size={14} color="#fff"/>
+          <Ionicons name="navigate-outline" size={13} color="#fff"/>
           <Text style={ec.navBtnTxt}>Cómo llegar</Text>
         </TouchableOpacity>
         {ev?.url ? (
           <TouchableOpacity style={ec.ticketBtn} onPress={() => Linking.openURL(ev.url).catch(()=>{})}>
-            <Ionicons name="open-outline" size={14} color={COLORS.purple}/>
+            <Ionicons name="open-outline" size={13} color={COLORS.purple}/>
             <Text style={ec.ticketBtnTxt}>Más info</Text>
           </TouchableOpacity>
         ) : null}
         <TouchableOpacity style={ec.voteBtn} onPress={vote}>
           <Text style={ec.voteTxt}>👍 {ev?.votes_up || 0}</Text>
         </TouchableOpacity>
-        {user?.is_admin && (
-          <TouchableOpacity style={[ec.voteBtn,{backgroundColor:'#FEE2E2'}]} onPress={() =>
-            Alert.alert('🛡️ Admin', '¿Eliminar evento?', [
-              {text:'Cancelar', style:'cancel'},
-              {text:'Eliminar', style:'destructive', onPress: async () => {
-                await apiPost(`/api/events/${ev.id}/deactivate`, {});
-                onRefresh();
-              }},
-            ])
-          }>
-            <Ionicons name="trash-outline" size={14} color="#DC2626"/>
-          </TouchableOpacity>
-        )}
         <TouchableOpacity style={ec.voteBtn} onPress={() => {
           const price = ev?.is_free ? '🆓 Gratis' : ev?.price_from ? `desde ${ev.price_from}€` : '';
-          Share.share({
-            message: `🎭 ${ev?.title||''}\n📍 ${ev?.city||''} · ${ev?.date||''}${ev?.time ? ' '+ev.time : ''}\n${price ? price+'\n' : ''}Via PreciMap 🗺️`,
-          }).catch(() => {});
+          Share.share({ message: `🎭 ${ev?.title||''}\n📍 ${ev?.city||''} · ${ev?.date||''}\n${price ? price+'\n' : ''}Via PreciMap 🗺️` }).catch(()=>{});
         }}>
-          <Ionicons name="share-outline" size={16} color={COLORS.text3}/>
+          <Ionicons name="share-outline" size={14} color={COLORS.text3}/>
         </TouchableOpacity>
-        <Text style={ec.source}>{isOfficial ? '🏛️ Oficial' : `👤 ${ev?.reporter_name || 'Comunidad'}`}</Text>
+        {user?.is_admin && (
+          <TouchableOpacity style={[ec.voteBtn,{backgroundColor:'#FEE2E2',paddingHorizontal:8}]} onPress={() =>
+            Alert.alert('🛡️ Admin','¿Eliminar evento?',[
+              {text:'Cancelar',style:'cancel'},
+              {text:'Eliminar',style:'destructive',onPress:async()=>{
+                await apiPost(`/api/events/${ev.id}/deactivate`,{});onRefresh();
+              }},
+            ])}>
+            <Ionicons name="trash-outline" size={13} color="#DC2626"/>
+          </TouchableOpacity>
+        )}
+        <Text style={ec.source} numberOfLines={1}>{isOfficial?'🏛️':('👤 '+(ev?.reporter_name||'').split(' ')[0])}</Text>
       </View>
     </View>
   );
@@ -603,7 +599,7 @@ const ec = StyleSheet.create({
   ticketBtnTxt:{fontSize:12,fontWeight:'600',color:COLORS.purple},
   voteBtn:{paddingHorizontal:10,paddingVertical:7,borderRadius:99,borderWidth:0.5,borderColor:COLORS.border,backgroundColor:COLORS.bg},
   voteTxt:{fontSize:13},
-  source:{fontSize:10,color:COLORS.text3,marginLeft:'auto'},
+  source:{fontSize:10,color:COLORS.text3,flex:1,textAlign:'right'},
 });
 
 const em = StyleSheet.create({
