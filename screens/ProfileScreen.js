@@ -484,6 +484,20 @@ export default function ProfileScreen() {
                   </View>
                 ))}
               </View>
+              {/* Estimated savings banner */}
+              {(u?.points||0) > 0 && (
+                <View style={{backgroundColor:'#DCFCE7',borderRadius:10,padding:10,marginTop:8,flexDirection:'row',alignItems:'center',gap:8}}>
+                  <Text style={{fontSize:18}}>💰</Text>
+                  <View style={{flex:1}}>
+                    <Text style={{fontSize:12,fontWeight:'700',color:'#166534'}}>
+                      Ahorro estimado: {((u.points||0)*0.15).toFixed(0)}€
+                    </Text>
+                    <Text style={{fontSize:10,color:'#166534',opacity:0.8}}>
+                      Basado en precios reportados y chollos compartidos
+                    </Text>
+                  </View>
+                </View>
+              )}
             </Section>
             <Section title="🎮 TU NIVEL">
               <View style={{backgroundColor:lvl.color+'15',borderRadius:14,padding:14,borderWidth:1,borderColor:lvl.color+'44'}}>
