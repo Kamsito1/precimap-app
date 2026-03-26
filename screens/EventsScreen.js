@@ -64,6 +64,7 @@ export default function EventsScreen() {
   const ayuntamientoCount = events.filter(e => e.source === 'ayuntamiento').length;
   const userCount = events.filter(e => e.source === 'user').length;
   const freeCount = events.filter(e => e.is_free).length;
+  const paidCount = events.filter(e => !e.is_free).length;
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
@@ -74,7 +75,7 @@ export default function EventsScreen() {
             <Text style={s.title}>🎭 Eventos</Text>
             <Text style={s.sub}>
               {events.length > 0
-                ? `${events.length} próximos · ${freeCount} gratuitos`
+                ? `${events.length} próximos · ${freeCount} gratis · ${paidCount} de pago`
                 : 'Sin eventos — sé el primero en añadir uno'}
             </Text>
           </View>

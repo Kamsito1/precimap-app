@@ -472,6 +472,19 @@ export default function MapScreen() {
             })}
           </MapView>
 
+          {/* Favorites only banner */}
+          {showFavsOnly && favStations.length === 0 && (
+            <View style={[ms.loadBar, {backgroundColor:'#FEF2F2',borderColor:'#FECACA'}]}>
+              <Text style={{fontSize:13}}>❤️</Text>
+              <Text style={[ms.loadTxt,{color:COLORS.danger}]}>
+                No tienes gasolineras favoritas · Abre una y pulsa ❤️
+              </Text>
+              <TouchableOpacity onPress={()=>setShowFavsOnly(false)} style={{marginLeft:8}}>
+                <Text style={{fontSize:11,color:COLORS.primary,fontWeight:'700'}}>Ver todas</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Server error banner */}
           {serverError && (
             <View style={[ms.loadBar, {backgroundColor:'#FEF2F2',borderColor:'#FECACA'}]}>
