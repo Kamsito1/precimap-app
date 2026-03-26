@@ -217,14 +217,19 @@ export default function MapScreen() {
           {!Object.keys(fuelStats).length ? (
             <View style={{flex:1,alignItems:'center',justifyContent:'center',gap:16,paddingHorizontal:40}}>
               <Text style={{fontSize:48}}>⛽</Text>
-              <Text style={{fontSize:17,fontWeight:'700',color:COLORS.text}}>Cargando precios...</Text>
+              <Text style={{fontSize:17,fontWeight:'700',color:COLORS.text}}>Conectando...</Text>
               <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center'}}>
-                Obteniendo datos de 12.000+ estaciones de España
+                Obteniendo precios de 12.000+ estaciones del Ministerio
               </Text>
-              <View style={{width:'100%',height:6,backgroundColor:COLORS.border,borderRadius:99,overflow:'hidden'}}>
-                <View style={{width:`${loadProgress}%`,height:'100%',backgroundColor:COLORS.primary,borderRadius:99}}/>
-              </View>
-              <Text style={{fontSize:12,color:COLORS.text3}}>{loadProgress < 100 ? `${loadProgress}%` : 'Cargando...'}</Text>
+              <ActivityIndicator color={COLORS.primary} style={{marginTop:8}}/>
+              {loadProgress > 0 && (
+                <>
+                  <View style={{width:'100%',height:6,backgroundColor:COLORS.border,borderRadius:99,overflow:'hidden'}}>
+                    <View style={{width:`${loadProgress}%`,height:'100%',backgroundColor:COLORS.primary,borderRadius:99}}/>
+                  </View>
+                  <Text style={{fontSize:12,color:COLORS.text3}}>{loadProgress}%</Text>
+                </>
+              )}
             </View>
           ) : (
             <ScrollView contentContainerStyle={{padding:16,gap:10,paddingBottom:60}}>
