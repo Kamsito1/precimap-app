@@ -467,7 +467,24 @@ export default function ProfileScreen() {
           const lvl = levels.slice().reverse().find(l => pts >= l.min) || levels[0];
           const next = levels[levels.indexOf(lvl)+1];
           const progress = next ? Math.min(100, ((pts-lvl.min)/(next.min-lvl.min))*100) : 100;
-          return (
+          return (<>
+            {/* Activity summary */}
+            <Section title="📊 RESUMEN">
+              <View style={{flexDirection:'row',gap:8}}>
+                {[
+                  [profile?.stats?.reports||0,'📍','Precios'],
+                  [profile?.stats?.deals||0,'🔥','Chollos'],
+                  [profile?.stats?.verified||0,'✅','Verif.'],
+                  [u?.streak||0,'🔥','Racha'],
+                ].map(([n,emoji,label])=>(
+                  <View key={label} style={{flex:1,backgroundColor:COLORS.bg3,borderRadius:10,padding:8,alignItems:'center',borderWidth:1,borderColor:COLORS.border}}>
+                    <Text style={{fontSize:16}}>{emoji}</Text>
+                    <Text style={{fontSize:16,fontWeight:'800',color:COLORS.primary}}>{n}</Text>
+                    <Text style={{fontSize:9,color:COLORS.text3,fontWeight:'600'}}>{label}</Text>
+                  </View>
+                ))}
+              </View>
+            </Section>
             <Section title="🎮 TU NIVEL">
               <View style={{backgroundColor:lvl.color+'15',borderRadius:14,padding:14,borderWidth:1,borderColor:lvl.color+'44'}}>
                 <View style={{flexDirection:'row',alignItems:'center',gap:12,marginBottom:12}}>
@@ -487,7 +504,7 @@ export default function ProfileScreen() {
                 ) : <Text style={{fontSize:11,color:lvl.color,fontWeight:'700'}}>¡Nivel máximo alcanzado! 👑</Text>}
               </View>
             </Section>
-          );
+          </>);
         })()}
 
         {/* ── Cómo ganar puntos ── */}

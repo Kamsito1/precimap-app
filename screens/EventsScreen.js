@@ -13,15 +13,16 @@ import AuthModal from '../components/AuthModal';
 import CityPicker from '../components/CityPicker';
 
 const CATS = [
-  { key:'all', label:'Todos', emoji:'🎭' },
-  { key:'cine', label:'Cine', emoji:'🎬' },
-  { key:'musica', label:'Música', emoji:'🎵' },
-  { key:'deporte', label:'Deporte', emoji:'⚽' },
-  { key:'festival', label:'Festival', emoji:'🎪' },
-  { key:'gastronomia', label:'Gastro', emoji:'🍷' },
-  { key:'expo', label:'Expo/Museos', emoji:'🖼️' },
-  { key:'teatro', label:'Teatro', emoji:'🎭' },
-  { key:'otro', label:'Otros', emoji:'📌' },
+  { key:'all',         label:'Todos',      emoji:'🎭' },
+  { key:'musica',      label:'Música',     emoji:'🎵' },
+  { key:'deporte',     label:'Deporte',    emoji:'⚽' },
+  { key:'cultura',     label:'Cultura',    emoji:'🏛️' },
+  { key:'festival',    label:'Festival',   emoji:'🎪' },
+  { key:'expo',        label:'Expo',       emoji:'🖼️' },
+  { key:'gastronomia', label:'Gastro',     emoji:'🍷' },
+  { key:'cine',        label:'Cine',       emoji:'🎬' },
+  { key:'teatro',      label:'Teatro',     emoji:'🎭' },
+  { key:'otro',        label:'Otros',      emoji:'📌' },
 ];
 
 const SORTS = [
