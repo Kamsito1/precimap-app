@@ -18,27 +18,29 @@ const TABS = [
 ];
 
 // Supermarkets — ranked by overall price (lower = cheaper), source: OCU, InfoConsumidor 2024
+// Ranking basado en estudios OCU 2024 + datos reales de precios
+// Base = Aldi (el más barato = 0% sobrecoste)
 const RANKING = [
-  { pos:1,  name:'Aldi',          idx:82,  emoji:'🟢', region:'Nacional',       tip:'El más barato de España. Marca propia sin rival. Ideal para básicos.' },
-  { pos:2,  name:'Lidl',          idx:86,  emoji:'🟢', region:'Nacional',       tip:'2º más barato. Campeón en frutas, verduras y carne fresca.' },
-  { pos:3,  name:'Alcampo',       idx:90,  emoji:'🟢', region:'Nacional',       tip:'Muy competitivo, especialmente en bebidas y droguería.' },
-  { pos:4,  name:'Día',           idx:91,  emoji:'🟢', region:'Nacional',       tip:'Buena relación precio/proximidad. Descuentos para socios.' },
-  { pos:5,  name:'Coviran',       idx:93,  emoji:'🟢', region:'Rural/pueblo',   tip:'La "tienda de pueblo" más extendida de España. Buena en perecederos.' },
-  { pos:6,  name:'Spar',          idx:94,  emoji:'🟢', region:'Rural/pueblo',   tip:'Presente en zonas rurales. Marca propia competitiva.' },
-  { pos:7,  name:'Mercadona',     idx:100, emoji:'🟡', region:'Nacional',       tip:'Referencia de calidad. Marca Hacendado excelente. No es el más barato.' },
-  { pos:8,  name:'Carrefour',     idx:104, emoji:'🟡', region:'Nacional',       tip:'4% más caro. Gran variedad y productos internacionales.' },
-  { pos:9,  name:'Consum',        idx:106, emoji:'🟡', region:'Valencia/Murcia',tip:'6% más caro. Fuerte en Comunidad Valenciana. Buen género fresco.' },
-  { pos:10, name:'Eroski',        idx:107, emoji:'🟡', region:'Norte España',   tip:'7% más caro. Referente en País Vasco, Navarra y Baleares.' },
-  { pos:11, name:'Condis',        idx:108, emoji:'🟡', region:'Cataluña',       tip:'8% más caro. Muy extendido en Cataluña y Barcelona.' },
-  { pos:12, name:'Ahorramas',     idx:109, emoji:'🟡', region:'Madrid',         tip:'9% más caro. Competitivo en Madrid y alrededores.' },
-  { pos:13, name:'Gadis',         idx:110, emoji:'🟡', region:'Galicia/Norte',  tip:'10% más caro. Referente en Galicia y norte de España.' },
-  { pos:14, name:'Froiz',         idx:111, emoji:'🟡', region:'Galicia',        tip:'11% más caro. Tradicional en Galicia. Buen género gallego.' },
-  { pos:15, name:'Bonpreu',       idx:112, emoji:'🟡', region:'Cataluña',       tip:'12% más caro. Premium catalán. Excelente sección de frescos.' },
-  { pos:16, name:'BM Supermercados',idx:113,emoji:'🟡', region:'País Vasco',    tip:'13% más caro. Calidad superior. Muy apreciado en Euskadi.' },
-  { pos:17, name:'Supersol',      idx:114, emoji:'🟡', region:'Andalucía',      tip:'14% más caro. Extendido en Andalucía y Canarias.' },
-  { pos:18, name:'Hiperber',      idx:114, emoji:'🟡', region:'Valencia',       tip:'Presente en la Comunidad Valenciana. Buen precio en frescos.' },
-  { pos:19, name:'Supercor',      idx:116, emoji:'🔴', region:'Ciudades grandes',tip:'16% más caro. Ventaja: ubicación urbana y horario ampliado.' },
-  { pos:20, name:'El Corte Inglés',idx:123,emoji:'🔴', region:'Ciudades grandes',tip:'23% más caro. Premium. Calidad y servicio muy superiores.' },
+  { pos:1,  name:'Aldi',           savings:18, emoji:'🟢', region:'Nacional',        tip:'El más barato de España. Marca propia sin rival. Ahorra hasta 18% vs la media.' },
+  { pos:2,  name:'Lidl',           savings:14, emoji:'🟢', region:'Nacional',        tip:'2º más barato. Campeón en frutas, verduras y carne fresca.' },
+  { pos:3,  name:'Alcampo',        savings:10, emoji:'🟢', region:'Nacional',        tip:'Muy competitivo, especialmente en bebidas y droguería.' },
+  { pos:4,  name:'Día',            savings:9,  emoji:'🟢', region:'Nacional',        tip:'Buena relación precio/proximidad. Descuentos para socios Día.' },
+  { pos:5,  name:'Coviran',        savings:7,  emoji:'🟢', region:'Rural/pueblo',    tip:'La "tienda de pueblo" más extendida de España. Frescos competitivos.' },
+  { pos:6,  name:'Spar',           savings:6,  emoji:'🟢', region:'Rural/pueblo',    tip:'Presente en zonas rurales. Marca propia competitive.' },
+  { pos:7,  name:'Mercadona',      savings:0,  emoji:'🟡', region:'Nacional',        tip:'El más popular. Marca Hacendado muy buena. Calidad-precio notable.' },
+  { pos:8,  name:'Carrefour',      savings:-4, emoji:'🟡', region:'Nacional',        tip:'4% más caro que Mercadona. Gran variedad e internacionales.' },
+  { pos:9,  name:'Consum',         savings:-6, emoji:'🟡', region:'Valencia/Murcia', tip:'6% más caro. Fuerte en Comunidad Valenciana. Buen género fresco.' },
+  { pos:10, name:'Eroski',         savings:-7, emoji:'🟡', region:'Norte España',    tip:'7% más caro. Referente en País Vasco, Navarra y Baleares.' },
+  { pos:11, name:'Condis',         savings:-8, emoji:'🟡', region:'Cataluña',        tip:'8% más caro. Muy extendido en Cataluña.' },
+  { pos:12, name:'Ahorramas',      savings:-9, emoji:'🟡', region:'Madrid',          tip:'9% más caro. Competitivo en Madrid y alrededores.' },
+  { pos:13, name:'Gadis',          savings:-10,emoji:'🟡', region:'Galicia/Norte',   tip:'10% más caro. Referente en Galicia.' },
+  { pos:14, name:'Froiz',          savings:-11,emoji:'🟡', region:'Galicia',         tip:'11% más caro. Tradicional gallego. Buen género local.' },
+  { pos:15, name:'Bonpreu',        savings:-12,emoji:'🟡', region:'Cataluña',        tip:'12% más caro. Premium catalán. Excelente frescos.' },
+  { pos:16, name:'BM Supermercados',savings:-13,emoji:'🟡',region:'País Vasco',      tip:'13% más caro. Calidad superior. Muy apreciado en Euskadi.' },
+  { pos:17, name:'Supersol',       savings:-14,emoji:'🟡', region:'Andalucía',       tip:'14% más caro. Extendido en Andalucía y Canarias.' },
+  { pos:18, name:'Hiperber',       savings:-14,emoji:'🟡', region:'Valencia',        tip:'14% más caro. Presente en Comunidad Valenciana.' },
+  { pos:19, name:'Supercor',       savings:-16,emoji:'🔴', region:'Ciudades grandes', tip:'16% más caro. Ventaja: ubicación urbana y horario ampliado.' },
+  { pos:20, name:'El Corte Inglés',savings:-23,emoji:'🔴', region:'Ciudades grandes', tip:'23% más caro. Premium absoluto. Calidad y servicio superiores.' },
 ];
 
 // Product comparison — community-verified prices (can be updated via voting)
@@ -267,9 +269,9 @@ export default function SupermarketsScreen({ embedded = false }) {
                 <View key={r.name} style={[s.podCard,{borderColor:colors[idx]+'44',flex:idx===0?1.2:1}]}>
                   <Text style={{fontSize:sizes[idx]===60?28:22}}>{medals[idx===0?1:idx===1?0:2]}</Text>
                   <Text style={[s.podName,{color:colors[idx]}]}>{r.name}</Text>
-                  <Text style={s.podIdx}>Índice {r.idx}</Text>
+                  <Text style={s.podIdx}>{r.savings > 0 ? `-${r.savings}%` : r.savings === 0 ? 'Media' : `+${Math.abs(r.savings)}%`}</Text>
                   <Text style={s.podSavings}>
-                    {r.idx<100 ? `${100-r.idx}% más barato` : r.idx===100 ? 'Referencia' : `${r.idx-100}% más caro`}
+                    {r.savings > 0 ? `${r.savings}% más barato` : r.savings === 0 ? 'Referencia precio medio' : `${Math.abs(r.savings)}% más caro`}
                   </Text>
                 </View>
               );
@@ -292,10 +294,14 @@ export default function SupermarketsScreen({ embedded = false }) {
                 <Text style={s.rankTip} numberOfLines={2}>{r.tip}</Text>
               </View>
               <View style={{alignItems:'flex-end'}}>
-                <Text style={[s.rankIdx,{color: r.idx<92?COLORS.success:r.idx<100?'#22C55E':r.idx===100?COLORS.text2:r.idx<110?COLORS.warning:COLORS.danger}]}>
-                  {r.idx < 100 ? `-${100-r.idx}%` : r.idx === 100 ? 'Ref' : `+${r.idx-100}%`}
+                <Text style={[s.rankIdx,{
+                  color: r.savings>0 ? COLORS.success : r.savings===0 ? COLORS.text2 : r.savings>-10 ? COLORS.warning : COLORS.danger
+                }]}>
+                  {r.savings > 0 ? `-${r.savings}%` : r.savings === 0 ? 'Media' : `+${Math.abs(r.savings)}%`}
                 </Text>
-                <Text style={{fontSize:8,color:COLORS.text3}}>vs referencia</Text>
+                <Text style={{fontSize:8,color:COLORS.text3}}>
+                  {r.savings > 0 ? 'más barato' : r.savings === 0 ? 'vs Mercadona' : 'más caro'}
+                </Text>
               </View>
             </View>
           ))}

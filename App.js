@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, Text, ActivityIndicator, useColorScheme, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -41,6 +41,7 @@ function AppNavigator() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [splashG95, setSplashG95] = useState(null);
   const [splashStats, setSplashStats] = useState(null);
+  const insets = useSafeAreaInsets();
 
   // Fetch real data for splash screen — MUST be before any conditional return
   useEffect(() => {
@@ -92,16 +93,16 @@ function AppNavigator() {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E2E8F0',
           borderTopWidth: 0.5,
-          height: Platform.OS === 'ios' ? 84 : 64,
-          paddingBottom: Platform.OS === 'ios' ? 26 : 10,
-          paddingTop: 8,
+          height: 52 + insets.bottom,
+          paddingBottom: insets.bottom || (Platform.OS === 'ios' ? 10 : 4),
+          paddingTop: 6,
           elevation: 10,
           shadowColor: '#000',
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: 0.08,
           shadowRadius: 10,
         },
-        tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: 0 },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
         tabBarIconStyle: { marginBottom: -2 },
       }}
     >

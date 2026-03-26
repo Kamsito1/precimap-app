@@ -325,31 +325,21 @@ export default function DealsScreen() {
                 })()}
 
                 <View style={s.cardBody}>
-                  {/* Store + category */}
+                  {/* Store + category + age — compact single line */}
                   <View style={s.metaRow}>
                     {deal.store && <View style={s.storeBadge}><Text style={s.storeTxt}>{deal.store}</Text></View>}
                     <View style={s.catTag}><Text style={s.catTagTxt}>{CATS.find(c=>c.key===deal.category)?.emoji} {deal.category}</Text></View>
-                    <Text style={s.ageTag}>{timeAgo(deal.detected_at)}</Text>
                     {(() => {
                       const hoursOld = (Date.now() - new Date(deal.detected_at)) / 3600000;
-                      if (hoursOld < 24) return <Text style={{fontSize:10,fontWeight:'700',color:'#fff',backgroundColor:COLORS.success,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>NUEVO</Text>;
+                      if (hoursOld < 24) return <View style={{backgroundColor:COLORS.success,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,fontWeight:'700',color:'#fff'}}>NUEVO</Text></View>;
                       return null;
                     })()}
-                    {(deal.votes_up||0) >= 100 && (
-                      <Text style={{fontSize:10,fontWeight:'800',color:'#fff',backgroundColor:'#DC2626',borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>🔥 TOP</Text>
-                    )}
-                    {deal.users?.name && (
-                      <Text style={[s.ageTag,{color:COLORS.text3}]}>por {deal.users.name.split(' ')[0]}</Text>
-                    )}
-                    {deal.expires_at && (() => {
-                      const daysLeft = Math.ceil((new Date(deal.expires_at) - Date.now()) / 86400000);
-                      if (daysLeft <= 3) return <Text style={s.expireTag}>⏰ {daysLeft}d</Text>;
-                      return null;
-                    })()}
+                    {(deal.votes_up||0) >= 100 && <View style={{backgroundColor:'#DC2626',borderRadius:4,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,fontWeight:'800',color:'#fff'}}>🔥TOP</Text></View>}
+                    <Text style={[s.ageTag,{marginLeft:'auto'}]} numberOfLines={1}>{timeAgo(deal.detected_at)}</Text>
                   </View>
 
-                  {/* Title */}
-                  <Text style={s.dealTitle} numberOfLines={3}>{deal.title}</Text>
+                  {/* Title — max 2 lines */}
+                  <Text style={s.dealTitle} numberOfLines={2}>{deal.title}</Text>
 
                   {/* Price — enhanced layout */}
                   <View style={s.priceRow}>
@@ -379,115 +369,116 @@ export default function DealsScreen() {
                         : <Text style={{fontSize:10,color:COLORS.primary,fontWeight:'700'}}>{(deal.users?.name||'?')[0]}</Text>
                       }
                     </View>
-                    <Text style={s.reporterName}>{deal.users?.name || 'Anónimo'}</Text>
+                    <Text style={s.reporterName}>por {deal.users?.name || 'Anónimo'}</Text>
+                    {deal.expires_at && (() => {
+                      const d2 = Math.ceil((new Date(deal.expires_at) - Date.now()) / 86400000);
+                      if (d2 > 0 && d2 <= 3) return <Text style={s.expireTag}>⏰ {d2}d</Text>;
+                      return null;
+                    })()}
                   </View>
                 </View>
 
-                {/* Actions */}
+                {/* CTA principal — Ver oferta (arriba del actions, ocupa todo el ancho) */}
+                {affUrl && (
+                  <TouchableOpacity style={s.goBtnFull} onPress={() => Linking.openURL(affUrl).catch(()=>{})}>
+                    <Text style={s.goBtnTxt}>Ver oferta</Text>
+                    <Ionicons name="open-outline" size={14} color="#fff"/>
+                  </TouchableOpacity>
+                )}
+
+                {/* Actions — voto + comentar + share + expirar. Sin texto largo, todo icono+número */}
                 <View style={s.actions}>
-                  {/* Votes */}
+                  {/* Voto caliente / frío */}
                   <View style={s.voteGroup}>
                     <TouchableOpacity
                       style={[s.voteBtn, myVotes[deal.id]===1 && {backgroundColor:'#FEE2E2'}]}
                       onPress={() => vote(deal.id, 1)}>
-                      <Ionicons name={myVotes[deal.id]===1 ? "flame" : "flame-outline"} size={22} color={COLORS.danger}/>
+                      <Ionicons name={myVotes[deal.id]===1 ? "flame" : "flame-outline"} size={18} color={COLORS.danger}/>
                       <Text style={[s.voteNum, {color:COLORS.danger}]}>{deal.votes_up||0}</Text>
                     </TouchableOpacity>
                     <View style={s.voteDivider}/>
                     <TouchableOpacity
                       style={[s.voteBtn, myVotes[deal.id]===-1 && {backgroundColor:'#EFF6FF'}]}
                       onPress={() => vote(deal.id, -1)}>
-                      <Ionicons name={myVotes[deal.id]===-1 ? "snow" : "snow-outline"} size={22} color={COLORS.primary}/>
+                      <Ionicons name={myVotes[deal.id]===-1 ? "snow" : "snow-outline"} size={18} color={COLORS.primary}/>
                       <Text style={[s.voteNum, {color:COLORS.primary}]}>{deal.votes_down||0}</Text>
                     </TouchableOpacity>
                   </View>
 
-                  <TouchableOpacity style={s.commentBtn} onPress={() => setCommentsFor(deal)}>
-                    <Ionicons name="chatbubble-outline" size={17} color={COLORS.text2}/>
-                    <Text style={s.commentCount}>{deal.comment_count||0}</Text>
+                  {/* Separador flexible */}
+                  <View style={{flex:1}}/>
+
+                  {/* Comentarios */}
+                  <TouchableOpacity style={s.iconBtn} onPress={() => setCommentsFor(deal)}>
+                    <Ionicons name="chatbubble-outline" size={18} color={COLORS.text2}/>
+                    {(deal.comment_count||0) > 0 && <Text style={s.iconBtnTxt}>{deal.comment_count}</Text>}
                   </TouchableOpacity>
 
-                  {/* Share deal */}
-                  <TouchableOpacity
-                    style={s.commentBtn}
-                    onPress={() => {
-                      const price = formatPrice(deal.deal_price);
-                      const disc  = deal.discount_percent ? ` (-${Math.round(deal.discount_percent)}%)` : '';
-                      const url   = deal.url ? `\n🔗 ${deal.url}` : '';
-                      Share.share({
-                        message: `🔥 ${deal.title}\n💰 ${price}${disc}${url}\n\nVía PreciMap — La app de ahorro de España`,
-                      }).catch(() => {});
-                    }}>
-                    <Ionicons name="share-outline" size={17} color={COLORS.text2}/>
+                  {/* Compartir */}
+                  <TouchableOpacity style={s.iconBtn} onPress={() => {
+                    Share.share({
+                      message: `🔥 ${deal.title}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent?` (-${Math.round(deal.discount_percent)}%)`:''}${deal.url?'\n🔗 '+deal.url:''}\n\nVía PreciMap`,
+                    }).catch(() => {});
+                  }}>
+                    <Ionicons name="share-outline" size={18} color={COLORS.text2}/>
                   </TouchableOpacity>
 
-                  {affUrl && (
-                    <TouchableOpacity style={s.goBtn} onPress={() => Linking.openURL(affUrl)}>
-                      <Text style={s.goBtnTxt}>Ver oferta</Text>
-                      <Ionicons name="arrow-forward" size={14} color="#fff"/>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Report as expired — any logged in user can vote */}
-                  {isLoggedIn && (
-                    <TouchableOpacity
-                      style={[s.expiredBtn, {flexDirection:'row',alignItems:'center',gap:4}]}
-                      onPress={async () => {
-                        if (user?.is_admin) {
-                          // Admin: direct delete
-                          Alert.alert('🛡️ Admin', '¿Eliminar este chollo?', [
-                            { text:'Cancelar', style:'cancel' },
-                            { text:'Eliminar', style:'destructive', onPress: async () => {
-                              await apiDelete(`/api/deals/${deal.id}`);
-                              setDeals(prev => prev.filter(d => d.id !== deal.id));
-                            }},
-                          ]);
-                        } else if (deal.reported_by === user?.id) {
-                          // Own deal: can retract
-                          Alert.alert('Tu chollo', '¿Qué quieres hacer?', [
-                            { text:'Cancelar', style:'cancel' },
-                            { text:'Retirar oferta', style:'destructive', onPress: async () => {
-                              await apiDelete(`/api/deals/${deal.id}`);
-                              setDeals(prev => prev.filter(d => d.id !== deal.id));
-                            }},
-                          ]);
-                        } else {
-                          // Others: expire vote
-                          Alert.alert(
-                            '⏰ ¿Ya no disponible?',
-                            `Tu voto se suma a los demás. Si 5 personas votan que ya expiró, se retira automáticamente.\nVotos actuales: ${deal.expire_reports || 0}/5`,
-                            [
-                              { text:'Sí, ya expiró', onPress: async () => {
-                                const res = await apiPost(`/api/deals/${deal.id}/report-expired`, {});
-                                if (res.ok) {
-                                  if (res.deactivated) {
-                                    setDeals(prev => prev.filter(d => d.id !== deal.id));
-                                    Alert.alert('✅ Retirada', 'La comunidad ha confirmado que esta oferta expiró.');
-                                  } else {
-                                    setDeals(prev => prev.map(d => d.id === deal.id
-                                      ? {...d, expire_reports: res.expire_reports} : d));
-                                    Alert.alert('Gracias', `Voto registrado (${res.expire_reports}/5)`);
-                                  }
-                                } else Alert.alert('Aviso', res.error || 'No se pudo registrar el voto');
-                              }},
-                              { text:'Cancelar', style:'cancel' },
-                            ]
-                          );
-                        }
-                      }}>
-                      <Ionicons name={user?.is_admin ? 'shield' : deal.reported_by===user?.id ? 'close-circle-outline' : 'alert-circle-outline'} size={16} color={user?.is_admin ? '#DC2626' : COLORS.text3}/>
-                      {(deal.expire_reports||0) > 0 && !user?.is_admin && <Text style={{fontSize:9,color:COLORS.danger,fontWeight:'700'}}>{deal.expire_reports}/5</Text>}
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Owner edit */}
+                  {/* Editar (propietario/admin) */}
                   {isLoggedIn && (deal.reported_by === user?.id || user?.is_admin) && (
-                    <TouchableOpacity onPress={() => {
+                    <TouchableOpacity style={s.iconBtn} onPress={() => {
                       setEditDeal(deal);
                       setEditPrice(String(deal.deal_price||''));
                       setEditTitle(deal.title||'');
                     }}>
-                      <Ionicons name="pencil-outline" size={17} color={COLORS.primary}/>
+                      <Ionicons name="pencil-outline" size={16} color={COLORS.primary}/>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Reportar expirado / Admin borrar */}
+                  {isLoggedIn && (
+                    <TouchableOpacity style={s.iconBtn} onPress={async () => {
+                      if (user?.is_admin) {
+                        Alert.alert('🛡️ Eliminar', '¿Eliminar este chollo?', [
+                          {text:'Cancelar',style:'cancel'},
+                          {text:'Eliminar',style:'destructive', onPress: async () => {
+                            await apiDelete(`/api/deals/${deal.id}`);
+                            setDeals(prev => prev.filter(d => d.id !== deal.id));
+                          }},
+                        ]);
+                      } else if (deal.reported_by === user?.id) {
+                        Alert.alert('Tu chollo', '¿Retirar tu oferta?', [
+                          {text:'Cancelar',style:'cancel'},
+                          {text:'Retirar',style:'destructive', onPress: async () => {
+                            await apiDelete(`/api/deals/${deal.id}`);
+                            setDeals(prev => prev.filter(d => d.id !== deal.id));
+                          }},
+                        ]);
+                      } else {
+                        Alert.alert('⏰ ¿Ya expiró?',
+                          `${deal.expire_reports||0}/5 votos. Con 5 votos se retira automáticamente.`,
+                          [{text:'Sí, ya expiró', onPress: async () => {
+                            const res = await apiPost(`/api/deals/${deal.id}/report-expired`, {});
+                            if (res.ok) {
+                              if (res.deactivated) {
+                                setDeals(prev => prev.filter(d => d.id !== deal.id));
+                              } else {
+                                setDeals(prev => prev.map(d => d.id===deal.id ? {...d,expire_reports:res.expire_reports} : d));
+                                Alert.alert('Gracias',`Voto registrado (${res.expire_reports}/5)`);
+                              }
+                            }
+                          }},
+                          {text:'Cancelar',style:'cancel'}]
+                        );
+                      }
+                    }}>
+                      <View style={{position:'relative'}}>
+                        <Ionicons name={user?.is_admin ? 'shield' : 'alert-circle-outline'} size={16} color={user?.is_admin?'#DC2626':COLORS.text3}/>
+                        {(deal.expire_reports||0)>0 && !user?.is_admin && (
+                          <View style={{position:'absolute',top:-4,right:-6,backgroundColor:COLORS.danger,borderRadius:99,width:12,height:12,alignItems:'center',justifyContent:'center'}}>
+                            <Text style={{fontSize:7,color:'#fff',fontWeight:'800'}}>{deal.expire_reports}</Text>
+                          </View>
+                        )}
+                      </View>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -592,37 +583,39 @@ const s = StyleSheet.create({
   catEmoji:{fontSize:13},catTxt:{fontSize:12,color:COLORS.text2},
   guestBanner:{backgroundColor:'#FFF5F5',borderBottomWidth:0.5,borderBottomColor:'#FECACA',paddingHorizontal:16,paddingVertical:9},
   guestTxt:{fontSize:13,color:COLORS.danger,fontWeight:'500',textAlign:'center'},
-  card:{backgroundColor:COLORS.bg2,borderRadius:18,overflow:'hidden',borderWidth:0.5,borderColor:COLORS.border,shadowColor:'#000',shadowOffset:{width:0,height:2},shadowOpacity:0.06,shadowRadius:8,elevation:2},
-  tempBadge:{alignSelf:'flex-start',paddingHorizontal:10,paddingVertical:4,margin:10,marginBottom:0,borderRadius:99},
-  tempTxt:{fontSize:12,fontWeight:'700'},
-  img:{width:'100%',height:200,backgroundColor:COLORS.bg3},
-  imgPlaceholder:{width:'100%',height:140,alignItems:'center',justifyContent:'center'},
-  cardBody:{padding:14},
-  metaRow:{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8,flexWrap:'wrap'},
-  storeBadge:{backgroundColor:COLORS.primaryLight,borderRadius:6,paddingHorizontal:8,paddingVertical:3},
-  storeTxt:{fontSize:11,fontWeight:'700',color:COLORS.primary},
-  catTag:{backgroundColor:COLORS.bg3,borderRadius:6,paddingHorizontal:8,paddingVertical:3},
-  catTagTxt:{fontSize:11,color:COLORS.text2},
-  ageTag:{fontSize:11,color:COLORS.text3,marginLeft:'auto'},
-  expiredBtn:{padding:8,borderRadius:8,backgroundColor:COLORS.bg3},
-  expireTag:{fontSize:10,color:COLORS.danger,fontWeight:'700',backgroundColor:'#FEF2F2',borderRadius:99,paddingHorizontal:6,paddingVertical:2},
-  dealTitle:{fontSize:16,fontWeight:'700',color:COLORS.text,lineHeight:22,marginBottom:10},
-  priceRow:{flexDirection:'row',alignItems:'center',gap:8,marginBottom:10},
-  dealPrice:{fontSize:22,fontWeight:'800',color:COLORS.danger},
-  origPrice:{fontSize:15,color:COLORS.text3,textDecorationLine:'line-through'},
-  discBadge:{backgroundColor:'#FEE2E2',borderRadius:8,paddingHorizontal:10,paddingVertical:4,justifyContent:'center'},
-  discTxt:{fontSize:15,fontWeight:'900',color:COLORS.danger,letterSpacing:-0.5},
+  card:{backgroundColor:COLORS.bg2,borderRadius:16,overflow:'hidden',borderWidth:0.5,borderColor:COLORS.border,shadowColor:'#000',shadowOffset:{width:0,height:2},shadowOpacity:0.06,shadowRadius:8,elevation:2},
+  tempBadge:{alignSelf:'flex-start',paddingHorizontal:8,paddingVertical:3,margin:8,marginBottom:0,borderRadius:99},
+  tempTxt:{fontSize:11,fontWeight:'700'},
+  img:{width:'100%',height:180,backgroundColor:COLORS.bg3},
+  imgPlaceholder:{width:'100%',height:120,alignItems:'center',justifyContent:'center'},
+  cardBody:{padding:12},
+  metaRow:{flexDirection:'row',alignItems:'center',gap:4,marginBottom:6,flexWrap:'nowrap',overflow:'hidden'},
+  storeBadge:{backgroundColor:COLORS.primaryLight,borderRadius:4,paddingHorizontal:6,paddingVertical:2},
+  storeTxt:{fontSize:10,fontWeight:'700',color:COLORS.primary},
+  catTag:{backgroundColor:COLORS.bg3,borderRadius:4,paddingHorizontal:6,paddingVertical:2},
+  catTagTxt:{fontSize:10,color:COLORS.text2},
+  ageTag:{fontSize:10,color:COLORS.text3},
+  expiredBtn:{padding:6,borderRadius:6,backgroundColor:COLORS.bg3},
+  expireTag:{fontSize:9,color:COLORS.danger,fontWeight:'700',backgroundColor:'#FEF2F2',borderRadius:99,paddingHorizontal:5,paddingVertical:1},
+  dealTitle:{fontSize:14,fontWeight:'700',color:COLORS.text,lineHeight:20,marginBottom:6,numberOfLines:2},
+  priceRow:{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8},
+  dealPrice:{fontSize:20,fontWeight:'800',color:COLORS.danger},
+  origPrice:{fontSize:13,color:COLORS.text3,textDecorationLine:'line-through'},
+  discBadge:{backgroundColor:'#FEE2E2',borderRadius:6,paddingHorizontal:7,paddingVertical:3,justifyContent:'center'},
+  discTxt:{fontSize:13,fontWeight:'900',color:COLORS.danger,letterSpacing:-0.5},
   reporterRow:{flexDirection:'row',alignItems:'center',gap:6},
-  reporterAvatar:{width:22,height:22,borderRadius:11,backgroundColor:COLORS.primaryLight,alignItems:'center',justifyContent:'center'},
-  reporterName:{fontSize:12,color:COLORS.text3},
-  actions:{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:12,paddingVertical:10,borderTopWidth:0.5,borderTopColor:COLORS.border,flexWrap:'wrap'},
-  voteGroup:{flexDirection:'row',alignItems:'center',borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,overflow:'hidden'},
-  voteBtn:{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:14,paddingVertical:9},
-  voteDivider:{width:1,height:'100%',backgroundColor:COLORS.border},
-  voteNum:{fontSize:15,fontWeight:'700'},
-  commentBtn:{flexDirection:'row',alignItems:'center',gap:4,padding:8},
-  commentCount:{fontSize:13,color:COLORS.text2},
-  goBtn:{marginLeft:'auto',flexDirection:'row',alignItems:'center',gap:4,backgroundColor:COLORS.primary,borderRadius:99,paddingHorizontal:16,paddingVertical:10},
+  reporterAvatar:{width:18,height:18,borderRadius:9,backgroundColor:COLORS.primaryLight,alignItems:'center',justifyContent:'center'},
+  reporterName:{fontSize:11,color:COLORS.text3},
+  // Actions — single row, 4 icon buttons max + votes pill
+  actions:{flexDirection:'row',alignItems:'center',gap:2,paddingHorizontal:12,paddingVertical:8,borderTopWidth:0.5,borderTopColor:COLORS.border},
+  voteGroup:{flexDirection:'row',alignItems:'center',borderRadius:99,borderWidth:1,borderColor:COLORS.border,overflow:'hidden'},
+  voteBtn:{flexDirection:'row',alignItems:'center',gap:3,paddingHorizontal:10,paddingVertical:7},
+  voteDivider:{width:0.5,height:22,backgroundColor:COLORS.border},
+  voteNum:{fontSize:13,fontWeight:'700'},
+  iconBtn:{padding:8,borderRadius:8},
+  iconBtnTxt:{fontSize:11,color:COLORS.text2,fontWeight:'600'},
+  goBtnFull:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,backgroundColor:COLORS.primary,borderRadius:10,paddingVertical:10,marginHorizontal:12,marginBottom:0},
+  goBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:4,backgroundColor:COLORS.primary,borderRadius:99,paddingHorizontal:10,paddingVertical:7},
   goBtnTxt:{color:'#fff',fontWeight:'700',fontSize:13},
   empty:{alignItems:'center',paddingTop:60,paddingHorizontal:32},
   emptyTitle:{fontSize:18,fontWeight:'700',color:COLORS.text,marginBottom:6},
