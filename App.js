@@ -42,14 +42,28 @@ function AppNavigator() {
   const [splashG95, setSplashG95] = useState(null);
   const [splashStats, setSplashStats] = useState(null);
 
-  // Fetch real data for splash screen
-  useState(() => {
+  // Fetch real data for splash screen — MUST be before any conditional return
+  useEffect(() => {
     apiGet('/api/gasolineras/stats').then(d => {
       const min = d?.stats?.g95?.min;
       if (min) setSplashG95(min.toFixed(3));
     }).catch(() => {});
     apiGet('/api/stats').then(d => setSplashStats(d)).catch(() => {});
-  });
+  }, []);
+
+  // Notification polling — MUST be before any conditional return
+  useEffect(() => {
+    if (!isLoggedIn) { setUnreadCount(0); return; }
+    const check = async () => {
+      try {
+        const me = await apiGet('/api/users/me');
+        setUnreadCount((me?.notifications || []).filter(n => !n.is_read).length);
+      } catch {}
+    };
+    check();
+    const t = setInterval(check, 60000);
+    return () => clearInterval(t);
+  }, [isLoggedIn]);
 
   if (authLoading) return (
     <View style={{ flex: 1, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
@@ -67,19 +81,6 @@ function AppNavigator() {
       </View>
     </View>
   );
-
-  useEffect(() => {
-    if (!isLoggedIn) { setUnreadCount(0); return; }
-    const check = async () => {
-      try {
-        const me = await apiGet('/api/users/me');
-        setUnreadCount((me?.notifications || []).filter(n => !n.is_read).length);
-      } catch {}
-    };
-    check();
-    const t = setInterval(check, 60000);
-    return () => clearInterval(t);
-  }, [isLoggedIn]);
 
   return (
     <Tab.Navigator
