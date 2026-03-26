@@ -762,6 +762,13 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
 function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded }) {
   const info = CATEGORY_INFO[place.category]||CATEGORY_INFO.default;
   const prices = place.prices||[];
+  const [history, setHistory] = React.useState({});
+
+  React.useEffect(() => {
+    apiGet(`/api/places/${place.id}/price-history`).then(d => {
+      if (d?.history) setHistory(d.history);
+    }).catch(() => {});
+  }, [place.id]);
   return (
     <View style={pcs.wrap}>
       <View style={pcs.handle}/>

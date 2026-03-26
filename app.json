@@ -7,6 +7,9 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "description": "Compara precios de gasolina, supermercados y bancos en toda España. Ahorra dinero con la comunidad.",
+    "privacy": "public",
+    "primaryColor": "#2563EB",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,12 +19,14 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
       "buildNumber": "1",
+      "requireFullScreen": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "PreciMap usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",
         "NSLocationAlwaysUsageDescription": "PreciMap usa tu ubicación para mostrarte precios cercanos.",
         "NSCameraUsageDescription": "PreciMap necesita la cámara para fotografiar precios y chollos.",
         "NSPhotoLibraryUsageDescription": "PreciMap necesita tu galería para subir fotos de chollos y tu avatar.",
-        "NSPhotoLibraryAddUsageDescription": "PreciMap guarda fotos de precios en tu galería."
+        "NSPhotoLibraryAddUsageDescription": "PreciMap guarda fotos de precios en tu galería.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -36,8 +41,7 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ]
     },
     "web": {

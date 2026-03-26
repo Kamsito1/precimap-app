@@ -93,6 +93,28 @@ const BANK_OFFERS = [
     is_referral:false, last_checked:'mar 2025',
     color:'#F97316', emoji:'🏦',
   },
+  {
+    id:'sabadell', category:'cuenta',
+    bank:'Banco Sabadell', logo:'🔵',
+    title:'Cuenta Online Sabadell — sin comisiones primer año',
+    highlight:'Sin comisiones 12 meses + tarjeta de débito gratis',
+    conditions:['Sin comisiones el primer año','Tarjeta de débito Visa gratuita','Banca online y app completa','Acceso a más de 1.200 cajeros Sabadell','Cuenta en euros y divisas'],
+    bonus_label:'12 meses sin comisiones',
+    url:'https://www.bancsabadell.com/es/Particulares/Cuentas/',
+    is_referral:false, last_checked:'mar 2025',
+    color:'#1D4ED8', emoji:'🏦',
+  },
+  {
+    id:'bankinter', category:'inversion',
+    bank:'Bankinter', logo:'🟧',
+    title:'Depósito Bankinter — hasta 3,75% TAE garantizado',
+    highlight:'El mejor depósito a plazo fijo del mercado español',
+    conditions:['Hasta 3,75% TAE a 6 meses (clientes nuevos)','Capital garantizado al 100%','Desde 500€ hasta 10.000.000€','Sin comisiones de contratación','Nuevo cliente: importe máximo 10.000€'],
+    bonus_label:'3,75% TAE garantizado',
+    url:'https://www.bankinter.com/banca/depositos',
+    is_referral:false, last_checked:'mar 2025',
+    color:'#F97316', emoji:'📈',
+  },
 ];
 
 const CATEGORIES = [

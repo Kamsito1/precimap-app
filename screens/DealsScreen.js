@@ -54,6 +54,12 @@ export default function DealsScreen() {
 
   useEffect(() => { resetAndLoad(); }, [cat, sort]);
 
+  // Debounced search — waits 400ms after typing stops before fetching
+  useEffect(() => {
+    const timer = setTimeout(() => { resetAndLoad(); }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   useEffect(() => {
     const t = setTimeout(() => resetAndLoad(), 400);
     return () => clearTimeout(t);
