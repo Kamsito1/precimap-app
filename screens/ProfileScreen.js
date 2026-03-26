@@ -432,6 +432,7 @@ export default function ProfileScreen() {
                     <View style={{flexDirection:'row',gap:10,marginTop:4}}>
                       <Text style={{fontSize:11,color:COLORS.text3}}>🔥 {d.votes_up||0} votos</Text>
                       <Text style={{fontSize:11,color:d.temperature==='🧊'?COLORS.primary:COLORS.danger}}>{d.temperature||'😐'}</Text>
+                      {d.store && <Text style={{fontSize:11,color:COLORS.text3}}>· {d.store}</Text>}
                     </View>
                   </View>
                 </View>
