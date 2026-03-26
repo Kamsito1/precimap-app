@@ -5,7 +5,7 @@
 ![v1.0.2](https://img.shields.io/badge/version-1.0.2-blue)
 ![React Native](https://img.shields.io/badge/React%20Native-0.81-blue)
 ![Expo](https://img.shields.io/badge/Expo-SDK%2054-black)
-![Tests](https://img.shields.io/badge/tests-20%2F20-brightgreen)
+![Tests](https://img.shields.io/badge/tests-27%2F27-brightgreen)
 
 ## 🚀 Estado del proyecto
 
