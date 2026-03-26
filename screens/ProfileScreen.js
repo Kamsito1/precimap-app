@@ -333,7 +333,7 @@ export default function ProfileScreen() {
             </View>
           )}
           <Text style={s.profileEmail}>{u?.email}</Text>
-          {u?.created_at && (
+          {u?.created_at && !isNaN(new Date(u.created_at)) && (
             <Text style={{fontSize:10,color:'rgba(255,255,255,0.5)',marginTop:2}}>
               Miembro desde {new Date(u.created_at).toLocaleDateString('es-ES',{month:'long',year:'numeric'})}
             </Text>

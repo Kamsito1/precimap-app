@@ -38,7 +38,7 @@ export default function PrivacyScreen({ onClose }) {
 
         <Text style={s.h2}>7. Contacto</Text>
         <Text style={s.p}>Para cualquier consulta sobre privacidad, escríbenos a:</Text>
-        <TouchableOpacity onPress={() => Linking.openURL('mailto:privacidad@precimap.app')}>
+        <TouchableOpacity onPress={() => Linking.openURL('mailto:privacidad@precimap.app').catch(()=>{})}>
           <Text style={s.link}>privacidad@precimap.app</Text>
         </TouchableOpacity>
 

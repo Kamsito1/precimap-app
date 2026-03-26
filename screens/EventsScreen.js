@@ -37,7 +37,7 @@ const SOURCES = [
 ];
 
 export default function EventsScreen() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   const [events, setEvents] = useState([]);
   const [cat, setCat] = useState('all');
   const [sort, setSort] = useState('date');
@@ -101,11 +101,11 @@ export default function EventsScreen() {
 
         {/* Next event highlight banner — shows most voted upcoming event */}
         {events.length > 0 && (() => {
-          // Show most popular upcoming event (highest votes)
-          const upcoming = events.filter(e => new Date(e.date) >= new Date());
-          const next = upcoming.reduce((best, e) => (e.votes_up||0) > (best.votes_up||0) ? e : best, upcoming[0] || events[0]);
-          if (!next) return null;
-          const daysUntil = Math.ceil((new Date(next.date) - new Date()) / 86400000);
+          const upcoming = events.filter(e => e?.date && new Date(e.date) >= new Date());
+          const next = upcoming.length > 0 ? upcoming.reduce((best, e) => (e.votes_up||0) > (best.votes_up||0) ? e : best, upcoming[0]) : null;
+          if (!next?.date) return null;
+          const nextDate = new Date(next.date);
+          const daysUntil = Math.max(0, Math.ceil((nextDate - new Date()) / 86400000));
           return (
             <TouchableOpacity
               style={{backgroundColor:COLORS.purple+'18',marginHorizontal:12,marginBottom:8,borderRadius:12,padding:12,borderWidth:1,borderColor:COLORS.purple+'44',flexDirection:'row',alignItems:'center',gap:10}}
@@ -116,7 +116,7 @@ export default function EventsScreen() {
                   {daysUntil === 0 ? 'HOY' : daysUntil === 1 ? 'MAÑANA' : `en ${daysUntil}d`}
                 </Text>
                 <Text style={{fontSize:18,color:'#fff',fontWeight:'800'}}>
-                  {new Date(next.date).getDate()}
+                  {nextDate.getDate()}
                 </Text>
               </View>
               <View style={{flex:1}}>
@@ -252,14 +252,19 @@ export default function EventsScreen() {
 
 // === EVENT CARD ===
 function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
-  const d = new Date(ev.date + 'T12:00:00');
-  const day = d.getDate();
-  const month = MONTHS_ES[d.getMonth()].toUpperCase();
-  const isToday = ev.date === new Date().toISOString().split('T')[0];
-  const isTomorrow = ev.date === new Date(Date.now()+86400000).toISOString().split('T')[0];
+  // Guard against null/invalid date
+  const rawDate = ev?.date || '';
+  const d = rawDate ? new Date(rawDate + 'T12:00:00') : null;
+  const isValidDate = d && !isNaN(d.getTime());
+  const day   = isValidDate ? d.getDate() : '?';
+  const month = isValidDate ? (MONTHS_ES[d.getMonth()] || '').toUpperCase() : '';
+  const todayStr    = new Date().toISOString().split('T')[0];
+  const tomorrowStr = new Date(Date.now()+86400000).toISOString().split('T')[0];
+  const isToday    = rawDate === todayStr;
+  const isTomorrow = rawDate === tomorrowStr;
   const CAT_EMOJI = {cine:'🎬',musica:'🎵',teatro:'🎭',deporte:'⚽',gastronomia:'🍷',festival:'🎪',expo:'🖼️',otro:'📌'};
-  const emoji = CAT_EMOJI[ev.category] || '📌';
-  const isOfficial = ev.source === 'ayuntamiento';
+  const emoji = CAT_EMOJI[ev?.category] || '📌';
+  const isOfficial = ev?.source === 'ayuntamiento';
 
   async function vote() {
     if (!isLoggedIn) { onAuthNeeded(); return; }
@@ -268,14 +273,14 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
   }
 
   function openMaps() {
-    if (ev.lat && ev.lng) {
+    if (ev?.lat && ev?.lng) {
       const url = Platform.OS === 'ios'
-        ? `maps://maps.apple.com/?daddr=${ev.lat},${ev.lng}&q=${encodeURIComponent(ev.venue||ev.title)}`
-        : `geo:${ev.lat},${ev.lng}?q=${encodeURIComponent(ev.venue||ev.title)}`;
-      Linking.openURL(url).catch(() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}`));
-    } else if (ev.venue || ev.address) {
-      const q = encodeURIComponent((ev.venue || '') + ' ' + (ev.address || '') + ' ' + (ev.city || ''));
-      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
+        ? `maps://maps.apple.com/?daddr=${ev.lat},${ev.lng}&q=${encodeURIComponent(ev.venue||ev.title||'')}`
+        : `geo:${ev.lat},${ev.lng}?q=${encodeURIComponent(ev.venue||ev.title||'')}`;
+      Linking.openURL(url).catch(() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}`).catch(()=>{}));
+    } else if (ev?.venue || ev?.address) {
+      const q = encodeURIComponent((ev.venue||'') + ' ' + (ev.address||'') + ' ' + (ev.city||''));
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${q}`).catch(()=>{});
     }
   }
 
@@ -293,26 +298,26 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
           <Text style={ec.month}>{month}</Text>
           {isToday ? <View style={ec.todayBadge}><Text style={ec.todayTxt}>HOY</Text></View>
           : isTomorrow ? <View style={ec.todayBadge}><Text style={ec.todayTxt}>MAÑ</Text></View>
-          : ev.time ? <Text style={ec.time}>{ev.time.slice(0,5)}</Text> : null}
+          : ev?.time ? <Text style={ec.time}>{String(ev.time).slice(0,5)}</Text> : null}
         </View>
         <View style={ec.info}>
           <View style={ec.topRow}>
-            <View style={ec.catBadge}><Text style={ec.catBadgeTxt}>{emoji} {ev.category}</Text></View>
-            {ev.is_free
+            <View style={ec.catBadge}><Text style={ec.catBadgeTxt}>{emoji} {ev?.category || 'otro'}</Text></View>
+            {ev?.is_free
               ? <View style={ec.freeBadge}><Text style={ec.freeTxt}>GRATIS</Text></View>
-              : ev.price_from != null
-                ? <View style={ec.paidBadge}><Text style={ec.paidTxt}>desde {Number(ev.price_from).toFixed(2)}€</Text></View>
-                : ev.price_label
+              : ev?.price_from != null
+                ? <View style={ec.paidBadge}><Text style={ec.paidTxt}>desde {Number(ev.price_from||0).toFixed(2)}€</Text></View>
+                : ev?.price_label
                   ? <View style={ec.paidBadge}><Text style={ec.paidTxt}>{ev.price_label}</Text></View>
                   : null}
           </View>
-          <Text style={ec.title} numberOfLines={2}>{ev.title}</Text>
-          {(ev.venue || ev.address) ? (
+          <Text style={ec.title} numberOfLines={2}>{ev?.title || 'Evento'}</Text>
+          {(ev?.venue || ev?.address) ? (
             <Text style={ec.venue} numberOfLines={1}>
-              📍 {ev.venue || ev.address}{ev.city ? ` · ${ev.city}` : ''}
+              📍 {ev.venue || ev.address}{ev?.city ? ` · ${ev.city}` : ''}
             </Text>
           ) : null}
-          {ev.description ? <Text style={ec.desc} numberOfLines={2}>{ev.description}</Text> : null}
+          {ev?.description ? <Text style={ec.desc} numberOfLines={2}>{ev.description}</Text> : null}
         </View>
       </View>
       <View style={ec.footer}>
@@ -320,14 +325,14 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
           <Ionicons name="navigate-outline" size={14} color="#fff"/>
           <Text style={ec.navBtnTxt}>Cómo llegar</Text>
         </TouchableOpacity>
-        {ev.url ? (
-          <TouchableOpacity style={ec.ticketBtn} onPress={() => Linking.openURL(ev.url)}>
+        {ev?.url ? (
+          <TouchableOpacity style={ec.ticketBtn} onPress={() => Linking.openURL(ev.url).catch(()=>{})}>
             <Ionicons name="open-outline" size={14} color={COLORS.purple}/>
             <Text style={ec.ticketBtnTxt}>Más info</Text>
           </TouchableOpacity>
         ) : null}
         <TouchableOpacity style={ec.voteBtn} onPress={vote}>
-          <Text style={ec.voteTxt}>👍 {ev.votes_up || 0}</Text>
+          <Text style={ec.voteTxt}>👍 {ev?.votes_up || 0}</Text>
         </TouchableOpacity>
         {user?.is_admin && (
           <TouchableOpacity style={[ec.voteBtn,{backgroundColor:'#FEE2E2'}]} onPress={() =>
@@ -343,14 +348,14 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
           </TouchableOpacity>
         )}
         <TouchableOpacity style={ec.voteBtn} onPress={() => {
-          const price = ev.is_free ? '🆓 Gratis' : ev.price_from ? `desde ${ev.price_from}€` : '';
+          const price = ev?.is_free ? '🆓 Gratis' : ev?.price_from ? `desde ${ev.price_from}€` : '';
           Share.share({
-            message: `🎭 ${ev.title}\n📍 ${ev.city} · ${ev.date}${ev.time ? ' '+ev.time : ''}\n${price ? price+'\n' : ''}Via PreciMap 🗺️`,
+            message: `🎭 ${ev?.title||''}\n📍 ${ev?.city||''} · ${ev?.date||''}${ev?.time ? ' '+ev.time : ''}\n${price ? price+'\n' : ''}Via PreciMap 🗺️`,
           }).catch(() => {});
         }}>
           <Ionicons name="share-outline" size={16} color={COLORS.text3}/>
         </TouchableOpacity>
-        <Text style={ec.source}>{isOfficial ? '🏛️ Oficial' : `👤 ${ev.reporter_name || 'Comunidad'}`}</Text>
+        <Text style={ec.source}>{isOfficial ? '🏛️ Oficial' : `👤 ${ev?.reporter_name || 'Comunidad'}`}</Text>
       </View>
     </View>
   );
@@ -387,7 +392,7 @@ function EmptyEvents({ onAdd, source }) {
       </View>
       <Text style={em.linksTitle}>Encuentra eventos en estas webs:</Text>
       {links.map(l => (
-        <TouchableOpacity key={l.url} style={em.linkBtn} onPress={() => Linking.openURL(l.url)}>
+        <TouchableOpacity key={l.url} style={em.linkBtn} onPress={() => Linking.openURL(l.url).catch(()=>{})}>
           <Text style={em.linkTxt}>{l.label}</Text>
           <Ionicons name="open-outline" size={12} color={COLORS.primary}/>
         </TouchableOpacity>
