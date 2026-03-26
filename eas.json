@@ -17,23 +17,21 @@
       },
       "env": {
         "NODE_ENV": "production",
-        "EXPO_PUBLIC_API_BASE": "https://precimap.railway.app"
+        "EXPO_PUBLIC_API_BASE": "https://web-production-a8023.up.railway.app"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
         "NODE_ENV": "production",
-        "EXPO_PUBLIC_API_BASE": "https://precimap.railway.app"
+        "EXPO_PUBLIC_API_BASE": "https://web-production-a8023.up.railway.app"
       }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "appleId": "sitoexpositorodriguez@gmail.com",
-        "ascAppId": "",
-        "appleTeamId": ""
+        "appleId": "sitoexpositorodriguez@gmail.com"
       }
     }
   }
