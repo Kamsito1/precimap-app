@@ -498,6 +498,19 @@ export default function MapScreen() {
                 ))}
               </ScrollView>
             )}
+            {activeCat === 'gimnasio' && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingTop:6}}>
+                {['mcfit','basic-fit','anytime fitness','vivagym','altafit','go fit','forus','gym directa','holmes place'].map(p=>(
+                  <TouchableOpacity key={p}
+                    style={{paddingHorizontal:10,paddingVertical:4,borderRadius:12,borderWidth:1,
+                      borderColor:product===p?'#7C3AED':COLORS.border,
+                      backgroundColor:product===p?'#EDE9FE':COLORS.bg}}
+                    onPress={()=>{setProduct(product===p?'':p); setTimeout(loadPlaces,100);}}>
+                    <Text style={{fontSize:12,fontWeight:'600',color:product===p?'#7C3AED':COLORS.text2}}>{p}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
           </View>
         )}
 
@@ -1304,11 +1317,14 @@ function AddPlaceModal({ visible, onClose, userLoc, onSuccess }) {
   const [error, setError] = useState('');
 
   const CATS = [
-    {key:'supermercado',label:'🛒 Supermercado'},
-    {key:'farmacia',label:'💊 Farmacia'},
-    {key:'gasolinera',label:'⛽ Gasolinera'},
-    {key:'restaurante',label:'🍽️ Restaurante'},
-    {key:'otro',label:'📍 Otro'},
+    {key:'supermercado', label:'🛒 Supermercado'},
+    {key:'gimnasio',     label:'💪 Gimnasio'},
+    {key:'farmacia',     label:'💊 Farmacia'},
+    {key:'gasolinera',   label:'⛽ Gasolinera'},
+    {key:'restaurante',  label:'🍽️ Restaurante'},
+    {key:'bar',          label:'🍺 Bar'},
+    {key:'cafe',         label:'☕ Café'},
+    {key:'otro',         label:'📍 Otro'},
   ];
 
   function reset() { setName(''); setCat('supermercado'); setAddr(''); setCity(''); setError(''); }

@@ -718,7 +718,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           ))}
           <Text style={{fontSize:11,color:COLORS.text3,marginTop:10,textAlign:'center'}}>
-            PreciMap v1.2.3 · Hecho con ❤️ en España
+            PreciMap v1.2.4 · Hecho con ❤️ en España
           </Text>
         </Section>
 
