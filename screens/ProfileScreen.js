@@ -437,10 +437,18 @@ export default function ProfileScreen() {
                         </View>
                       )}
                     </View>
-                    <View style={{flexDirection:'row',gap:10,marginTop:4}}>
+                    <View style={{flexDirection:'row',gap:10,marginTop:4,alignItems:'center'}}>
                       <Text style={{fontSize:11,color:COLORS.text3}}>🔥 {d.votes_up||0} votos</Text>
                       <Text style={{fontSize:11,color:d.temperature==='🧊'?COLORS.primary:COLORS.danger}}>{d.temperature||'😐'}</Text>
                       {d.store && <Text style={{fontSize:11,color:COLORS.text3}}>· {d.store}</Text>}
+                      <View style={{flex:1}}/>
+                      {d.url && (
+                        <TouchableOpacity
+                          style={{backgroundColor:COLORS.primary,borderRadius:8,paddingHorizontal:10,paddingVertical:4}}
+                          onPress={() => { const {openURL} = require('../utils'); openURL(d.url); }}>
+                          <Text style={{fontSize:11,color:'#fff',fontWeight:'700'}}>Ver ↗</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </View>
                 </View>
@@ -499,10 +507,14 @@ export default function ProfileScreen() {
                   <Text style={{fontSize:18}}>💰</Text>
                   <View style={{flex:1}}>
                     <Text style={{fontSize:12,fontWeight:'700',color:'#166534'}}>
-                      Ahorro estimado: {((u.points||0)*0.15).toFixed(0)}€
+                      Ahorro estimado a la comunidad: {(
+                        (profile?.stats?.reports||0)*2.5 +
+                        (profile?.stats?.deals||0)*18 +
+                        (profile?.stats?.verified||0)*1.5
+                      ).toFixed(0)}€
                     </Text>
                     <Text style={{fontSize:10,color:'#166534',opacity:0.8}}>
-                      Basado en precios reportados y chollos compartidos
+                      {profile?.stats?.reports||0} precios · {profile?.stats?.deals||0} chollos · {profile?.stats?.verified||0} verificados
                     </Text>
                   </View>
                 </View>
@@ -632,6 +644,19 @@ export default function ProfileScreen() {
               ['🗑️ Gestionar chollos (borrar directamente)', () => Alert.alert('Admin', 'Desde la pantalla de Chollos puedes borrar cualquiera con el botón de escudo rojo.')],
               ['🎭 Gestionar eventos (borrar directamente)', () => Alert.alert('Admin', 'Desde la pantalla de Eventos puedes borrar cualquiera con el botón de escudo rojo.')],
               ['💰 Aprobar cambios de precio', () => Alert.alert('Admin', 'Desde cualquier lugar del mapa → "Ver precios y cambios" → vota o aprueba directamente.')],
+              ['🏅 Re-asignar badges a todos los usuarios', async () => {
+                try {
+                  const res = await apiPost('/api/admin/recheck-badges', {});
+                  Alert.alert('✅ Badges rechecked', `${res.checked} usuarios procesados`);
+                  loadProfile();
+                } catch(e) { Alert.alert('Error', e.message); }
+              }],
+              ['🤖 Lanzar scraper de Amazon ahora', async () => {
+                try {
+                  await apiPost('/api/admin/run-scraper', {});
+                  Alert.alert('✅ Scraper lanzado', 'Buscando chollos de Amazon en background...');
+                } catch(e) { Alert.alert('Error', e.message); }
+              }],
             ].map(([label, onPress]) => (
               <TouchableOpacity key={label} style={{flexDirection:'row',alignItems:'center',gap:10,paddingVertical:12,borderBottomWidth:0.5,borderBottomColor:COLORS.border}} onPress={onPress}>
                 <Text style={{fontSize:13,color:'#991B1B',flex:1}}>{label}</Text>
@@ -659,8 +684,8 @@ export default function ProfileScreen() {
         <Section title="ℹ️ INFORMACIÓN LEGAL">
           {[
             ['Política de Privacidad', () => setShowPrivacy(true)],
-            ['Términos de Uso', () => Linking.openURL('https://precimap.app/terminos').catch(()=>{})],
-            ['Código fuente (contribuir)', () => Linking.openURL('https://github.com/kamsito/precimap').catch(()=>{})],
+            ['Términos de Uso', () => Linking.openURL('https://github.com/Kamsito1/precimap-app/blob/main/TERMS.md').catch(()=>{})],
+            ['Código fuente (contribuir)', () => Linking.openURL('https://github.com/Kamsito1/precimap-app').catch(()=>{})],
           ].map(([label, onPress]) => (
             <TouchableOpacity key={label} style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingVertical:12,borderBottomWidth:0.5,borderBottomColor:COLORS.border}}
               onPress={onPress}>

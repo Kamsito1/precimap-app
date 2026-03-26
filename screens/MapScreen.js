@@ -313,6 +313,28 @@ export default function MapScreen() {
               </TouchableOpacity>
             </View>
           ) : (
+            <View style={{flex:1}}>
+            {/* 🧮 Calculadora de ahorro rápida */}
+            {fuelStats?.g95 && (() => {
+              const min = fuelStats.g95.min || 0;
+              const avg = fuelStats.g95.avg || 0;
+              const tank = 50;
+              const savedPerTank = ((avg - min) * tank).toFixed(2);
+              const savedPerMonth = ((avg - min) * tank * 2.5).toFixed(0);
+              return (
+                <View style={{backgroundColor:'#ECFDF5',borderRadius:14,padding:14,marginHorizontal:16,marginTop:12,marginBottom:4,flexDirection:'row',alignItems:'center',gap:10,borderWidth:1,borderColor:'#BBF7D0'}}>
+                  <Text style={{fontSize:24}}>⛽</Text>
+                  <View style={{flex:1}}>
+                    <Text style={{fontSize:13,fontWeight:'700',color:'#065F46'}}>
+                      Ahorra {savedPerMonth}€/mes llenando donde la G95 es más barata
+                    </Text>
+                    <Text style={{fontSize:11,color:'#047857',marginTop:2}}>
+                      {min.toFixed(3)}€/L mín vs {avg.toFixed(3)}€/L media · {savedPerTank}€ por depósito
+                    </Text>
+                  </View>
+                </View>
+              );
+            })()}
             <ScrollView contentContainerStyle={{padding:16,gap:10,paddingBottom:60}}>
               {FUELS.filter(f=>f.key!=='all').map(fuel => {
                 const st = fuelStats[fuel.key];
@@ -355,6 +377,7 @@ export default function MapScreen() {
                 <Ionicons name="chevron-forward" size={16} color={COLORS.text3}/>
               </TouchableOpacity>
             </ScrollView>
+            </View>
           )}
         </View>
       </SafeAreaView>
@@ -776,7 +799,7 @@ export default function MapScreen() {
             />
             {gasSearch ? <TouchableOpacity onPress={()=>setGasSearch('')}><Ionicons name="close-circle" size={16} color={COLORS.text3}/></TouchableOpacity> : null}
             <Text style={{fontSize:11,color:COLORS.text3}}>
-              {(visiblePlaces.length + visibleGas.length).toLocaleString('es-ES')} result.
+              {(visiblePlaces.length + visibleGas.length).toLocaleString('es-ES')} resultados
             </Text>
           </View>
           {loading ? <ActivityIndicator color={COLORS.primary} style={{marginTop:40}}/> : (() => {
@@ -850,7 +873,7 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
   const info = item.isGas ? {emoji:'⛽',bg:'#FEF3C7',label:'Gasolinera'} : (CATEGORY_INFO[item.category]||CATEGORY_INFO.default);
   const fuelLabel = activeFuel && activeFuel !== 'all' ? FUEL_LABELS[activeFuel] : 'G95';
   const col = item.isGas && item.minPrice ? gasPriceColor(item.minPrice) : null;
-  const dist = !item._dist || item._dist===999 ? '?' : item._dist<1 ? `${Math.round(item._dist*1000)}m` : `${item._dist.toFixed(1)}km`;
+  const dist = !item._dist || item._dist===999 ? null : item._dist<1 ? `${Math.round(item._dist*1000)}m` : `${item._dist.toFixed(1)}km`;
   return (
     <TouchableOpacity style={lcs.card} onPress={onPress} activeOpacity={0.75}>
       <View style={[lcs.icon,{backgroundColor:info.bg}]}>
@@ -875,7 +898,7 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
         )}
       </View>
       <View style={lcs.right}>
-        <Text style={lcs.dist}>📍 {dist}</Text>
+        {dist && <Text style={lcs.dist}>📍 {dist}</Text>}
         <TouchableOpacity style={lcs.navBtn} onPress={onNav}>
           <Text style={lcs.navTxt}>Ir</Text>
         </TouchableOpacity>
@@ -945,7 +968,7 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
           </View>
         )}
         {/* All fuels grid */}
-        <Text style={gcs.sectionTitle}>TODOS LOS CARBURANTES</Text>
+        <Text style={gcs.sectionTitle}>Todos los carburantes</Text>
         <Text style={gcs.sectionNote}>Fuente: Ministerio de Energía de España · Actualización diaria</Text>
         <View style={gcs.grid}>
           {fuels.map(([key,price])=>{
@@ -1054,7 +1077,7 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onPr
             <TouchableOpacity key={p.id} style={pcs.priceRow} onPress={() => onProposePrice(place, p.product)} activeOpacity={0.7}>
               <View style={{flex:1}}>
                 <Text style={pcs.product}>{p.product}</Text>
-                <Text style={pcs.reporter}>Por {p.reporter_name||'usuario'} · {timeAgo(p.reported_at)}</Text>
+                <Text style={pcs.reporter}>Por {p.users?.name || p.reporter_name || 'usuario'} · {timeAgo(p.reported_at)}</Text>
                 <View style={[pcs.statusBadge,{backgroundColor:p.status==='verified'?COLORS.successLight:COLORS.warningLight}]}>
                   <Text style={[pcs.statusTxt,{color:p.status==='verified'?COLORS.success:COLORS.warning}]}>{p.status==='verified'?'✅ Verificado':'⏳ Pendiente · toca para proponer cambio'}</Text>
                 </View>

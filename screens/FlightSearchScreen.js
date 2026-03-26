@@ -150,10 +150,15 @@ export default function FlightSearchScreen({ embedded = false }) {
   const Wrapper = embedded ? View : SafeAreaView;
   const wrapperProps = embedded ? {style:{flex:1,backgroundColor:COLORS.bg}} : {style:ss.safe, edges:['top']};
 
+  // Default dates: tomorrow + 7 days
+  const _tomorrow = new Date(Date.now() + 86400000);
+  const _return   = new Date(Date.now() + 8 * 86400000);
+  const _fmt = d => `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+
   const [origin,  setOrigin]  = useState(AIRPORTS[0]); // MAD
   const [dest,    setDest]    = useState(null);
-  const [depDate, setDepDate] = useState('');
-  const [retDate, setRetDate] = useState('');
+  const [depDate, setDepDate] = useState(_fmt(_tomorrow));
+  const [retDate, setRetDate] = useState(_fmt(_return));
   const [adults,  setAdults]  = useState(1);
   const [tripType, setTripType] = useState('round'); // 'one' | 'round'
   const [picker,  setPicker]  = useState(null); // 'origin' | 'dest'

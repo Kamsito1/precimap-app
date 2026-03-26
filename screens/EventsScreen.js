@@ -274,9 +274,13 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
 
   function openMaps() {
     if (ev?.lat && ev?.lng) {
-      const url = Platform.OS === 'ios'
-        ? `maps://maps.apple.com/?daddr=${ev.lat},${ev.lng}&q=${encodeURIComponent(ev.venue||ev.title||'')}`
-        : `geo:${ev.lat},${ev.lng}?q=${encodeURIComponent(ev.venue||ev.title||'')}`;
+      // Web: always use Google Maps. Native: use platform-appropriate maps
+      const isWeb = typeof document !== 'undefined';
+      const url = isWeb
+        ? `https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}&destination_place_id=${encodeURIComponent(ev.venue||ev.title||'')}`
+        : Platform.OS === 'ios'
+          ? `maps://maps.apple.com/?daddr=${ev.lat},${ev.lng}&q=${encodeURIComponent(ev.venue||ev.title||'')}`
+          : `geo:${ev.lat},${ev.lng}?q=${encodeURIComponent(ev.venue||ev.title||'')}`;
       Linking.openURL(url).catch(() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}`).catch(()=>{}));
     } else if (ev?.venue || ev?.address) {
       const q = encodeURIComponent((ev.venue||'') + ' ' + (ev.address||'') + ' ' + (ev.city||''));

@@ -16,6 +16,11 @@ const CATS = [
   {key:'deportes',label:'Deportes',emoji:'⚽'},
   {key:'belleza',label:'Belleza',emoji:'💄'},
   {key:'libros',label:'Libros',emoji:'📚'},
+  {key:'juegos',label:'Gaming',emoji:'🎮'},
+  {key:'ocio',label:'Ocio',emoji:'🎭'},
+  {key:'salud',label:'Salud',emoji:'💊'},
+  {key:'mascotas',label:'Mascotas',emoji:'🐾'},
+  {key:'infantil',label:'Infantil',emoji:'👶'},
   {key:'otros',label:'Otros',emoji:'🏷️'},
 ];
 
@@ -110,15 +115,20 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
     const url_low = v.toLowerCase();
     const store_low = (s||'').toLowerCase();
     const catGuess =
-      /(amazon|media|pc|gaming|playstation|xbox|nintendo|steam|fnac)/i.test(store_low+url_low) ? 'tecnologia' :
-      /(zara|mango|primark|pull|asos|shein|bershka|lefties|moda|ropa)/i.test(store_low+url_low) ? 'moda' :
-      /(ikea|leroy|bricomart|hogar|sofa|colchon|mueble)/i.test(url_low) ? 'hogar' :
-      /(mercadona|lidl|aldi|carrefour|dia|supermercado|aliment|aceite|pasta)/i.test(store_low+url_low) ? 'alimentacion' :
-      /(vueling|iberia|ryanair|booking|airbnb|viaje|hotel|vuelo|sky)/i.test(store_low+url_low) ? 'viajes' :
-      /(nike|adidas|decathlon|deporte|gym|fitness|running)/i.test(store_low+url_low) ? 'deportes' :
-      /(sephora|druni|douglas|perfum|cosmet|belleza|beauty)/i.test(url_low) ? 'belleza' :
-      /(libro|fnac|book|amazon.*book|audible)/i.test(url_low) ? 'libros' :
-      /(coches|motor|automocion|pcm|leasing|coche)/i.test(url_low) ? 'coches' : null;
+      /(amazon|media|pc|gaming|playstation|xbox|nintendo|steam|fnac|apple|samsung|iphone|laptop|portátil|auricular)/i.test(store_low+url_low) ? 'tecnologia' :
+      /(zara|mango|primark|pull|asos|shein|bershka|lefties|moda|ropa|calzado|zapatilla|vestido)/i.test(store_low+url_low) ? 'moda' :
+      /(ikea|leroy|bricomart|hogar|sofa|colchon|mueble|aspirador|robot|freidora|cafetera)/i.test(url_low) ? 'hogar' :
+      /(mercadona|lidl|aldi|carrefour|dia|supermercado|aliment|aceite|pasta|arroz|leche)/i.test(store_low+url_low) ? 'alimentacion' :
+      /(vueling|iberia|ryanair|booking|airbnb|viaje|hotel|vuelo|sky|trivago|renfe)/i.test(store_low+url_low) ? 'viajes' :
+      /(nike|adidas|decathlon|deporte|gym|fitness|running|bicicleta|pesas|yoga)/i.test(store_low+url_low) ? 'deportes' :
+      /(sephora|druni|douglas|perfum|cosmet|belleza|beauty|serum|crema|maquillaje)/i.test(url_low) ? 'belleza' :
+      /(libro|fnac|book|audible|comic|manga|novela)/i.test(url_low) ? 'libros' :
+      /(ps5|playstation|xbox|nintendo|steam|gaming|videojuego|game|rpg|fps)/i.test(url_low) ? 'juegos' :
+      /(spotify|netflix|disney|hbo|prime|cine|teatro|musica|concierto|festival|ocio|leisure)/i.test(url_low) ? 'ocio' :
+      /(farmacia|salud|vitamina|suplemento|proteina|collagen|ibuprofeno|medicamento)/i.test(url_low) ? 'salud' :
+      /(mascota|perro|gato|veterinario|pienso|acuario|pajaro|roedor)/i.test(url_low) ? 'mascotas' :
+      /(bebe|infantil|juguete|cuna|cochecito|pañal|guarderia|jugueteria)/i.test(url_low) ? 'infantil' :
+      /(coches|motor|automocion|pcm|leasing|coche|moto|neumatico)/i.test(url_low) ? 'coches' : null;
     if (catGuess) setCat(catGuess);
 
     if (v.startsWith('http') && v.length > 20) {

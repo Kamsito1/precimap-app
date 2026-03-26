@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../utils';
+import { COLORS, openURL } from '../utils';
 
 const APPS = [
   {
@@ -97,15 +97,16 @@ export default function AppsScreen({ embedded = false }) {
   const totalEarn = '10-33€/mes';
 
   function openApp(app) {
-    Linking.openURL(app.url).catch(() =>
-      Alert.alert('Error', 'No se pudo abrir el enlace')
-    );
+    openURL(app.url);
   }
 
   function copyCode(app) {
     if (app.referralCode) {
-      // Clipboard.setString(app.referralCode); // not available everywhere
-      Alert.alert('📋 Código copiado', `Usa el código "${app.referralCode}" al registrarte en ${app.name}.\n\n${app.bonus}`);
+      // Try clipboard API (web), fallback to Alert
+      if (typeof navigator !== 'undefined' && navigator.clipboard) {
+        navigator.clipboard.writeText(app.referralCode).catch(() => {});
+      }
+      Alert.alert('📋 ¡Código copiado!', `Código: ${app.referralCode}\n\nÚsalo al registrarte en ${app.name} para obtener:\n${app.bonus}`);
       setCopied(app.id);
       setTimeout(() => setCopied(null), 3000);
     }

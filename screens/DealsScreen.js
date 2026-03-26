@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, apiGet, apiPost, apiDelete, timeAgo, applyAffiliateTag, formatPrice, API_BASE } from '../utils';
+import { COLORS, apiGet, apiPost, apiDelete, timeAgo, applyAffiliateTag, formatPrice, API_BASE, openURL } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
 import CommentsModal from '../components/CommentsModal';
@@ -25,6 +25,10 @@ const CATS = [
   { key:'deportes',     label:'Deporte',       emoji:'⚽' },
   { key:'libros',       label:'Libros',        emoji:'📚' },
   { key:'coches',       label:'Motor',         emoji:'🚗' },
+  { key:'ocio',         label:'Ocio',          emoji:'🎭' },
+  { key:'salud',        label:'Salud',         emoji:'💊' },
+  { key:'mascotas',     label:'Mascotas',      emoji:'🐾' },
+  { key:'infantil',     label:'Infantil',      emoji:'👶' },
   { key:'otros',        label:'Otros',         emoji:'🏷️' },
 ];
 
@@ -147,7 +151,7 @@ export default function DealsScreen() {
                     const searchTxt = search.trim() ? ` · "${search.trim()}"` : '';
                     return `${deals.length} ofertas${discs.length ? ' · mejor ' + Math.round(Math.max(...discs)) + '%' : ''}${filterTxt}${searchTxt}`;
                   })()
-                : loading ? 'Cargando chollos...' : 'Sin chollos con ese filtro'
+                : loading ? '⏳ Cargando chollos...' : deals.length > 0 ? `${deals.length} chollos · desliza para ver más` : 'Sin chollos con ese filtro'
               }
             </Text>
           </View>
@@ -253,8 +257,7 @@ export default function DealsScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
                 {trending.slice(0,5).map(t=>(
                   <TouchableOpacity key={t.id} style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:10,width:180,borderWidth:1,borderColor:COLORS.border,gap:4}}
-                    onPress={()=>Linking.openURL(t.url).catch(()=>{})}>
-                    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+                    onPress={()=>openURL(t.url)}>                    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
                       <Text style={{fontSize:9,fontWeight:'800',color:COLORS.danger}}>{t.temperature} TRENDING</Text>
                       <Text style={{fontSize:9,color:COLORS.text3}}>👍{t.votes_up||0}</Text>
                     </View>
@@ -287,7 +290,8 @@ export default function DealsScreen() {
               : temperature(deal.votes_up, deal.votes_down);
             const affUrl = applyAffiliateTag(deal.url);
             const catEmoji = CATS.find(c=>c.key===deal.category)?.emoji || '🏷️';
-            const catColor = {tecnologia:'#3B82F6',moda:'#EC4899',hogar:'#F59E0B',alimentacion:'#22C55E',viajes:'#6366F1',juegos:'#8B5CF6',belleza:'#F43F5E',deportes:'#14B8A6',libros:'#78716C',coches:'#64748B',otros:'#94A3B8'}[deal.category] || '#94A3B8';
+            const catLabel = CATS.find(c=>c.key===deal.category)?.label || deal.category || 'otros';
+            const catColor = {tecnologia:'#3B82F6',moda:'#EC4899',hogar:'#F59E0B',alimentacion:'#22C55E',viajes:'#6366F1',juegos:'#8B5CF6',belleza:'#F43F5E',deportes:'#14B8A6',libros:'#78716C',coches:'#64748B',ocio:'#A855F7',salud:'#06B6D4',mascotas:'#F97316',infantil:'#F59E0B',otros:'#94A3B8'}[deal.category] || '#94A3B8';
             return (
               <View style={s.card}>
                 {/* Temp badge */}
@@ -307,9 +311,10 @@ export default function DealsScreen() {
                     </View>
                   );
                   if (imgs.length === 1) return (
-                    <TouchableOpacity onPress={() => affUrl && Linking.openURL(affUrl)} activeOpacity={0.9}>
+                    <TouchableOpacity onPress={() => affUrl && openURL(affUrl)} activeOpacity={0.9}>
                       <Image source={{uri: imgs[0].startsWith('/') ? `${API_BASE}${imgs[0]}` : imgs[0]}}
-                        style={s.img} resizeMode="cover"/>
+                        style={s.img} resizeMode="cover"
+                        onError={e => { e.currentTarget?.setNativeProps?.({src:[{uri:`https://ui-avatars.com/api/?name=${encodeURIComponent(deal.store||deal.category||'?')}&size=400&background=random`}]}); }}/>
                     </TouchableOpacity>
                   );
                   // Multi-image carousel
@@ -318,7 +323,7 @@ export default function DealsScreen() {
                       <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}
                         style={{width: CARD_W}} contentContainerStyle={{width: CARD_W * imgs.length}}>
                         {imgs.map((uri,idx) => (
-                          <TouchableOpacity key={idx} onPress={() => affUrl && Linking.openURL(affUrl)} activeOpacity={0.9}>
+                          <TouchableOpacity key={idx} onPress={() => affUrl && openURL(affUrl)} activeOpacity={0.9}>
                             <Image source={{uri: uri.startsWith('/') ? `${API_BASE}${uri}` : uri}}
                               style={[s.img, {width: CARD_W}]} resizeMode="cover"/>
                           </TouchableOpacity>
@@ -340,13 +345,13 @@ export default function DealsScreen() {
                   {/* Store + category + age — compact single line */}
                   <View style={s.metaRow}>
                     {deal.store && <View style={s.storeBadge}><Text style={[s.storeTxt,{maxWidth:90}]} numberOfLines={1}>{deal.store}</Text></View>}
-                    <View style={s.catTag}><Text style={s.catTagTxt}>{CATS.find(c=>c.key===deal.category)?.emoji} {deal.category}</Text></View>
+                    <View style={s.catTag}><Text style={s.catTagTxt}>{catEmoji} {catLabel}</Text></View>
                     {(() => {
                       const hoursOld = (Date.now() - new Date(deal.detected_at)) / 3600000;
                       if (hoursOld < 24) return <View style={{backgroundColor:COLORS.success,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,fontWeight:'700',color:'#fff'}}>NUEVO</Text></View>;
                       return null;
                     })()}
-                    {(deal.votes_up||0) >= 100 && <View style={{backgroundColor:'#DC2626',borderRadius:4,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,fontWeight:'800',color:'#fff'}}>🔥TOP</Text></View>}
+                    {(deal.votes_up||0) >= 20 && <View style={{backgroundColor:'#DC2626',borderRadius:4,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,fontWeight:'800',color:'#fff'}}>🔥TOP</Text></View>}
                     <Text style={[s.ageTag,{flex:1,textAlign:'right'}]} numberOfLines={1}>{timeAgo(deal.detected_at)}</Text>
                   </View>
 
@@ -392,7 +397,7 @@ export default function DealsScreen() {
 
                 {/* CTA principal — Ver oferta (arriba del actions, ocupa todo el ancho) */}
                 {affUrl && (
-                  <TouchableOpacity style={s.goBtnFull} onPress={() => Linking.openURL(affUrl).catch(()=>{})}>
+                  <TouchableOpacity style={s.goBtnFull} onPress={() => openURL(affUrl)}>
                     <Text style={s.goBtnTxt}>Ver oferta</Text>
                     <Ionicons name="open-outline" size={14} color="#fff"/>
                   </TouchableOpacity>
@@ -427,10 +432,18 @@ export default function DealsScreen() {
                   </TouchableOpacity>
 
                   {/* Compartir */}
-                  <TouchableOpacity style={s.iconBtn} onPress={() => {
-                    Share.share({
-                      message: `🔥 ${deal.title}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent?` (-${Math.round(deal.discount_percent)}%)`:''}${deal.url?'\n🔗 '+deal.url:''}\n\nVía PreciMap`,
-                    }).catch(() => {});
+                  <TouchableOpacity style={s.iconBtn} onPress={async () => {
+                    const text = `🔥 ${deal.title}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent?` (-${Math.round(deal.discount_percent)}%)`:''}${deal.url?'\n🔗 '+applyAffiliateTag(deal.url):''}\n\nVía PreciMap`;
+                    try {
+                      if (typeof navigator !== 'undefined' && navigator.share) {
+                        await navigator.share({ title: deal.title, text, url: deal.url || '' });
+                      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                        await navigator.clipboard.writeText(text);
+                        Alert.alert('✅ Copiado', 'Enlace copiado al portapapeles');
+                      } else {
+                        await Share.share({ message: text });
+                      }
+                    } catch {}
                   }}>
                     <Ionicons name="share-outline" size={18} color={COLORS.text2}/>
                   </TouchableOpacity>

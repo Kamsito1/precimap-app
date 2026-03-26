@@ -11,10 +11,11 @@ import AuthModal from '../components/AuthModal';
 import { useNavigation } from '@react-navigation/native';
 
 const TABS = [
-  { key:'ranking',   label:'🏆 Ranking',    desc:'¿Cuál es más barato?' },
-  { key:'productos', label:'🔍 Productos',   desc:'Compara precios reales' },
-  { key:'categoria', label:'📦 Por tipo',    desc:'El mejor en cada sección' },
-  { key:'consejos',  label:'💡 Consejos',    desc:'Trucos para ahorrar' },
+  { key:'ranking',      label:'🏆 Ranking',    desc:'¿Cuál es más barato?' },
+  { key:'productos',    label:'🔍 Productos',   desc:'Compara precios reales' },
+  { key:'calculadora',  label:'🧮 Calculadora', desc:'Lista de la compra' },
+  { key:'categoria',    label:'📦 Por tipo',    desc:'El mejor en cada sección' },
+  { key:'consejos',     label:'💡 Consejos',    desc:'Trucos para ahorrar' },
 ];
 
 // Supermarkets — ranked by overall price (lower = cheaper), source: OCU, InfoConsumidor 2024
@@ -45,124 +46,124 @@ const RANKING = [
 
 // Product comparison — community-verified prices (can be updated via voting)
 // Columns: mercadona, lidl, aldi, carrefour, dia
-const STORES_KEY = ['aldi','lidl','mercadona','dia','carrefour'];
-const STORES_LABEL = { aldi:'Aldi', lidl:'Lidl', mercadona:'Mercadona', dia:'Día', carrefour:'Carrefour' };
+const STORES_KEY = ['aldi','lidl','mercadona','dia','carrefour','alcampo'];
+const STORES_LABEL = { aldi:'Aldi', lidl:'Lidl', mercadona:'Mercadona', dia:'Día', carrefour:'Carrefour', alcampo:'Alcampo' };
 
 const PRODUCTOS = [
   // BÁSICOS
-  { name:'Leche entera 1L',          cat:'lácteos',   aldi:0.65, lidl:0.67, mercadona:0.72, dia:0.68, carrefour:0.85 },
-  { name:'Leche semidesnatada 1L',   cat:'lácteos',   aldi:0.63, lidl:0.65, mercadona:0.70, dia:0.66, carrefour:0.82 },
-  { name:'Leche desnatada 1L',       cat:'lácteos',   aldi:0.62, lidl:0.64, mercadona:0.69, dia:0.65, carrefour:0.80 },
-  { name:'Yogur natural x4',         cat:'lácteos',   aldi:0.55, lidl:0.59, mercadona:0.72, dia:0.65, carrefour:0.89 },
-  { name:'Yogur griego 0% x4',       cat:'lácteos',   aldi:0.89, lidl:0.95, mercadona:1.15, dia:1.05, carrefour:1.35 },
-  { name:'Queso fresco 500g',        cat:'lácteos',   aldi:1.65, lidl:1.79, mercadona:2.05, dia:1.89, carrefour:2.45 },
-  { name:'Mantequilla 250g',         cat:'lácteos',   aldi:1.55, lidl:1.65, mercadona:1.85, dia:1.75, carrefour:2.10 },
-  { name:'Pasta espaguetis 500g',    cat:'básicos',   aldi:0.39, lidl:0.45, mercadona:0.55, dia:0.49, carrefour:0.65 },
-  { name:'Macarrones 500g',          cat:'básicos',   aldi:0.39, lidl:0.45, mercadona:0.55, dia:0.49, carrefour:0.65 },
-  { name:'Arroz largo 1kg',          cat:'básicos',   aldi:0.69, lidl:0.72, mercadona:0.85, dia:0.79, carrefour:0.99 },
-  { name:'Harina de trigo 1kg',      cat:'básicos',   aldi:0.55, lidl:0.59, mercadona:0.69, dia:0.63, carrefour:0.79 },
-  { name:'Azúcar 1kg',               cat:'básicos',   aldi:0.89, lidl:0.95, mercadona:1.05, dia:0.99, carrefour:1.15 },
-  { name:'Sal 1kg',                  cat:'básicos',   aldi:0.35, lidl:0.39, mercadona:0.45, dia:0.42, carrefour:0.55 },
+  { name:'Leche entera 1L',          cat:'lácteos',   aldi:0.65, lidl:0.67, mercadona:0.72, dia:0.68, carrefour:0.85, alcampo:0.80 },
+  { name:'Leche semidesnatada 1L',   cat:'lácteos',   aldi:0.63, lidl:0.65, mercadona:0.70, dia:0.66, carrefour:0.82, alcampo:0.77 },
+  { name:'Leche desnatada 1L',       cat:'lácteos',   aldi:0.62, lidl:0.64, mercadona:0.69, dia:0.65, carrefour:0.80, alcampo:0.75 },
+  { name:'Yogur natural x4',         cat:'lácteos',   aldi:0.55, lidl:0.59, mercadona:0.72, dia:0.65, carrefour:0.89, alcampo:0.84 },
+  { name:'Yogur griego 0% x4',       cat:'lácteos',   aldi:0.89, lidl:0.95, mercadona:1.15, dia:1.05, carrefour:1.35, alcampo:1.27 },
+  { name:'Queso fresco 500g',        cat:'lácteos',   aldi:1.65, lidl:1.79, mercadona:2.05, dia:1.89, carrefour:2.45, alcampo:2.30 },
+  { name:'Mantequilla 250g',         cat:'lácteos',   aldi:1.55, lidl:1.65, mercadona:1.85, dia:1.75, carrefour:2.10, alcampo:1.97 },
+  { name:'Pasta espaguetis 500g',    cat:'básicos',   aldi:0.39, lidl:0.45, mercadona:0.55, dia:0.49, carrefour:0.65, alcampo:0.61 },
+  { name:'Macarrones 500g',          cat:'básicos',   aldi:0.39, lidl:0.45, mercadona:0.55, dia:0.49, carrefour:0.65, alcampo:0.61 },
+  { name:'Arroz largo 1kg',          cat:'básicos',   aldi:0.69, lidl:0.72, mercadona:0.85, dia:0.79, carrefour:0.99, alcampo:0.93 },
+  { name:'Harina de trigo 1kg',      cat:'básicos',   aldi:0.55, lidl:0.59, mercadona:0.69, dia:0.63, carrefour:0.79, alcampo:0.74 },
+  { name:'Azúcar 1kg',               cat:'básicos',   aldi:0.89, lidl:0.95, mercadona:1.05, dia:0.99, carrefour:1.15, alcampo:1.08 },
+  { name:'Sal 1kg',                  cat:'básicos',   aldi:0.35, lidl:0.39, mercadona:0.45, dia:0.42, carrefour:0.55, alcampo:0.52 },
   // ACEITES
-  { name:'Aceite oliva virgen 1L',   cat:'aceites',   aldi:4.85, lidl:4.99, mercadona:5.49, dia:5.25, carrefour:5.79 },
-  { name:'Aceite girasol 1L',        cat:'aceites',   aldi:1.05, lidl:1.09, mercadona:1.29, dia:1.19, carrefour:1.45 },
+  { name:'Aceite oliva virgen 1L',   cat:'aceites',   aldi:4.85, lidl:4.99, mercadona:5.49, dia:5.25, carrefour:5.79, alcampo:5.44 },
+  { name:'Aceite girasol 1L',        cat:'aceites',   aldi:1.05, lidl:1.09, mercadona:1.29, dia:1.19, carrefour:1.45, alcampo:1.36 },
   // CARNE Y PESCADO
-  { name:'Pechuga pollo 1kg',        cat:'carne',     aldi:4.65, lidl:4.49, mercadona:5.20, dia:5.10, carrefour:5.89 },
-  { name:'Muslos pollo 1kg',         cat:'carne',     aldi:3.25, lidl:3.15, mercadona:3.95, dia:3.75, carrefour:4.25 },
-  { name:'Cerdo picado 500g',        cat:'carne',     aldi:2.15, lidl:2.25, mercadona:2.85, dia:2.65, carrefour:3.15 },
-  { name:'Atún en lata 3×80g',       cat:'conservas', aldi:1.55, lidl:1.65, mercadona:1.85, dia:1.79, carrefour:2.15 },
-  { name:'Sardinas en aceite',       cat:'conservas', aldi:0.89, lidl:0.95, mercadona:1.15, dia:1.05, carrefour:1.35 },
+  { name:'Pechuga pollo 1kg',        cat:'carne',     aldi:4.65, lidl:4.49, mercadona:5.20, dia:5.10, carrefour:5.89, alcampo:5.54 },
+  { name:'Muslos pollo 1kg',         cat:'carne',     aldi:3.25, lidl:3.15, mercadona:3.95, dia:3.75, carrefour:4.25, alcampo:3.99 },
+  { name:'Cerdo picado 500g',        cat:'carne',     aldi:2.15, lidl:2.25, mercadona:2.85, dia:2.65, carrefour:3.15, alcampo:2.96 },
+  { name:'Atún en lata 3×80g',       cat:'conservas', aldi:1.55, lidl:1.65, mercadona:1.85, dia:1.79, carrefour:2.15, alcampo:2.02 },
+  { name:'Sardinas en aceite',       cat:'conservas', aldi:0.89, lidl:0.95, mercadona:1.15, dia:1.05, carrefour:1.35, alcampo:1.27 },
   // FRUTA Y VERDURA
-  { name:'Plátanos 1kg',             cat:'fruta',     aldi:1.45, lidl:1.29, mercadona:1.89, dia:1.69, carrefour:1.99 },
-  { name:'Manzanas Golden 1kg',      cat:'fruta',     aldi:1.59, lidl:1.49, mercadona:1.99, dia:1.79, carrefour:2.29 },
-  { name:'Naranjas 1kg',             cat:'fruta',     aldi:1.25, lidl:1.19, mercadona:1.79, dia:1.59, carrefour:1.99 },
-  { name:'Tomates ensalada 1kg',     cat:'verdura',   aldi:1.29, lidl:1.19, mercadona:1.85, dia:1.59, carrefour:2.09 },
-  { name:'Cebollas 1kg',             cat:'verdura',   aldi:0.65, lidl:0.69, mercadona:0.89, dia:0.79, carrefour:0.99 },
-  { name:'Patatas 2kg',              cat:'verdura',   aldi:1.05, lidl:1.09, mercadona:1.39, dia:1.25, carrefour:1.65 },
+  { name:'Plátanos 1kg',             cat:'fruta',     aldi:1.45, lidl:1.29, mercadona:1.89, dia:1.69, carrefour:1.99, alcampo:1.87 },
+  { name:'Manzanas Golden 1kg',      cat:'fruta',     aldi:1.59, lidl:1.49, mercadona:1.99, dia:1.79, carrefour:2.29, alcampo:2.15 },
+  { name:'Naranjas 1kg',             cat:'fruta',     aldi:1.25, lidl:1.19, mercadona:1.79, dia:1.59, carrefour:1.99, alcampo:1.87 },
+  { name:'Tomates ensalada 1kg',     cat:'verdura',   aldi:1.29, lidl:1.19, mercadona:1.85, dia:1.59, carrefour:2.09, alcampo:1.96 },
+  { name:'Cebollas 1kg',             cat:'verdura',   aldi:0.65, lidl:0.69, mercadona:0.89, dia:0.79, carrefour:0.99, alcampo:0.93 },
+  { name:'Patatas 2kg',              cat:'verdura',   aldi:1.05, lidl:1.09, mercadona:1.39, dia:1.25, carrefour:1.65, alcampo:1.55 },
   // PANADERÍA
-  { name:'Pan de molde 450g',        cat:'panadería', aldi:0.79, lidl:0.85, mercadona:0.95, dia:0.89, carrefour:1.15 },
-  { name:'Pan integral 450g',        cat:'panadería', aldi:0.85, lidl:0.89, mercadona:1.05, dia:0.99, carrefour:1.25 },
+  { name:'Pan de molde 450g',        cat:'panadería', aldi:0.79, lidl:0.85, mercadona:0.95, dia:0.89, carrefour:1.15, alcampo:1.08 },
+  { name:'Pan integral 450g',        cat:'panadería', aldi:0.85, lidl:0.89, mercadona:1.05, dia:0.99, carrefour:1.25, alcampo:1.17 },
   // BEBIDAS
-  { name:'Agua mineral 6×1.5L',      cat:'bebidas',   aldi:1.55, lidl:1.69, mercadona:1.99, dia:1.85, carrefour:2.29 },
-  { name:'Refresco cola 2L',         cat:'bebidas',   aldi:0.79, lidl:0.85, mercadona:0.99, dia:0.89, carrefour:1.15 },
-  { name:'Zumo naranja 1L',          cat:'bebidas',   aldi:1.35, lidl:1.45, mercadona:1.55, dia:1.49, carrefour:1.79 },
-  { name:'Cerveza 6×33cl',           cat:'bebidas',   aldi:2.45, lidl:2.65, mercadona:2.99, dia:2.79, carrefour:3.45 },
+  { name:'Agua mineral 6×1.5L',      cat:'bebidas',   aldi:1.55, lidl:1.69, mercadona:1.99, dia:1.85, carrefour:2.29, alcampo:2.15 },
+  { name:'Refresco cola 2L',         cat:'bebidas',   aldi:0.79, lidl:0.85, mercadona:0.99, dia:0.89, carrefour:1.15, alcampo:1.08 },
+  { name:'Zumo naranja 1L',          cat:'bebidas',   aldi:1.35, lidl:1.45, mercadona:1.55, dia:1.49, carrefour:1.79, alcampo:1.68 },
+  { name:'Cerveza 6×33cl',           cat:'bebidas',   aldi:2.45, lidl:2.65, mercadona:2.99, dia:2.79, carrefour:3.45, alcampo:3.24 },
   // LIMPIEZA
-  { name:'Detergente lavadora 40',   cat:'limpieza',  aldi:4.10, lidl:4.29, mercadona:3.95, dia:4.55, carrefour:5.99 },
-  { name:'Lavavajillas 750ml',       cat:'limpieza',  aldi:0.89, lidl:0.95, mercadona:1.05, dia:0.99, carrefour:1.35 },
-  { name:'Lejía 2L',                 cat:'limpieza',  aldi:0.55, lidl:0.59, mercadona:0.65, dia:0.62, carrefour:0.89 },
-  { name:'Suavizante 32 lavados',    cat:'limpieza',  aldi:1.55, lidl:1.65, mercadona:1.85, dia:1.75, carrefour:2.35 },
+  { name:'Detergente lavadora 40',   cat:'limpieza',  aldi:4.10, lidl:4.29, mercadona:3.95, dia:4.55, carrefour:5.99, alcampo:5.63 },
+  { name:'Lavavajillas 750ml',       cat:'limpieza',  aldi:0.89, lidl:0.95, mercadona:1.05, dia:0.99, carrefour:1.35, alcampo:1.27 },
+  { name:'Lejía 2L',                 cat:'limpieza',  aldi:0.55, lidl:0.59, mercadona:0.65, dia:0.62, carrefour:0.89, alcampo:0.84 },
+  { name:'Suavizante 32 lavados',    cat:'limpieza',  aldi:1.55, lidl:1.65, mercadona:1.85, dia:1.75, carrefour:2.35, alcampo:2.21 },
   // HIGIENE
-  { name:'Papel higiénico x12',      cat:'higiene',   aldi:2.75, lidl:2.89, mercadona:3.10, dia:2.99, carrefour:3.99 },
-  { name:'Gel ducha 750ml',          cat:'higiene',   aldi:0.89, lidl:0.95, mercadona:1.09, dia:0.99, carrefour:1.45 },
-  { name:'Champú 750ml',             cat:'higiene',   aldi:0.99, lidl:1.05, mercadona:1.25, dia:1.15, carrefour:1.65 },
-  { name:'Pasta dientes 75ml',       cat:'higiene',   aldi:0.55, lidl:0.59, mercadona:0.75, dia:0.69, carrefour:0.99 },
-  { name:'Jabón líquido manos 500ml',cat:'higiene',   aldi:1.10, lidl:1.35, mercadona:1.20, dia:1.25, carrefour:1.65 },
+  { name:'Papel higiénico x12',      cat:'higiene',   aldi:2.75, lidl:2.89, mercadona:3.10, dia:2.99, carrefour:3.99, alcampo:3.75 },
+  { name:'Gel ducha 750ml',          cat:'higiene',   aldi:0.89, lidl:0.95, mercadona:1.09, dia:0.99, carrefour:1.45, alcampo:1.36 },
+  { name:'Champú 750ml',             cat:'higiene',   aldi:0.99, lidl:1.05, mercadona:1.25, dia:1.15, carrefour:1.65, alcampo:1.55 },
+  { name:'Pasta dientes 75ml',       cat:'higiene',   aldi:0.55, lidl:0.59, mercadona:0.75, dia:0.69, carrefour:0.99, alcampo:0.93 },
+  { name:'Jabón líquido manos 500ml',cat:'higiene',   aldi:1.10, lidl:1.35, mercadona:1.20, dia:1.25, carrefour:1.65, alcampo:1.55 },
   // DESAYUNO
-  { name:'Café molido 250g',         cat:'café',      aldi:2.15, lidl:2.25, mercadona:2.45, dia:2.35, carrefour:2.89 },
-  { name:'Cereales corn flakes 500g',cat:'desayuno',  aldi:1.15, lidl:1.25, mercadona:1.45, dia:1.35, carrefour:1.89 },
-  { name:'Galletas María 800g',      cat:'desayuno',  aldi:1.09, lidl:1.15, mercadona:1.35, dia:1.25, carrefour:1.69 },
-  { name:'Mermelada fresa 450g',     cat:'desayuno',  aldi:0.79, lidl:0.85, mercadona:1.05, dia:0.95, carrefour:1.35 },
-  { name:'Nocilla/crema cacao 400g', cat:'desayuno',  aldi:1.45, lidl:1.55, mercadona:1.95, dia:1.75, carrefour:2.25 },
+  { name:'Café molido 250g',         cat:'café',      aldi:2.15, lidl:2.25, mercadona:2.45, dia:2.35, carrefour:2.89, alcampo:2.72 },
+  { name:'Cereales corn flakes 500g',cat:'desayuno',  aldi:1.15, lidl:1.25, mercadona:1.45, dia:1.35, carrefour:1.89, alcampo:1.78 },
+  { name:'Galletas María 800g',      cat:'desayuno',  aldi:1.09, lidl:1.15, mercadona:1.35, dia:1.25, carrefour:1.69, alcampo:1.59 },
+  { name:'Mermelada fresa 450g',     cat:'desayuno',  aldi:0.79, lidl:0.85, mercadona:1.05, dia:0.95, carrefour:1.35, alcampo:1.27 },
+  { name:'Nocilla/crema cacao 400g', cat:'desayuno',  aldi:1.45, lidl:1.55, mercadona:1.95, dia:1.75, carrefour:2.25, alcampo:2.11 },
   // CONSERVAS
-  { name:'Tomates triturados 400g',  cat:'conservas', aldi:0.45, lidl:0.49, mercadona:0.55, dia:0.52, carrefour:0.69 },
-  { name:'Garbanzos cocidos 400g',   cat:'conservas', aldi:0.55, lidl:0.59, mercadona:0.75, dia:0.69, carrefour:0.89 },
-  { name:'Maíz dulce 340g',          cat:'conservas', aldi:0.65, lidl:0.69, mercadona:0.85, dia:0.79, carrefour:1.05 },
+  { name:'Tomates triturados 400g',  cat:'conservas', aldi:0.45, lidl:0.49, mercadona:0.55, dia:0.52, carrefour:0.69, alcampo:0.65 },
+  { name:'Garbanzos cocidos 400g',   cat:'conservas', aldi:0.55, lidl:0.59, mercadona:0.75, dia:0.69, carrefour:0.89, alcampo:0.84 },
+  { name:'Maíz dulce 340g',          cat:'conservas', aldi:0.65, lidl:0.69, mercadona:0.85, dia:0.79, carrefour:1.05, alcampo:0.99 },
   // HUEVOS
-  { name:'Huevos L x12',             cat:'huevos',    aldi:1.89, lidl:1.99, mercadona:2.15, dia:2.05, carrefour:2.45 },
-  { name:'Huevos M x12',             cat:'huevos',    aldi:1.69, lidl:1.79, mercadona:1.95, dia:1.85, carrefour:2.25 },
+  { name:'Huevos L x12',             cat:'huevos',    aldi:1.89, lidl:1.99, mercadona:2.15, dia:2.05, carrefour:2.45, alcampo:2.30 },
+  { name:'Huevos M x12',             cat:'huevos',    aldi:1.69, lidl:1.79, mercadona:1.95, dia:1.85, carrefour:2.25, alcampo:2.11 },
   // CARNE EXTRA
-  { name:'Pavo filetes 500g',        cat:'carne',     aldi:3.49, lidl:3.29, mercadona:3.99, dia:3.85, carrefour:4.35 },
-  { name:'Salchichas Frankfurt x6',  cat:'carne',     aldi:0.89, lidl:0.95, mercadona:1.19, dia:1.09, carrefour:1.45 },
-  { name:'Jamón York 200g',          cat:'carne',     aldi:1.35, lidl:1.45, mercadona:1.65, dia:1.55, carrefour:1.99 },
-  { name:'Chorizo extra 200g',       cat:'carne',     aldi:1.55, lidl:1.65, mercadona:1.89, dia:1.79, carrefour:2.25 },
+  { name:'Pavo filetes 500g',        cat:'carne',     aldi:3.49, lidl:3.29, mercadona:3.99, dia:3.85, carrefour:4.35, alcampo:4.09 },
+  { name:'Salchichas Frankfurt x6',  cat:'carne',     aldi:0.89, lidl:0.95, mercadona:1.19, dia:1.09, carrefour:1.45, alcampo:1.36 },
+  { name:'Jamón York 200g',          cat:'carne',     aldi:1.35, lidl:1.45, mercadona:1.65, dia:1.55, carrefour:1.99, alcampo:1.87 },
+  { name:'Chorizo extra 200g',       cat:'carne',     aldi:1.55, lidl:1.65, mercadona:1.89, dia:1.79, carrefour:2.25, alcampo:2.11 },
   // LÁCTEOS EXTRA
-  { name:'Yogur de frutas x4',       cat:'lácteos',   aldi:0.75, lidl:0.79, mercadona:0.99, dia:0.89, carrefour:1.25 },
-  { name:'Queso lonchas x8',         cat:'lácteos',   aldi:1.05, lidl:1.15, mercadona:1.35, dia:1.25, carrefour:1.65 },
-  { name:'Mozzarella 125g',          cat:'lácteos',   aldi:0.79, lidl:0.85, mercadona:0.99, dia:0.95, carrefour:1.19 },
-  { name:'Nata líquida 200ml',       cat:'lácteos',   aldi:0.69, lidl:0.75, mercadona:0.89, dia:0.85, carrefour:1.05 },
+  { name:'Yogur de frutas x4',       cat:'lácteos',   aldi:0.75, lidl:0.79, mercadona:0.99, dia:0.89, carrefour:1.25, alcampo:1.17 },
+  { name:'Queso lonchas x8',         cat:'lácteos',   aldi:1.05, lidl:1.15, mercadona:1.35, dia:1.25, carrefour:1.65, alcampo:1.55 },
+  { name:'Mozzarella 125g',          cat:'lácteos',   aldi:0.79, lidl:0.85, mercadona:0.99, dia:0.95, carrefour:1.19, alcampo:1.12 },
+  { name:'Nata líquida 200ml',       cat:'lácteos',   aldi:0.69, lidl:0.75, mercadona:0.89, dia:0.85, carrefour:1.05, alcampo:0.99 },
   // VERDURA EXTRA
-  { name:'Lechuga iceberg',          cat:'verdura',   aldi:0.89, lidl:0.79, mercadona:0.99, dia:0.95, carrefour:1.19 },
-  { name:'Zanahorias 1kg',           cat:'verdura',   aldi:0.65, lidl:0.69, mercadona:0.85, dia:0.79, carrefour:0.99 },
-  { name:'Brócoli 500g',             cat:'verdura',   aldi:0.99, lidl:0.89, mercadona:1.25, dia:1.15, carrefour:1.45 },
-  { name:'Espinacas bolsa 300g',     cat:'verdura',   aldi:1.19, lidl:1.09, mercadona:1.35, dia:1.25, carrefour:1.59 },
-  { name:'Pimientos rojos 1kg',      cat:'verdura',   aldi:1.79, lidl:1.69, mercadona:2.15, dia:1.99, carrefour:2.45 },
-  { name:'Champiñones 500g',         cat:'verdura',   aldi:1.35, lidl:1.29, mercadona:1.59, dia:1.49, carrefour:1.89 },
+  { name:'Lechuga iceberg',          cat:'verdura',   aldi:0.89, lidl:0.79, mercadona:0.99, dia:0.95, carrefour:1.19, alcampo:1.12 },
+  { name:'Zanahorias 1kg',           cat:'verdura',   aldi:0.65, lidl:0.69, mercadona:0.85, dia:0.79, carrefour:0.99, alcampo:0.93 },
+  { name:'Brócoli 500g',             cat:'verdura',   aldi:0.99, lidl:0.89, mercadona:1.25, dia:1.15, carrefour:1.45, alcampo:1.36 },
+  { name:'Espinacas bolsa 300g',     cat:'verdura',   aldi:1.19, lidl:1.09, mercadona:1.35, dia:1.25, carrefour:1.59, alcampo:1.49 },
+  { name:'Pimientos rojos 1kg',      cat:'verdura',   aldi:1.79, lidl:1.69, mercadona:2.15, dia:1.99, carrefour:2.45, alcampo:2.30 },
+  { name:'Champiñones 500g',         cat:'verdura',   aldi:1.35, lidl:1.29, mercadona:1.59, dia:1.49, carrefour:1.89, alcampo:1.78 },
   // FRUTA EXTRA
-  { name:'Kiwis x6',                 cat:'fruta',     aldi:1.49, lidl:1.39, mercadona:1.79, dia:1.65, carrefour:1.99 },
-  { name:'Fresas 500g',              cat:'fruta',     aldi:1.89, lidl:1.79, mercadona:2.25, dia:2.09, carrefour:2.49 },
-  { name:'Uvas 500g',                cat:'fruta',     aldi:1.59, lidl:1.49, mercadona:1.99, dia:1.79, carrefour:2.19 },
-  { name:'Sandía 1/2',               cat:'fruta',     aldi:1.99, lidl:1.89, mercadona:2.45, dia:2.25, carrefour:2.79 },
+  { name:'Kiwis x6',                 cat:'fruta',     aldi:1.49, lidl:1.39, mercadona:1.79, dia:1.65, carrefour:1.99, alcampo:1.87 },
+  { name:'Fresas 500g',              cat:'fruta',     aldi:1.89, lidl:1.79, mercadona:2.25, dia:2.09, carrefour:2.49, alcampo:2.34 },
+  { name:'Uvas 500g',                cat:'fruta',     aldi:1.59, lidl:1.49, mercadona:1.99, dia:1.79, carrefour:2.19, alcampo:2.06 },
+  { name:'Sandía 1/2',               cat:'fruta',     aldi:1.99, lidl:1.89, mercadona:2.45, dia:2.25, carrefour:2.79, alcampo:2.62 },
   // BÁSICOS EXTRA
-  { name:'Lentejas 500g',            cat:'básicos',   aldi:0.55, lidl:0.59, mercadona:0.75, dia:0.69, carrefour:0.89 },
-  { name:'Alubias blancas 500g',     cat:'básicos',   aldi:0.59, lidl:0.65, mercadona:0.79, dia:0.75, carrefour:0.95 },
-  { name:'Cous cous 500g',           cat:'básicos',   aldi:0.79, lidl:0.85, mercadona:0.99, dia:0.95, carrefour:1.19 },
-  { name:'Quinoa 400g',              cat:'básicos',   aldi:1.99, lidl:2.15, mercadona:2.45, dia:2.35, carrefour:2.89 },
-  { name:'Avena copos 500g',         cat:'desayuno',  aldi:0.89, lidl:0.95, mercadona:1.15, dia:1.05, carrefour:1.39 },
-  { name:'Miel 500g',                cat:'desayuno',  aldi:2.35, lidl:2.49, mercadona:2.79, dia:2.65, carrefour:3.15 },
+  { name:'Lentejas 500g',            cat:'básicos',   aldi:0.55, lidl:0.59, mercadona:0.75, dia:0.69, carrefour:0.89, alcampo:0.84 },
+  { name:'Alubias blancas 500g',     cat:'básicos',   aldi:0.59, lidl:0.65, mercadona:0.79, dia:0.75, carrefour:0.95, alcampo:0.89 },
+  { name:'Cous cous 500g',           cat:'básicos',   aldi:0.79, lidl:0.85, mercadona:0.99, dia:0.95, carrefour:1.19, alcampo:1.12 },
+  { name:'Quinoa 400g',              cat:'básicos',   aldi:1.99, lidl:2.15, mercadona:2.45, dia:2.35, carrefour:2.89, alcampo:2.72 },
+  { name:'Avena copos 500g',         cat:'desayuno',  aldi:0.89, lidl:0.95, mercadona:1.15, dia:1.05, carrefour:1.39, alcampo:1.31 },
+  { name:'Miel 500g',                cat:'desayuno',  aldi:2.35, lidl:2.49, mercadona:2.79, dia:2.65, carrefour:3.15, alcampo:2.96 },
   // BEBIDAS EXTRA
-  { name:'Leche sin lactosa 1L',     cat:'bebidas',   aldi:0.89, lidl:0.95, mercadona:1.09, dia:1.05, carrefour:1.29 },
-  { name:'Té verde x20',             cat:'bebidas',   aldi:0.89, lidl:0.99, mercadona:1.15, dia:1.09, carrefour:1.45 },
-  { name:'Vino tinto 75cl',          cat:'bebidas',   aldi:2.99, lidl:3.25, mercadona:3.49, dia:3.35, carrefour:4.25 },
+  { name:'Leche sin lactosa 1L',     cat:'bebidas',   aldi:0.89, lidl:0.95, mercadona:1.09, dia:1.05, carrefour:1.29, alcampo:1.21 },
+  { name:'Té verde x20',             cat:'bebidas',   aldi:0.89, lidl:0.99, mercadona:1.15, dia:1.09, carrefour:1.45, alcampo:1.36 },
+  { name:'Vino tinto 75cl',          cat:'bebidas',   aldi:2.99, lidl:3.25, mercadona:3.49, dia:3.35, carrefour:4.25, alcampo:3.99 },
   // LIMPIEZA EXTRA
-  { name:'Papel de cocina x3',       cat:'limpieza',  aldi:1.49, lidl:1.59, mercadona:1.75, dia:1.65, carrefour:2.15 },
-  { name:'Bolsas basura 30L x30',    cat:'limpieza',  aldi:1.19, lidl:1.25, mercadona:1.45, dia:1.35, carrefour:1.79 },
-  { name:'Fregasuelos 1.5L',         cat:'limpieza',  aldi:0.99, lidl:1.05, mercadona:1.19, dia:1.09, carrefour:1.45 },
+  { name:'Papel de cocina x3',       cat:'limpieza',  aldi:1.49, lidl:1.59, mercadona:1.75, dia:1.65, carrefour:2.15, alcampo:2.02 },
+  { name:'Bolsas basura 30L x30',    cat:'limpieza',  aldi:1.19, lidl:1.25, mercadona:1.45, dia:1.35, carrefour:1.79, alcampo:1.68 },
+  { name:'Fregasuelos 1.5L',         cat:'limpieza',  aldi:0.99, lidl:1.05, mercadona:1.19, dia:1.09, carrefour:1.45, alcampo:1.36 },
   // HIGIENE EXTRA
-  { name:'Desodorante roll-on 50ml', cat:'higiene',   aldi:0.99, lidl:1.05, mercadona:1.35, dia:1.25, carrefour:1.75 },
-  { name:'Afeitado gel 200ml',       cat:'higiene',   aldi:1.49, lidl:1.59, mercadona:1.89, dia:1.75, carrefour:2.35 },
-  { name:'Crema hidratante 200ml',   cat:'higiene',   aldi:1.89, lidl:2.05, mercadona:2.45, dia:2.25, carrefour:2.99 },
+  { name:'Desodorante roll-on 50ml', cat:'higiene',   aldi:0.99, lidl:1.05, mercadona:1.35, dia:1.25, carrefour:1.75, alcampo:1.65 },
+  { name:'Afeitado gel 200ml',       cat:'higiene',   aldi:1.49, lidl:1.59, mercadona:1.89, dia:1.75, carrefour:2.35, alcampo:2.21 },
+  { name:'Crema hidratante 200ml',   cat:'higiene',   aldi:1.89, lidl:2.05, mercadona:2.45, dia:2.25, carrefour:2.99, alcampo:2.81 },
   // ACEITES EXTRA
-  { name:'Aceite oliva suave 1L',    cat:'aceites',   aldi:3.99, lidl:4.19, mercadona:4.49, dia:4.35, carrefour:4.89 },
-  { name:'Vinagre de vino 750ml',    cat:'aceites',   aldi:0.59, lidl:0.65, mercadona:0.79, dia:0.75, carrefour:0.99 },
+  { name:'Aceite oliva suave 1L',    cat:'aceites',   aldi:3.99, lidl:4.19, mercadona:4.49, dia:4.35, carrefour:4.89, alcampo:4.60 },
+  { name:'Vinagre de vino 750ml',    cat:'aceites',   aldi:0.59, lidl:0.65, mercadona:0.79, dia:0.75, carrefour:0.99, alcampo:0.93 },
   // CONSERVAS EXTRA
-  { name:'Guisantes 400g',           cat:'conservas', aldi:0.49, lidl:0.55, mercadona:0.65, dia:0.59, carrefour:0.79 },
-  { name:'Espárragos 200g',          cat:'conservas', aldi:1.09, lidl:1.19, mercadona:1.45, dia:1.35, carrefour:1.79 },
-  { name:'Almejas en salmuera',      cat:'conservas', aldi:1.85, lidl:1.99, mercadona:2.25, dia:2.15, carrefour:2.75 },
-  { name:'Mejillones escabeche',     cat:'conservas', aldi:0.99, lidl:1.09, mercadona:1.25, dia:1.19, carrefour:1.55 },
+  { name:'Guisantes 400g',           cat:'conservas', aldi:0.49, lidl:0.55, mercadona:0.65, dia:0.59, carrefour:0.79, alcampo:0.74 },
+  { name:'Espárragos 200g',          cat:'conservas', aldi:1.09, lidl:1.19, mercadona:1.45, dia:1.35, carrefour:1.79, alcampo:1.68 },
+  { name:'Almejas en salmuera',      cat:'conservas', aldi:1.85, lidl:1.99, mercadona:2.25, dia:2.15, carrefour:2.75, alcampo:2.58 },
+  { name:'Mejillones escabeche',     cat:'conservas', aldi:0.99, lidl:1.09, mercadona:1.25, dia:1.19, carrefour:1.55, alcampo:1.46 },
   // CAFÉ EXTRA
-  { name:'Café cápsulas x10',        cat:'café',      aldi:1.89, lidl:2.09, mercadona:2.35, dia:2.25, carrefour:2.99 },
-  { name:'Café soluble 200g',        cat:'café',      aldi:3.49, lidl:3.75, mercadona:3.99, dia:3.89, carrefour:4.55 },
+  { name:'Café cápsulas x10',        cat:'café',      aldi:1.89, lidl:2.09, mercadona:2.35, dia:2.25, carrefour:2.99, alcampo:2.81 },
+  { name:'Café soluble 200g',        cat:'café',      aldi:3.49, lidl:3.75, mercadona:3.99, dia:3.89, carrefour:4.55, alcampo:4.28 },
 ];
 
 // Best per category (computed from data above)
@@ -515,6 +516,9 @@ export default function SupermarketsScreen({ embedded = false }) {
         </>}
 
         {/* ── POR CATEGORÍA TAB ── */}
+        {/* ── CALCULADORA TAB — Lista de la compra ── */}
+        {tab==='calculadora' && <CalculadoraTab productos={PRODUCTOS} storesKey={STORES_KEY} storesLabel={STORES_LABEL}/>}
+
         {tab==='categoria' && Object.entries(BY_CAT).map(([key,val]) => (
           <View key={key} style={s.catCard}>
             <Text style={s.catCardKey}>{key.replace('_',' ').toUpperCase()}</Text>
@@ -593,6 +597,95 @@ export default function SupermarketsScreen({ embedded = false }) {
         </View>
       )}
     </Wrapper>
+  );
+}
+
+// ─── CALCULADORA DE LISTA DE COMPRA ──────────────────────────────────────────
+function CalculadoraTab({ productos, storesKey, storesLabel }) {
+  const [cart, setCart] = React.useState({}); // { productName: qty }
+  const [search, setSearch] = React.useState('');
+
+  const filtered = search.trim()
+    ? productos.filter(p => p.name.toLowerCase().includes(search.toLowerCase()))
+    : productos.slice(0, 30);
+
+  const cartItems = productos.filter(p => cart[p.name] > 0);
+
+  // Calculate total per store
+  const totals = {};
+  storesKey.forEach(k => { totals[k] = 0; });
+  cartItems.forEach(p => {
+    const qty = cart[p.name] || 0;
+    storesKey.forEach(k => { if (p[k]) totals[k] += p[k] * qty; });
+  });
+
+  const bestStore = storesKey.reduce((a, b) => (totals[a] || 999) < (totals[b] || 999) ? a : b);
+  const worstStore = storesKey.reduce((a, b) => (totals[a] || 0) > (totals[b] || 0) ? a : b);
+  const saving = cartItems.length > 0 ? (totals[worstStore] - totals[bestStore]) : 0;
+
+  return (
+    <View style={{flex:1}}>
+      {/* Summary */}
+      {cartItems.length > 0 && (
+        <View style={{backgroundColor:'#ECFDF5',borderRadius:14,padding:14,margin:12,borderWidth:1,borderColor:'#BBF7D0'}}>
+          <Text style={{fontSize:13,fontWeight:'700',color:'#065F46',marginBottom:8}}>
+            🧮 Tu lista ({cartItems.length} productos)
+          </Text>
+          {storesKey.filter(k => totals[k] > 0).sort((a,b) => totals[a]-totals[b]).map((k,i) => (
+            <View key={k} style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingVertical:4,borderBottomWidth: i < storesKey.length-1 ? 0.5 : 0, borderBottomColor:'#BBF7D0'}}>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+                {k === bestStore && <Text style={{fontSize:12}}>🥇</Text>}
+                <Text style={{fontSize:14,fontWeight: k===bestStore ? '800' : '600', color: k===bestStore ? '#065F46' : '#374151'}}>{storesLabel[k]}</Text>
+              </View>
+              <View style={{alignItems:'flex-end'}}>
+                <Text style={{fontSize:15,fontWeight:'700',color: k===bestStore ? '#16A34A' : '#374151'}}>{totals[k].toFixed(2)}€</Text>
+                {k === bestStore && saving > 0.5 && <Text style={{fontSize:10,color:'#16A34A'}}>ahorro {saving.toFixed(2)}€ vs más caro</Text>}
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Search */}
+      <View style={{flexDirection:'row',alignItems:'center',backgroundColor:'#fff',borderRadius:12,borderWidth:1.5,borderColor:'#E2E8F0',marginHorizontal:12,marginBottom:8,paddingHorizontal:12,paddingVertical:8,gap:8}}>
+        <Text style={{fontSize:16}}>🔍</Text>
+        <TextInput style={{flex:1,fontSize:14,color:'#0F172A'}} value={search} onChangeText={setSearch}
+          placeholder="Buscar producto..." placeholderTextColor="#94A3B8"/>
+        {search.length > 0 && <TouchableOpacity onPress={() => setSearch('')}><Text style={{color:'#94A3B8',fontSize:18}}>×</Text></TouchableOpacity>}
+      </View>
+
+      {/* Product list */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:12,paddingBottom:100}}>
+        {filtered.map(p => {
+          const qty = cart[p.name] || 0;
+          const minK = storesKey.reduce((a,b) => (p[a]||999) < (p[b]||999) ? a : b);
+          return (
+            <View key={p.name} style={{flexDirection:'row',alignItems:'center',paddingVertical:10,borderBottomWidth:0.5,borderBottomColor:'#E2E8F0'}}>
+              <View style={{flex:1}}>
+                <Text style={{fontSize:13,fontWeight:'600',color:'#0F172A'}} numberOfLines={1}>{p.name}</Text>
+                <Text style={{fontSize:11,color:'#16A34A'}}>🥇 {storesLabel[minK]} {p[minK]?.toFixed(2)}€</Text>
+              </View>
+              <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+                <TouchableOpacity
+                  style={{width:28,height:28,borderRadius:14,borderWidth:1.5,borderColor:'#E2E8F0',alignItems:'center',justifyContent:'center',backgroundColor: qty > 0 ? '#FEE2E2' : '#F8FAFC'}}
+                  onPress={() => setCart(c => ({...c, [p.name]: Math.max(0, (c[p.name]||0)-1)}))}>
+                  <Text style={{fontSize:16,color:'#DC2626',fontWeight:'700',marginTop:-2}}>−</Text>
+                </TouchableOpacity>
+                <Text style={{fontSize:14,fontWeight:'700',color:'#0F172A',minWidth:18,textAlign:'center'}}>{qty || 0}</Text>
+                <TouchableOpacity
+                  style={{width:28,height:28,borderRadius:14,borderWidth:1.5,borderColor:'#2563EB',alignItems:'center',justifyContent:'center',backgroundColor:'#EFF6FF'}}
+                  onPress={() => setCart(c => ({...c, [p.name]: (c[p.name]||0)+1}))}>
+                  <Text style={{fontSize:16,color:'#2563EB',fontWeight:'700',marginTop:-2}}>+</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })}
+        {!search.trim() && productos.length > 30 && (
+          <Text style={{textAlign:'center',color:'#94A3B8',fontSize:12,marginTop:8}}>Busca un producto para ver más resultados</Text>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 

@@ -73,7 +73,7 @@ export default function RankingScreen() {
               [stats.users || 0,       '👤 Usuarios'],
               [stats.prices || 0,      '💰 Precios'],
               [stats.deals || 0,       '🔥 Chollos'],
-              [(stats.gasolineras||0).toLocaleString('es-ES').replace(/\./g,'').slice(0,5)+'K+', '⛽ Gasolinas'],
+              [Number(stats.gasolineras||0).toLocaleString('es-ES')+'+', '⛽ Gasolinas'],
             ].map(([n, l]) => (
               <View key={l} style={s.statBox}>
                 <Text style={s.statN}>{typeof n==='number' ? Number(n).toLocaleString('es-ES') : n}</Text>
@@ -115,7 +115,7 @@ export default function RankingScreen() {
           {!stats ? <ActivityIndicator color={COLORS.primary} style={{marginTop:40}}/> : (<>
           <Text style={{fontSize:13,color:COLORS.text3,marginBottom:4}}>Estadísticas de la comunidad PreciMap</Text>
           {[
-            ['⛽', '12.213', 'Gasolineras indexadas','Del Ministerio de Energía (RITE)'],
+            ['⛽', Number(stats?.gasolineras||12213).toLocaleString('es-ES')+'+', 'Gasolineras indexadas','Del Ministerio de Energía (RITE)'],
             ['👤', String(stats.users||0), 'Usuarios activos','Ahorradores registrados'],
             ['💰', String(stats.prices||0), 'Precios reportados','Por la comunidad en el mapa'],
             ['🔥', String(stats.deals||0), 'Chollos publicados','Ofertas verificadas'],
@@ -196,7 +196,7 @@ export default function RankingScreen() {
                   <Text style={s.myRankTitle}>
                     {(myRank.points||0)>=1000?'Leyenda':(myRank.points||0)>=400?'Gurú':(myRank.points||0)>=150?'Experto':(myRank.points||0)>=50?'Ahorrador':'Novato'} · Tu posición
                   </Text>
-                  <Text style={s.myRankSub}>{myRank.points || 0} pts · {myRank.reports || 0} reportes</Text>
+                  <Text style={s.myRankSub}>{myRank.points || 0} pts · {myRank.reports || 0} {(myRank.reports||0) === 1 ? 'reporte' : 'reportes'}</Text>
                 </View>
                 <Text style={s.myRankHint}>Sigue reportando precios{'\n'}para entrar en el top 30</Text>
               </View>
@@ -219,10 +219,10 @@ export default function RankingScreen() {
                       )
                     }
                     <Text style={s.podiumName} numberOfLines={1}>
-                      {u.name?.split(' ')[0]}{user && u.id === user.id ? ' 👈' : ''}
+                      {u.name?.split(' ')[0]}{user && u.id === user.id ? ' 👈 tú' : ''}
                     </Text>
                     <Text style={[s.podiumPts, { color: MEDAL_COLOR[i] }]}>{u.points || 0} pts</Text>
-                    <Text style={s.podiumReports}>{u.reports || 0} reportes</Text>
+                    <Text style={s.podiumReports}>{u.reports || 0} {(u.reports||0)===1?'reporte':'reportes'}</Text>
                   </View>
                 ))}
               </View>
@@ -248,7 +248,7 @@ export default function RankingScreen() {
                       {isMe && <View style={{backgroundColor:COLORS.primary,borderRadius:99,paddingHorizontal:6,paddingVertical:2}}><Text style={{fontSize:9,fontWeight:'800',color:'#fff'}}>TÚ</Text></View>}
                     </View>
                     <View style={s.rowMeta}>
-                      <Text style={s.rowMetaTxt}>📍 {u.reports || 0} reportes</Text>
+                      <Text style={s.rowMetaTxt}>📍 {u.reports || 0} {(u.reports||0)===1?'reporte':'reportes'}</Text>
                       {(u.streak || 0) > 0 && <Text style={s.rowMetaTxt}>🔥 {u.streak}d</Text>}
                       {u.rank_title && <Text style={{fontSize:10,color:COLORS.primary,fontWeight:'700'}}>{u.rank_title}</Text>}
                     </View>

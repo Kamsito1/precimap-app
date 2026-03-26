@@ -174,6 +174,19 @@ export function detectStore(url) {
   return null;
 }
 
+// Web-safe URL opener — uses window.open on web, Linking on native
+export function openURL(url) {
+  if (!url) return;
+  try {
+    if (typeof window !== 'undefined' && window.open && typeof document !== 'undefined') {
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      const { Linking } = require('react-native');
+      Linking.openURL(url).catch(() => {});
+    }
+  } catch {}
+}
+
 export function applyAffiliateTag(url, tag = 'juanantonioex-21') {
   if (!url) return url;
   try {

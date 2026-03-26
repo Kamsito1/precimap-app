@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
-  Linking, TextInput, Modal, Alert, Clipboard,
+  Linking, TextInput, Modal, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../utils';
+import { COLORS, openURL } from '../utils';
 
 // ─── BANCOS — Solo admin puede modificar esta lista ─────────────────────────
 const BANK_OFFERS = [
@@ -71,7 +71,9 @@ export default function BanksScreen({ embedded = false }) {
   const [copiedCode, setCopiedCode] = useState(false);
 
   function copyCode(code) {
-    Clipboard.setString(code);
+    if (typeof navigator !== 'undefined' && navigator.clipboard) {
+      navigator.clipboard.writeText(code).catch(() => {});
+    }
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
     Alert.alert('✅ Copiado', `Código "${code}" copiado. Pégalo al registrarte en BBVA.`);
@@ -152,7 +154,7 @@ export default function BanksScreen({ embedded = false }) {
             )}
 
             <TouchableOpacity style={[s.ctaBtn, {backgroundColor: offer.color}]}
-              onPress={() => Linking.openURL(offer.url).catch(()=>{})}>
+              onPress={() => openURL(offer.url)}>
               <Text style={s.ctaBtnTxt}>{offer.cta}</Text>
               <Ionicons name="arrow-forward" size={15} color="#fff"/>
             </TouchableOpacity>

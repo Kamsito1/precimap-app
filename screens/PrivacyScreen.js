@@ -38,8 +38,8 @@ export default function PrivacyScreen({ onClose }) {
 
         <Text style={s.h2}>7. Contacto</Text>
         <Text style={s.p}>Para cualquier consulta sobre privacidad, escríbenos a:</Text>
-        <TouchableOpacity onPress={() => Linking.openURL('mailto:privacidad@precimap.app').catch(()=>{})}>
-          <Text style={s.link}>privacidad@precimap.app</Text>
+        <TouchableOpacity onPress={() => Linking.openURL('mailto:sitoexpositorodriguez@gmail.com').catch(()=>{})}>
+          <Text style={s.link}>sitoexpositorodriguez@gmail.com</Text>
         </TouchableOpacity>
 
         <Text style={s.h2}>8. Cambios en esta política</Text>
