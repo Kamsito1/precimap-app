@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>PreciMap — Abre en Expo Go</title>
+<style>
+  body { font-family: -apple-system, sans-serif; background: #f1f5f9; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+  .card { background: white; border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.1); max-width: 400px; width: 90%; }
+  .logo { font-size: 48px; margin-bottom: 8px; }
+  h1 { font-size: 24px; font-weight: 700; color: #0f172a; margin: 0 0 4px; }
+  p { color: #64748b; font-size: 14px; margin: 0 0 24px; }
+  #qr { margin: 0 auto 20px; display: block; }
+  .url { background: #eff6ff; border-radius: 10px; padding: 12px 16px; font-family: monospace; font-size: 13px; color: #2563eb; word-break: break-all; margin-bottom: 20px; }
+  .steps { text-align: left; background: #f8fafc; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+  .step { display: flex; gap: 10px; margin-bottom: 10px; font-size: 13px; color: #334155; align-items: center; }
+  .step:last-child { margin-bottom: 0; }
+  .num { background: #2563eb; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .note { font-size: 12px; color: #94a3b8; margin-top: 8px; }
+  .reload { background: #2563eb; color: white; border: none; border-radius: 99px; padding: 10px 24px; font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+</style>
+<script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+<div class="card">
+  <div class="logo">🗺️</div>
+  <h1>PreciMap</h1>
+  <p>Escanea con Expo Go en tu iPhone</p>
+  <canvas id="qr"></canvas>
+  <div class="url" id="expo-url">Generando URL...</div>
+  <div class="steps">
+    <div class="step"><div class="num">1</div>Descarga <strong>Expo Go</strong> en el App Store</div>
+    <div class="step"><div class="num">2</div>Asegúrate de estar en la <strong>misma WiFi</strong> que tu Mac</div>
+    <div class="step"><div class="num">3</div>Abre Expo Go y toca <strong>"Scan QR Code"</strong></div>
+    <div class="step"><div class="num">4</div>Apunta al QR de arriba ☝️</div>
+  </div>
+  <div class="note">IP de tu Mac: <strong>192.168.18.139</strong> · Puerto Metro: <strong>8084</strong></div>
+  <button class="reload" onclick="generateQR()">🔄 Regenerar QR</button>
+</div>
+<script>
+const IP = '192.168.18.139';
+const PORT = '8085';
+const expoUrl = `exp://${IP}:${PORT}`;
+
+function generateQR() {
+  document.getElementById('expo-url').textContent = expoUrl;
+  QRCode.toCanvas(document.getElementById('qr'), expoUrl, {
+    width: 220,
+    margin: 2,
+    color: { dark: '#0f172a', light: '#ffffff' }
+  }, function(err) {
+    if (err) document.getElementById('expo-url').textContent = 'Error: ' + err;
+  });
+}
+
+window.onload = generateQR;
+</script>
+</body>
+</html>
