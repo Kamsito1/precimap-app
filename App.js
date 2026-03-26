@@ -44,8 +44,12 @@ function AppNavigator() {
     <View style={{ flex: 1, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
       <Text style={{ fontSize: 52 }}>🗺️</Text>
       <Text style={{ fontSize: 26, fontWeight: '800', color: '#fff', letterSpacing: -0.5 }}>PreciMap</Text>
-      <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>Ahorra en España</Text>
+      <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>La app de ahorro de España</Text>
       <ActivityIndicator color="rgba(255,255,255,0.8)" style={{ marginTop: 16 }} />
+      <View style={{ position: 'absolute', bottom: 40, alignItems: 'center', gap: 4 }}>
+        <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>🟢 G95 desde 1.199€/L · ⛽ 12.000+ gasolineras</Text>
+        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v3.2.1</Text>
+      </View>
     </View>
   );
 
