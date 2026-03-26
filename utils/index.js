@@ -114,11 +114,15 @@ export async function apiUpload(path, fields, fileUri, fieldName = 'image') {
 
 // ─── FORMATTERS ───────────────────────────────────────────────────────────────
 export function timeAgo(dateStr) {
+  if (!dateStr) return '';
   const d = new Date(dateStr), now = Date.now(), diff = now - d;
-  if (diff < 60000)  return 'ahora mismo';
-  if (diff < 3600000)return `${Math.floor(diff/60000)}m`;
-  if (diff < 86400000) return `${Math.floor(diff/3600000)}h`;
-  if (diff < 604800000) return `${Math.floor(diff/86400000)}d`;
+  if (diff < 30000)    return 'ahora mismo';
+  if (diff < 60000)    return `hace ${Math.floor(diff/1000)}s`;
+  if (diff < 3600000)  return `hace ${Math.floor(diff/60000)}min`;
+  if (diff < 7200000)  return `hace 1h`;
+  if (diff < 86400000) return `hace ${Math.floor(diff/3600000)}h`;
+  if (diff < 172800000)return `ayer`;
+  if (diff < 604800000)return `hace ${Math.floor(diff/86400000)} días`;
   return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]}`;
 }
 
