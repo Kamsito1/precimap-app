@@ -202,7 +202,7 @@ export default function ProfileScreen() {
         apiPost('/api/notifications/read', {}).catch(() => {});
       }
     }
-    catch(e) { console.warn('loadProfile error:', e); }
+    catch(e) { /* loadProfile error silenced for production */ }
     finally { setLoading(false); setRefreshing(false); }
   }
 
