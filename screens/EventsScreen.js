@@ -431,10 +431,17 @@ function AddEventModal({ visible, onClose, onSuccess }) {
 
   async function submit() {
     if (!title.trim() || !cat || !date) { setError('Título, categoría y fecha son obligatorios'); return; }
+    // Convert DD/MM/YYYY → YYYY-MM-DD for the API
+    let isoDate = date;
+    if (date.includes('/')) {
+      const p = date.split('/');
+      if (p.length === 3 && p[2].length === 4) isoDate = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
+      else { setError('Fecha inválida. Usa el formato DD/MM/AAAA'); return; }
+    }
     setLoading(true); setError('');
     try {
       const res = await apiPost('/api/events', {
-        title: title.trim(), category: cat, date, time,
+        title: title.trim(), category: cat, date: isoDate, time,
         venue: venue.trim(), address: address.trim(), city: city.trim(),
         lat: gpsCoords?.lat || null, lng: gpsCoords?.lng || null,
         price_from: price && !isFree ? parseFloat(price) : null,

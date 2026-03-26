@@ -74,16 +74,12 @@ export default function DealsScreen() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => {
-    const t = setTimeout(() => resetAndLoad(), 400);
-    return () => clearTimeout(t);
-  }, [search]);
-
   function resetAndLoad() {
     setOffset(0); setHasMore(true); load(0, true);
   }
 
   async function load(off = 0, reset = false) {
+    if (reset) setLoading(true);
     try {
       let url = `/api/deals?cat=${cat}&sort=${sort}&limit=${PAGE}&offset=${off}`;
       if (search.trim()) url += `&search=${encodeURIComponent(search.trim())}`;
@@ -510,7 +506,7 @@ export default function DealsScreen() {
               </View>
             );
           }}
-          ListEmptyComponent={
+          ListEmptyComponent={loading ? null :
             <View style={s.empty}>
               <Text style={{fontSize:52,textAlign:'center',marginBottom:12}}>
                 {search ? '🔍' : minDiscount > 0 ? '🎯' : '🛍️'}
