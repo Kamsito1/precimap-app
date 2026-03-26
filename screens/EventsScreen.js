@@ -41,7 +41,8 @@ export default function EventsScreen() {
   const [cat, setCat] = useState('all');
   const [sort, setSort] = useState('date');
   const [source, setSource] = useState('all');
-  const [priceFilter, setPriceFilter] = useState('all'); // 'all' | 'free' | 'paid'
+  const [priceFilter, setPriceFilter] = useState('all');
+  const [search, setSearch] = useState('');
   const [city, setCity] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -51,16 +52,22 @@ export default function EventsScreen() {
 
   useEffect(() => { loadEvents(); }, [cat, sort, source, city]);
 
+  // Debounced search
+  useEffect(() => {
+    const t = setTimeout(() => loadEvents(), 400);
+    return () => clearTimeout(t);
+  }, [search]);
   async function loadEvents() {
     try {
       let url = `/api/events?cat=${cat}&sort=${sort}`;
       if (source !== 'all') url += `&source=${source}`;
       if (city) url += `&city=${encodeURIComponent(city)}`;
+      if (search.trim()) url += `&search=${encodeURIComponent(search.trim())}`;
       setEvents(await apiGet(url) || []);
     } catch {} finally { setLoading(false); setRefreshing(false); }
   }
 
-  const onRefresh = useCallback(() => { setRefreshing(true); loadEvents(); }, [cat, sort, source, city]);
+  const onRefresh = useCallback(() => { setRefreshing(true); loadEvents(); }, [cat, sort, source, city, search]);
 
   const ayuntamientoCount = events.filter(e => e.source === 'ayuntamiento').length;
   const userCount = events.filter(e => e.source === 'user').length;
@@ -156,6 +163,23 @@ export default function EventsScreen() {
         {/* Filter panel */}
         {showFilters && (
           <View style={s.filtersPanel}>
+            {/* Search box */}
+            <View style={{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg3,borderRadius:10,paddingHorizontal:10,marginBottom:10,borderWidth:1,borderColor:COLORS.border}}>
+              <Ionicons name="search-outline" size={16} color={COLORS.text3}/>
+              <TextInput
+                style={{flex:1,paddingVertical:8,paddingHorizontal:6,fontSize:13,color:COLORS.text}}
+                placeholder="Buscar eventos..."
+                placeholderTextColor={COLORS.text3}
+                value={search}
+                onChangeText={setSearch}
+                returnKeyType="search"
+              />
+              {search.length > 0 && (
+                <TouchableOpacity onPress={() => setSearch('')}>
+                  <Ionicons name="close-circle" size={16} color={COLORS.text3}/>
+                </TouchableOpacity>
+              )}
+            </View>
             <Text style={s.filterLabel}>Ordenar por</Text>
             <View style={s.radRow}>
               {SORTS.map(so => (

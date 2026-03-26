@@ -280,8 +280,12 @@ export default function DealsScreen() {
                     <Text style={s.dealPrice}>{formatPrice(deal.deal_price)}</Text>
                     {deal.original_price && <Text style={s.origPrice}>{formatPrice(deal.original_price)}</Text>}
                     {deal.discount_percent && deal.discount_percent >= 5 && (
-                      <View style={[s.discBadge, deal.discount_percent >= 30 && {backgroundColor:'#DC2626'}]}>
-                        <Text style={s.discTxt}>-{Math.round(deal.discount_percent)}%</Text>
+                      <View style={[s.discBadge,
+                        deal.discount_percent >= 50 ? {backgroundColor:'#7C3AED'} :
+                        deal.discount_percent >= 30 ? {backgroundColor:'#DC2626'} :
+                        {backgroundColor:'#FEE2E2'}
+                      ]}>
+                        <Text style={[s.discTxt, deal.discount_percent >= 30 && {color:'#fff'}]}>-{Math.round(deal.discount_percent)}%</Text>
                       </View>
                     )}
                     {deal.original_price && deal.deal_price && (
