@@ -317,25 +317,42 @@ export default function SupermarketsScreen({ embedded = false }) {
               </ScrollView>
             )}
           </View>
-          {community.length > 0 ? community.map(p => (
-              <TouchableOpacity key={p.id} style={s.communityRow} onPress={() => navigation?.navigate('Mapa')}>
-                <View style={s.communityDot}/>
+          {community.length > 0 ? community.map(p => {
+              // Get brand tag from name
+              const brandColors = {Mercadona:'#008F39',Lidl:'#FFE000',Aldi:'#00539F',Carrefour:'#0070C0',Día:'#E4002B',Alcampo:'#FF6600',Eroski:'#C00',Consum:'#009900',Supersol:'#FF8C00',Gadis:'#005AA7',Coviran:'#E8001C',Spar:'#E3001B',Froiz:'#005AA7',BM:'#003087',Bonpreu:'#00529B',Condis:'#CC0000',Ahorramas:'#FF7700',Hiperdino:'#FF0000'};
+              const brand = Object.keys(brandColors).find(b => p.name.includes(b)) || null;
+              const brandColor = brand ? brandColors[brand] : COLORS.primary;
+              const prices = p.prices || [];
+              const cheapest = prices.length > 0 ? prices.sort((a,b) => a.price-b.price)[0] : null;
+              return (
+              <TouchableOpacity key={p.id} style={[s.communityRow,{paddingVertical:14}]} onPress={() => navigation?.navigate('Mapa')}>
+                <View style={{width:40,height:40,borderRadius:10,backgroundColor:brandColor+'15',borderWidth:1.5,borderColor:brandColor+'44',alignItems:'center',justifyContent:'center',marginRight:10}}>
+                  <Text style={{fontSize:10,fontWeight:'800',color:brandColor}} numberOfLines={1}>
+                    {brand ? brand.slice(0,6).toUpperCase() : '🛒'}
+                  </Text>
+                </View>
                 <View style={{flex:1}}>
-                  <Text style={s.communityName}>{p.name}</Text>
-                  <Text style={s.communityCity}>📍 {p.city || 'España'}{p.address ? ` · ${p.address}` : ''}</Text>
+                  <Text style={s.communityName} numberOfLines={1}>{p.name}</Text>
+                  <Text style={s.communityCity}>📍 {p.city}{p.address ? ` · ${p.address.slice(0,25)}` : ''}</Text>
+                  {cheapest && (
+                    <Text style={{fontSize:10,color:COLORS.success,fontWeight:'700',marginTop:2}}>
+                      {cheapest.product}: {cheapest.price?.toFixed(2)}€
+                    </Text>
+                  )}
                 </View>
                 <View style={{alignItems:'flex-end',gap:2}}>
-                  {p.minPrice ? <Text style={s.communityPrice}>desde {p.minPrice?.toFixed(2)}€</Text> : null}
+                  {prices.length > 0 && <Text style={{fontSize:10,color:COLORS.text3}}>{prices.length} precios</Text>}
                   <Ionicons name="chevron-forward" size={12} color={COLORS.text3}/>
                 </View>
               </TouchableOpacity>
-            )) : (
+              );
+            }) : (
               <View style={{alignItems:'center',padding:20}}>
                 <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center'}}>
-                  {communityCity ? `No hay supermercados reportados en ${communityCity}` : 'Sin datos de comunidad aún'}
+                  {communityCity ? `Sin datos para ${communityCity}` : 'Sin datos de comunidad aún'}
                 </Text>
                 <TouchableOpacity style={{marginTop:8,backgroundColor:COLORS.primaryLight,borderRadius:99,paddingHorizontal:16,paddingVertical:8}} onPress={() => navigation?.navigate('Mapa')}>
-                  <Text style={{fontSize:12,color:COLORS.primary,fontWeight:'700'}}>Añadir en el mapa →</Text>
+                  <Text style={{fontSize:12,color:COLORS.primary,fontWeight:'700'}}>Ver en el mapa →</Text>
                 </TouchableOpacity>
               </View>
             )}
