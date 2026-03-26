@@ -6,14 +6,23 @@ import BanksScreen from './BanksScreen';
 import SupermarketsScreen from './SupermarketsScreen';
 
 const SUBTABS = [
-  { key: 'super',   label: '🛒 Supermercados' },
-  { key: 'bancos',  label: '🏦 Bancos' },
+  { key: 'super',  label: '🛒 Supermercados' },
+  { key: 'bancos', label: '🏦 Bancos' },
+];
+
+// Quick stats about savings potential
+const SAVING_FACTS = [
+  '💡 Aldi es un 22% más barato que Mercadona en media',
+  '💡 Trade Republic da 3.62% TAE en cuenta remunerada',
+  '💡 Con Revolut ahorras comisiones en divisas',
+  '💡 Comprar en Lidl ahorra ~35€/mes en una familia',
+  '💡 El depósito de Bankinter da 3.75% TAE garantizado',
 ];
 
 export default function AhorroScreen() {
   const [sub, setSub] = useState('super');
-  // Track which screens have been visited (lazy mount)
   const [visited, setVisited] = useState({ super: true, bancos: false });
+  const [factIdx] = useState(() => Math.floor(Math.random() * SAVING_FACTS.length));
 
   const switchTab = useCallback((key) => {
     setSub(key);
@@ -22,8 +31,13 @@ export default function AhorroScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-      {/* Sub-tab selector — handles safe area top */}
       <SafeAreaView edges={['top']} style={{ backgroundColor: COLORS.bg2, borderBottomWidth: 0.5, borderBottomColor: COLORS.border }}>
+        {/* Saving tip bar */}
+        <View style={{ backgroundColor: COLORS.primaryLight, paddingHorizontal: 14, paddingVertical: 7 }}>
+          <Text style={{ fontSize: 12, color: COLORS.primaryDark, fontWeight: '500' }} numberOfLines={1}>
+            {SAVING_FACTS[factIdx]}
+          </Text>
+        </View>
         <View style={s.subTabRow}>
           {SUBTABS.map(t => (
             <TouchableOpacity
