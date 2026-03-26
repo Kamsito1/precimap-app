@@ -7,7 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
-import { COLORS, apiGet, apiPost, timeAgo, MONTHS_ES } from '../utils';
+import { COLORS, apiGet, apiPost, timeAgo, MONTHS_ES, openURL } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
 import CityPicker from '../components/CityPicker';
@@ -330,7 +330,7 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
           <Text style={ec.navBtnTxt}>Cómo llegar</Text>
         </TouchableOpacity>
         {ev?.url ? (
-          <TouchableOpacity style={ec.ticketBtn} onPress={() => Linking.openURL(ev.url).catch(()=>{})}>
+          <TouchableOpacity style={ec.ticketBtn} onPress={() => openURL(ev.url)}>
             <Ionicons name="open-outline" size={13} color={COLORS.purple}/>
             <Text style={ec.ticketBtnTxt}>Más info</Text>
           </TouchableOpacity>
@@ -392,7 +392,7 @@ function EmptyEvents({ onAdd, source }) {
       </View>
       <Text style={em.linksTitle}>Encuentra eventos en estas webs:</Text>
       {links.map(l => (
-        <TouchableOpacity key={l.url} style={em.linkBtn} onPress={() => Linking.openURL(l.url).catch(()=>{})}>
+        <TouchableOpacity key={l.url} style={em.linkBtn} onPress={() => openURL(l.url)}>
           <Text style={em.linkTxt}>{l.label}</Text>
           <Ionicons name="open-outline" size={12} color={COLORS.primary}/>
         </TouchableOpacity>

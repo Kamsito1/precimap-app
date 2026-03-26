@@ -16,7 +16,7 @@ export default function PrivacyScreen({ onClose }) {
         )}
       </View>
       <ScrollView contentContainerStyle={s.body}>
-        <Text style={s.updated}>Última actualización: marzo 2025</Text>
+        <Text style={s.updated}>Última actualización: marzo 2026</Text>
 
         <Text style={s.h2}>1. Quién somos</Text>
         <Text style={s.p}>PreciMap es una aplicación de ahorro y comparación de precios. El responsable del tratamiento es el desarrollador de PreciMap.</Text>
