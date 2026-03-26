@@ -145,7 +145,7 @@ export default function DealsScreen() {
                     const discs = deals.filter(d => d.discount_percent > 0).map(d => d.discount_percent || 0);
                     const filterTxt = minDiscount > 0 ? ` · filtro -${minDiscount}%+` : '';
                     const searchTxt = search.trim() ? ` · "${search.trim()}"` : '';
-                    return `${deals.length} ofertas${discs.length ? ' · mejor ' + Math.max(...discs).toFixed(0) + '%' : ''}${filterTxt}${searchTxt}`;
+                    return `${deals.length} ofertas${discs.length ? ' · mejor ' + Math.round(Math.max(...discs)) + '%' : ''}${filterTxt}${searchTxt}`;
                   })()
                 : loading ? 'Cargando chollos...' : 'Sin chollos con ese filtro'
               }
@@ -560,6 +560,15 @@ export default function DealsScreen() {
         </View>
       </Modal>
 
+      {/* FAB — Publicar chollo */}
+      <TouchableOpacity
+        style={s.fab}
+        onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}
+        activeOpacity={0.85}>
+        <Ionicons name="add" size={28} color="#fff"/>
+        <Text style={s.fabTxt}>Chollo</Text>
+      </TouchableOpacity>
+
     </SafeAreaView>
   );
 }
@@ -570,6 +579,8 @@ const s = StyleSheet.create({
   headerTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',paddingHorizontal:16,paddingTop:14,paddingBottom:10},
   title:{fontSize:22,fontWeight:'700',color:COLORS.text},
   sub:{fontSize:12,color:COLORS.text3,marginTop:1},
+  fab:{position:'absolute',bottom:80,right:16,backgroundColor:COLORS.danger,borderRadius:28,paddingHorizontal:18,paddingVertical:14,flexDirection:'row',alignItems:'center',gap:6,shadowColor:COLORS.danger,shadowOpacity:0.45,shadowRadius:12,shadowOffset:{width:0,height:4},elevation:8},
+  fabTxt:{color:'#fff',fontWeight:'800',fontSize:14},
   addBtn:{flexDirection:'row',alignItems:'center',gap:4,backgroundColor:COLORS.danger,borderRadius:99,paddingHorizontal:14,paddingVertical:8},
   addBtnTxt:{color:'#fff',fontWeight:'700',fontSize:13},
   sortRow:{flexDirection:'row',paddingHorizontal:12,gap:6,paddingBottom:10},

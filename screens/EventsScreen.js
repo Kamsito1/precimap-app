@@ -236,6 +236,16 @@ export default function EventsScreen() {
 
       <AddEventModal visible={showAdd} onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); loadEvents(); }}/>
       <AuthModal visible={showAuth} onClose={() => setShowAuth(false)}/>
+
+      {/* FAB */}
+      <TouchableOpacity
+        style={{position:'absolute',bottom:80,right:16,backgroundColor:COLORS.purple||'#7C3AED',borderRadius:28,paddingHorizontal:18,paddingVertical:14,flexDirection:'row',alignItems:'center',gap:6,shadowColor:'#7C3AED',shadowOpacity:0.45,shadowRadius:12,shadowOffset:{width:0,height:4},elevation:8}}
+        onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}
+        activeOpacity={0.85}>
+        <Ionicons name="add" size={26} color="#fff"/>
+        <Text style={{color:'#fff',fontWeight:'800',fontSize:14}}>Evento</Text>
+      </TouchableOpacity>
+
     </SafeAreaView>
   );
 }

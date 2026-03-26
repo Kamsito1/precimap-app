@@ -724,7 +724,7 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
         {item.minPrice && (
           <View style={[lcs.pricePill,{backgroundColor:col?col.bg+'22':COLORS.warningLight}]}>
             <Text style={[lcs.pricePillTxt,{color:col?col.bg:COLORS.warning}]}>
-              {item.isGas ? fuelLabel+' ' : 'desde '}{item.minPrice.toFixed(item.isGas?3:2)}€
+              {item.isGas ? fuelLabel+' ' : 'desde '}{(item.minPrice||0).toFixed(item.isGas?3:2)}€
             </Text>
           </View>
         )}
@@ -888,12 +888,12 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onPr
                 <View key={prod} style={{flexDirection:'row',alignItems:'center',paddingVertical:8,borderBottomWidth:0.5,borderBottomColor:COLORS.border,gap:10}}>
                   <View style={{flex:1}}>
                     <Text style={{fontSize:13,fontWeight:'600',color:COLORS.text}} numberOfLines={1}>{prod}</Text>
-                    <Text style={{fontSize:10,color:COLORS.text3,marginTop:1}}>min {min.toFixed(2)}€ · max {max.toFixed(2)}€ · {pts.length} reportes</Text>
+                    <Text style={{fontSize:10,color:COLORS.text3,marginTop:1}}>min {(min||0).toFixed(2)}€ · max {(max||0).toFixed(2)}€ · {pts.length} reportes</Text>
                   </View>
                   <View style={{alignItems:'flex-end'}}>
-                    <Text style={{fontSize:16,fontWeight:'800',color:COLORS.text}}>{last.toFixed(2)}€</Text>
+                    <Text style={{fontSize:16,fontWeight:'800',color:COLORS.text}}>{(last||0).toFixed(2)}€</Text>
                     <Text style={{fontSize:11,fontWeight:'700',color: Math.abs(diff)<0.01 ? COLORS.text3 : diff>0 ? COLORS.danger : COLORS.success}}>
-                      {Math.abs(diff)<0.01 ? '—' : diff>0 ? `↑${diff.toFixed(2)}€` : `↓${Math.abs(diff).toFixed(2)}€`}
+                      {Math.abs(diff)<0.01 ? '—' : diff>0 ? `↑${(diff||0).toFixed(2)}€` : `↓${Math.abs(diff||0).toFixed(2)}€`}
                     </Text>
                   </View>
                 </View>

@@ -178,12 +178,15 @@ export default function SupermarketsScreen({ embedded = false }) {
     finally { setRefreshing(false); }
   }
 
-  // Load all cities on mount
+  // Load all cities on mount — with count per city
   useEffect(() => {
-    apiGet('/api/places?cat=supermercado&limit=200').then(data => {
+    apiGet('/api/places?cat=supermercado').then(data => {
       if (Array.isArray(data)) {
-        const cities = [...new Set(data.map(p => p.city).filter(Boolean))].sort();
-        setAllCities(cities);
+        // Count per city and sort by count desc
+        const cityCount = {};
+        data.forEach(p => { if (p.city) cityCount[p.city] = (cityCount[p.city]||0)+1; });
+        const sorted = Object.entries(cityCount).sort((a,b)=>b[1]-a[1]).map(([c])=>c);
+        setAllCities(sorted);
       }
     }).catch(() => {});
   }, []);
@@ -411,7 +414,7 @@ export default function SupermarketsScreen({ embedded = false }) {
                     <View key={k} style={{flex:1,alignItems:'center'}}>
                       {price != null ? (
                         <Text style={[{fontSize:11,fontWeight:isMin?'800':'400',color:isMin?'#16A34A':COLORS.text}]}>
-                          {price.toFixed(2)}
+                          {(+price||0).toFixed(2)}
                         </Text>
                       ) : <Text style={{fontSize:10,color:COLORS.text3}}>—</Text>}
                     </View>
@@ -499,9 +502,9 @@ export default function SupermarketsScreen({ embedded = false }) {
                     <Text style={{fontSize:11,color:COLORS.text3}}>{pts[pts.length-1]?.date}</Text>
                   </View>
                   <View style={{flexDirection:'row',justifyContent:'space-between',marginTop:8,backgroundColor:COLORS.bg3,borderRadius:8,padding:10}}>
-                    <Text style={{fontSize:12,color:COLORS.success}}>🟢 Min: {minP.toFixed(2)}€</Text>
-                    <Text style={{fontSize:12,color:COLORS.text2}}>Avg: {(prices.reduce((a,b)=>a+b,0)/prices.length).toFixed(2)}€</Text>
-                    <Text style={{fontSize:12,color:COLORS.danger}}>🔴 Max: {maxP.toFixed(2)}€</Text>
+                    <Text style={{fontSize:12,color:COLORS.success}}>🟢 Min: {(minP||0).toFixed(2)}€</Text>
+                    <Text style={{fontSize:12,color:COLORS.text2}}>Avg: {prices.length ? (prices.reduce((a,b)=>a+b,0)/prices.length).toFixed(2) : '0.00'}€</Text>
+                    <Text style={{fontSize:12,color:COLORS.danger}}>🔴 Max: {(maxP||0).toFixed(2)}€</Text>
                   </View>
                 </View>
               );
