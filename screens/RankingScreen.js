@@ -98,11 +98,16 @@ export default function RankingScreen() {
             keyExtractor={u => String(u.id)}
             contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: 100 }}
             ListHeaderComponent={leaders.length > 0 && leaders[0]?.period_fallback && period !== 'all' ? (
-              <View style={{backgroundColor:'#FEF3C7',borderRadius:12,padding:12,marginBottom:8,flexDirection:'row',gap:8}}>
-                <Text>📅</Text>
-                <Text style={{flex:1,fontSize:12,color:'#92400E'}}>
-                  Sin actividad esta {period === 'week' ? 'semana' : 'mes'} aún. Mostrando ranking histórico.
-                </Text>
+              <View style={{backgroundColor:'#FEF3C7',borderRadius:12,padding:12,marginBottom:8,flexDirection:'row',gap:8,alignItems:'center'}}>
+                <Text style={{fontSize:18}}>📅</Text>
+                <View style={{flex:1}}>
+                  <Text style={{fontSize:13,fontWeight:'700',color:'#92400E'}}>
+                    Sin actividad esta {period === 'week' ? 'semana' : 'mes'}
+                  </Text>
+                  <Text style={{fontSize:11,color:'#B45309',marginTop:2}}>
+                    Reporta precios para aparecer en el ranking semanal · mostrando histórico
+                  </Text>
+                </View>
               </View>
             ) : null}
             ListFooterComponent={myRank ? (

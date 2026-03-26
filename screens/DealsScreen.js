@@ -126,9 +126,11 @@ export default function DealsScreen() {
               {deals.length > 0
                 ? (() => {
                     const discs = deals.filter(d => d.discount_percent > 0).map(d => d.discount_percent || 0);
-                    return `${deals.length} ofertas${discs.length ? ' · mejor ahorro ' + Math.max(...discs) + '%' : ''}`;
+                    const filterTxt = minDiscount > 0 ? ` · filtro -${minDiscount}%+` : '';
+                    const searchTxt = search.trim() ? ` · "${search.trim()}"` : '';
+                    return `${deals.length} ofertas${discs.length ? ' · mejor ' + Math.max(...discs).toFixed(0) + '%' : ''}${filterTxt}${searchTxt}`;
                   })()
-                : 'Cargando chollos...'
+                : loading ? 'Cargando chollos...' : 'Sin chollos con ese filtro'
               }
             </Text>
           </View>

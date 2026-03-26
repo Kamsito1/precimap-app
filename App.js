@@ -39,6 +39,15 @@ function TabIcon({ name, focused, color, badge }) {
 function AppNavigator() {
   const { isLoggedIn, loading: authLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const [splashG95, setSplashG95] = useState(null);
+
+  // Fetch real G95 min price for splash screen
+  useState(() => {
+    apiGet('/api/gasolineras/stats').then(d => {
+      const min = d?.stats?.g95?.min;
+      if (min) setSplashG95(min.toFixed(3));
+    }).catch(() => {});
+  });
 
   if (authLoading) return (
     <View style={{ flex: 1, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
@@ -47,7 +56,11 @@ function AppNavigator() {
       <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>La app de ahorro de España</Text>
       <ActivityIndicator color="rgba(255,255,255,0.8)" style={{ marginTop: 16 }} />
       <View style={{ position: 'absolute', bottom: 40, alignItems: 'center', gap: 4 }}>
-        <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>🟢 G95 desde 1.199€/L · ⛽ 12.000+ gasolineras</Text>
+        <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+          {splashG95
+            ? `🟢 G95 desde ${splashG95}€/L · ⛽ 12.213 gasolineras`
+            : '🗺️ Gasolineras · Chollos · Supermercados'}
+        </Text>
         <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v3.3.0</Text>
       </View>
     </View>
