@@ -708,7 +708,7 @@ export default function ProfileScreen() {
         <Section title="ℹ️ INFORMACIÓN LEGAL">
           {[
             ['Política de Privacidad', () => setShowPrivacy(true)],
-            ['Términos de Uso', () => Linking.openURL('https://github.com/Kamsito1/precimap-app/blob/main/TERMS.md').catch(()=>{})],
+            ['Términos de Uso', () => Linking.openURL('https://web-production-a8023.up.railway.app/terms').catch(()=>{})],
             ['Código fuente (contribuir)', () => Linking.openURL('https://github.com/Kamsito1/precimap-app').catch(()=>{})],
           ].map(([label, onPress]) => (
             <TouchableOpacity key={label} style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingVertical:12,borderBottomWidth:0.5,borderBottomColor:COLORS.border}}
