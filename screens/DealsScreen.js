@@ -68,8 +68,10 @@ export default function DealsScreen() {
     apiGet('/api/deals/trending').then(t => { if (Array.isArray(t)) setTrending(t); }).catch(()=>{});
   }, []);
 
-  // Debounced search — waits 400ms after typing stops before fetching
+  // Debounced search — skip on mount (initial load handled by the effect above)
+  const isMounted = useRef(false);
   useEffect(() => {
+    if (!isMounted.current) { isMounted.current = true; return; }
     const timer = setTimeout(() => { resetAndLoad(); }, 400);
     return () => clearTimeout(timer);
   }, [search]);
