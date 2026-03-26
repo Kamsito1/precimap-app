@@ -460,6 +460,12 @@ export default function MapScreen() {
                   <View style={[ms.gasMarker, { backgroundColor: col.bg }]}>
                     <Text style={ms.gasEmoji}>⛽</Text>
                     {displayPrice > 0 && <Text style={ms.gasPrice}>{displayPrice.toFixed(3)}</Text>}
+                    {userLoc && (() => {
+                      const d = distanceKm(userLoc.lat, userLoc.lng, s.lat, s.lng);
+                      if (d > 5) return null; // only show if <5km
+                      const label = d < 1 ? `${Math.round(d*1000)}m` : `${d.toFixed(1)}km`;
+                      return <Text style={{fontSize:8,color:col.text,fontWeight:'600',opacity:0.8}}>{label}</Text>;
+                    })()}
                   </View>
                 </Marker>
               );

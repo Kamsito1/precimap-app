@@ -52,6 +52,7 @@ export default function RankingScreen() {
 
   const MEDAL_COLOR = ['#F59E0B', '#94A3B8', '#B45309'];
   const MEDAL_BG    = ['#FFFBEB', '#F8FAFC', '#FEF3C7'];
+  const PODIUM_HEIGHT = [1, 0.82, 0.72]; // relative heights for visual podium effect
   const MEDAL_EMOJI = ['🥇', '🥈', '🥉'];
 
   return (
@@ -128,7 +129,10 @@ export default function RankingScreen() {
             ListHeaderComponent={leaders.length > 0 ? (
               <View style={s.podium}>
                 {leaders.slice(0, 3).map((u, i) => (
-                  <View key={u.id} style={[s.podiumCard, { backgroundColor: MEDAL_BG[i], borderColor: MEDAL_COLOR[i] + '44' }]}>
+                  <View key={u.id} style={[s.podiumCard,
+                    { backgroundColor: MEDAL_BG[i], borderColor: MEDAL_COLOR[i] + '44' },
+                    i === 0 && { transform: [{ scale: 1.06 }], zIndex: 2, elevation: 4 },
+                  ]}>
                     <Text style={s.podiumMedal}>{MEDAL_EMOJI[i]}</Text>
                     {u.avatar_url
                       ? <Image source={{ uri: u.avatar_url }} style={[s.podiumAvatar, { borderColor: MEDAL_COLOR[i] }]}/>

@@ -2,7 +2,7 @@
   "expo": {
     "name": "PreciMap",
     "slug": "precimap",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "requireFullScreen": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "PreciMap usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",

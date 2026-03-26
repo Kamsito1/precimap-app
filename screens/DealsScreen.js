@@ -27,9 +27,10 @@ const CATS = [
 ];
 
 const SORTS = [
-  { key:'hot',  label:'🔥 Top',     desc:'Más votados' },
-  { key:'new',  label:'🆕 Nuevo',   desc:'Más recientes' },
-  { key:'top',  label:'👑 Histórico',desc:'Mejor de siempre' },
+  { key:'hot',   label:'🔥 Top',    desc:'Más votados' },
+  { key:'new',   label:'🆕 Nuevo',  desc:'Más recientes' },
+  { key:'top',   label:'👑 Mejor',  desc:'Históricamente mejor' },
+  { key:'price', label:'💰 Precio', desc:'Más baratos primero' },
 ];
 
 export default function DealsScreen() {

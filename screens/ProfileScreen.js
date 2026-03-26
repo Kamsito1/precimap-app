@@ -305,7 +305,15 @@ export default function ProfileScreen() {
               ? <View style={s.avatar}><ActivityIndicator color="#fff"/></View>
               : u?.avatar_url
                 ? <Image source={{uri:u.avatar_url}} style={s.avatar} resizeMode="cover"/>
-                : <View style={s.avatar}><Text style={s.avatarTxt}>{initials(u?.name)}</Text></View>
+                : (() => {
+                    const pts=u?.points||0;
+                    const lvlColor=pts>=1000?'#7C3AED':pts>=400?'#2563EB':pts>=150?'#0891B2':pts>=50?'#16A34A':'#6B7280';
+                    return (
+                      <View style={[s.avatar,{backgroundColor:lvlColor}]}>
+                        <Text style={s.avatarTxt}>{initials(u?.name)}</Text>
+                      </View>
+                    );
+                  })()
             }
             <View style={s.avatarEdit}><Ionicons name="camera" size={12} color="#fff"/></View>
           </TouchableOpacity>

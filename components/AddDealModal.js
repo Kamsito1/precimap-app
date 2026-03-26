@@ -69,6 +69,20 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
     setUrl(v);
     const s = detectStore(v);
     if (s) setStore(s);
+    // Auto-detect category from URL/store
+    const url_low = v.toLowerCase();
+    const store_low = (s||'').toLowerCase();
+    const catGuess =
+      /(amazon|media|pc|gaming|playstation|xbox|nintendo|steam|fnac)/i.test(store_low+url_low) ? 'tecnologia' :
+      /(zara|mango|primark|pull|asos|shein|bershka|lefties|moda|ropa)/i.test(store_low+url_low) ? 'moda' :
+      /(ikea|leroy|bricomart|hogar|sofa|colchon|mueble)/i.test(url_low) ? 'hogar' :
+      /(mercadona|lidl|aldi|carrefour|dia|supermercado|aliment|aceite|pasta)/i.test(store_low+url_low) ? 'alimentacion' :
+      /(vueling|iberia|ryanair|booking|airbnb|viaje|hotel|vuelo|sky)/i.test(store_low+url_low) ? 'viajes' :
+      /(nike|adidas|decathlon|deporte|gym|fitness|running)/i.test(store_low+url_low) ? 'deportes' :
+      /(sephora|druni|douglas|perfum|cosmet|belleza|beauty)/i.test(url_low) ? 'belleza' :
+      /(libro|fnac|book|amazon.*book|audible)/i.test(url_low) ? 'libros' :
+      /(coches|motor|automocion|pcm|leasing|coche)/i.test(url_low) ? 'coches' : null;
+    if (catGuess) setCat(catGuess);
   }
 
   const disc = price && original && !isNaN(+price) && !isNaN(+original) && +original > +price
