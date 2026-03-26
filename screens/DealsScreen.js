@@ -176,19 +176,31 @@ export default function DealsScreen() {
           )}
         </View>
 
-        {/* Sort tabs */}
-        <View style={s.sortRow}>
+        {/* Sort tabs — row 1 */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{paddingHorizontal:12,gap:8,paddingBottom:6}}>
           {SORTS.map(so => (
-            <TouchableOpacity key={so.key} style={[s.sortBtn, sort===so.key && s.sortBtnOn]} onPress={() => setSort(so.key)}>
-              <Text style={[s.sortTxt, sort===so.key && {color:'#fff',fontWeight:'700'}]}>{so.label}</Text>
+            <TouchableOpacity key={so.key}
+              style={[{paddingHorizontal:16,paddingVertical:9,borderRadius:20,borderWidth:1.5,
+                borderColor: sort===so.key ? COLORS.danger : COLORS.border,
+                backgroundColor: sort===so.key ? COLORS.danger : COLORS.bg}]}
+              onPress={() => setSort(so.key)}>
+              <Text style={{fontSize:13,fontWeight:'700',color: sort===so.key ? '#fff' : COLORS.text2}}>{so.label}</Text>
             </TouchableOpacity>
           ))}
-          <View style={{flex:1}}/>
+          <View style={{width:1,height:1}}/>
+        </ScrollView>
+        {/* Discount filter — row 2 */}
+        <View style={{flexDirection:'row',paddingHorizontal:12,gap:8,paddingBottom:10}}>
+          <Text style={{fontSize:12,color:COLORS.text3,alignSelf:'center',marginRight:4}}>Descuento:</Text>
           {[0,20,30,50].map(d => (
-            <TouchableOpacity key={d} style={[s.sortBtn, minDiscount===d && {backgroundColor:COLORS.danger,borderColor:COLORS.danger}]}
+            <TouchableOpacity key={d}
+              style={{paddingHorizontal:12,paddingVertical:6,borderRadius:16,borderWidth:1.5,
+                borderColor: minDiscount===d ? COLORS.danger : COLORS.border,
+                backgroundColor: minDiscount===d ? COLORS.danger : COLORS.bg}}
               onPress={() => setMinDiscount(d)}>
-              <Text style={[s.sortTxt, minDiscount===d && {color:'#fff',fontWeight:'700'}]}>
-                {d===0 ? 'Todo' : `-${d}%+`}
+              <Text style={{fontSize:12,fontWeight:'700',color: minDiscount===d ? '#fff' : COLORS.text2}}>
+                {d===0 ? 'Todos' : `-${d}%+`}
               </Text>
             </TouchableOpacity>
           ))}

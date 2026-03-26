@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, apiUpload, apiPost, detectStore, applyAffiliateTag } from '../utils';
+import { COLORS, apiUpload, apiPost, apiGet, detectStore, applyAffiliateTag } from '../utils';
 
 const CATS = [
   {key:'tecnologia',label:'Tecnología',emoji:'💻'},
@@ -13,23 +13,42 @@ const CATS = [
   {key:'hogar',label:'Hogar',emoji:'🏠'},
   {key:'alimentacion',label:'Alimentación',emoji:'🛒'},
   {key:'viajes',label:'Viajes',emoji:'✈️'},
+  {key:'deportes',label:'Deportes',emoji:'⚽'},
+  {key:'belleza',label:'Belleza',emoji:'💄'},
+  {key:'libros',label:'Libros',emoji:'📚'},
   {key:'otros',label:'Otros',emoji:'🏷️'},
 ];
 
 export default function AddDealModal({ visible, onClose, onSuccess }) {
-  const [title,    setTitle]    = useState('');
-  const [url,      setUrl]      = useState('');
-  const [price,    setPrice]    = useState('');
-  const [original, setOriginal] = useState('');
-  const [store,    setStore]    = useState('');
-  const [cat,      setCat]      = useState('otros');
-  const [images,   setImages]   = useState([]); // multiple photos
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState('');
+  const [title,      setTitle]      = useState('');
+  const [url,        setUrl]        = useState('');
+  const [price,      setPrice]      = useState('');
+  const [original,   setOriginal]   = useState('');
+  const [store,      setStore]      = useState('');
+  const [cat,        setCat]        = useState('otros');
+  const [images,     setImages]     = useState([]);
+  const [loading,    setLoading]    = useState(false);
+  const [error,      setError]      = useState('');
+  const [duplicates, setDuplicates] = useState([]);
+  const [dupLoading, setDupLoading] = useState(false);
+  const [confirmed,  setConfirmed]  = useState(false); // user confirmed despite duplicate
 
   function reset() {
     setTitle(''); setUrl(''); setPrice(''); setOriginal('');
     setStore(''); setCat('otros'); setImages([]); setError('');
+    setDuplicates([]); setConfirmed(false);
+  }
+
+  // Check for duplicates after URL or title changes (debounced)
+  async function checkDuplicates(checkUrl, checkTitle) {
+    if ((!checkUrl || checkUrl.length < 10) && (!checkTitle || checkTitle.length < 5)) return;
+    setDupLoading(true);
+    try {
+      const res = await apiPost('/api/deals/check-duplicate', { url: checkUrl, title: checkTitle });
+      setDuplicates(res?.duplicates || []);
+      if (res?.duplicates?.length > 0) setConfirmed(false);
+    } catch {}
+    finally { setDupLoading(false); }
   }
 
   async function pickImage() {
@@ -58,13 +77,20 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
     if (!title.trim()) return setError('El título es obligatorio');
     if (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0) return setError('Introduce un precio válido');
     if (url.trim() && !url.trim().startsWith('http')) return setError('La URL debe empezar por http:// o https://');
-    // Image optional but strongly recommended
+
+    // Block if duplicates found and not confirmed
+    if (duplicates.length > 0 && !confirmed) {
+      return setError('Ya existe un chollo similar. Confirma que es diferente para publicarlo.');
+    }
+
     setLoading(true);
     try {
       const detectedStore = store.trim() || detectStore(url) || '';
+      // Silently apply affiliate tag (user doesn't see this)
+      const finalUrl = url.trim() ? applyAffiliateTag(url.trim()) : '';
       const res = await apiUpload('/api/deals', {
         title: title.trim(),
-        url: url.trim() ? applyAffiliateTag(url.trim()) : '',
+        url: finalUrl,
         deal_price: parseFloat(price),
         original_price: original && parseFloat(original) > 0 ? parseFloat(original) : '',
         store: detectedStore,
@@ -80,7 +106,7 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
     setUrl(v);
     const s = detectStore(v);
     if (s) setStore(s);
-    // Auto-detect category from URL/store
+    // Auto-detect category
     const url_low = v.toLowerCase();
     const store_low = (s||'').toLowerCase();
     const catGuess =
@@ -94,6 +120,37 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
       /(libro|fnac|book|amazon.*book|audible)/i.test(url_low) ? 'libros' :
       /(coches|motor|automocion|pcm|leasing|coche)/i.test(url_low) ? 'coches' : null;
     if (catGuess) setCat(catGuess);
+
+    if (v.startsWith('http') && v.length > 20) {
+      // Duplicate check
+      clearTimeout(window._dupTimer);
+      window._dupTimer = setTimeout(() => checkDuplicates(v, title), 800);
+
+      // Amazon PA API autofill — if Amazon URL and no title yet
+      if ((v.includes('amazon.es') || v.includes('amazon.com') || v.includes('amzn')) && !title) {
+        clearTimeout(window._amazonTimer);
+        window._amazonTimer = setTimeout(async () => {
+          try {
+            const { API_BASE } = await import('../utils');
+            const res = await fetch(`${API_BASE}/api/amazon/product?url=${encodeURIComponent(v)}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.title && !title) setTitle(data.title);
+              if (data.price && !price) setPrice(String(data.price));
+              if (data.originalPrice && !original) setOriginal(String(data.originalPrice));
+            }
+          } catch {}
+        }, 1500);
+      }
+    }
+  }
+
+  function handleTitleChange(v) {
+    setTitle(v);
+    if (v.length > 8) {
+      clearTimeout(window._dupTitleTimer);
+      window._dupTitleTimer = setTimeout(() => checkDuplicates(url, v), 1200);
+    }
   }
 
   const disc = price && original && !isNaN(+price) && !isNaN(+original) && +original > +price
@@ -145,17 +202,52 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
               </ScrollView>
             </View>
 
-            {/* URL — autodetects store */}
+            {/* URL — autodetects store + duplicate check */}
             <Field label="URL del producto">
               <TextInput style={s.input} value={url} onChangeText={handleUrlChange}
                 placeholder="https://amazon.es/..." keyboardType="url" autoCapitalize="none"
                 placeholderTextColor={COLORS.text3}/>
             </Field>
             {store ? <Text style={s.storeDetected}>🏪 Detectado: {store}</Text> : null}
+            {dupLoading && <Text style={{fontSize:11,color:COLORS.text3,marginBottom:8}}>🔍 Comprobando duplicados...</Text>}
+
+            {/* DUPLICATE WARNING — Chollometro style */}
+            {duplicates.length > 0 && !confirmed && (
+              <View style={s.dupWarning}>
+                <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8}}>
+                  <Ionicons name="warning" size={18} color="#D97706"/>
+                  <Text style={{fontSize:14,fontWeight:'700',color:'#92400E'}}>
+                    ⚠️ Ya existe {duplicates.length} chollo similar
+                  </Text>
+                </View>
+                {duplicates.slice(0,2).map(d => (
+                  <View key={d.id} style={s.dupItem}>
+                    {d.image_url ? <Image source={{uri:d.image_url}} style={s.dupImg}/> : <Text style={{fontSize:20}}>🏷️</Text>}
+                    <View style={{flex:1}}>
+                      <Text style={{fontSize:12,fontWeight:'600',color:'#92400E'}} numberOfLines={2}>{d.title}</Text>
+                      <Text style={{fontSize:11,color:'#B45309'}}>{d.deal_price}€ · {d.store || 'Sin tienda'}</Text>
+                      <Text style={{fontSize:10,color:'#B45309',opacity:0.7}}>{d.match_type === 'url_exacta' ? '🔗 URL idéntica' : `📝 ${d.similarity}% similar`}</Text>
+                    </View>
+                  </View>
+                ))}
+                <Text style={{fontSize:12,color:'#92400E',marginBottom:8}}>
+                  Si tu chollo tiene diferente precio o condición, puedes publicarlo igualmente.
+                </Text>
+                <TouchableOpacity style={s.dupConfirmBtn} onPress={() => setConfirmed(true)}>
+                  <Text style={{color:'#D97706',fontWeight:'700',fontSize:13}}>✓ Es diferente, publicar igualmente</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {confirmed && duplicates.length > 0 && (
+              <View style={{backgroundColor:'#DCFCE7',borderRadius:8,padding:8,marginBottom:8,flexDirection:'row',alignItems:'center',gap:6}}>
+                <Ionicons name="checkmark-circle" size={14} color="#16A34A"/>
+                <Text style={{fontSize:12,color:'#166534'}}>Confirmado — publicarás tu chollo aunque sea similar</Text>
+              </View>
+            )}
 
             {/* Title */}
             <Field label="Título *">
-              <TextInput style={s.input} value={title} onChangeText={setTitle}
+              <TextInput style={s.input} value={title} onChangeText={handleTitleChange}
                 placeholder="Ej: TV Samsung 55'' 4K a mitad de precio"
                 placeholderTextColor={COLORS.text3} maxLength={120}/>
             </Field>
@@ -252,4 +344,9 @@ const s = StyleSheet.create({
   errTxt:{flex:1,color:COLORS.danger,fontSize:13},
   submitBtn:{backgroundColor:COLORS.danger,borderRadius:14,paddingVertical:16,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,shadowColor:COLORS.danger,shadowOffset:{width:0,height:4},shadowOpacity:0.3,shadowRadius:8,elevation:4},
   submitTxt:{color:'#fff',fontWeight:'700',fontSize:16},
+  // Duplicate warning styles
+  dupWarning:{backgroundColor:'#FFFBEB',borderRadius:12,padding:12,marginBottom:12,borderWidth:1.5,borderColor:'#FCD34D'},
+  dupItem:{flexDirection:'row',gap:10,alignItems:'flex-start',backgroundColor:'#FEF3C7',borderRadius:8,padding:8,marginBottom:6},
+  dupImg:{width:44,height:44,borderRadius:6,backgroundColor:COLORS.bg3},
+  dupConfirmBtn:{borderWidth:1.5,borderColor:'#D97706',borderRadius:8,padding:8,alignItems:'center'},
 });

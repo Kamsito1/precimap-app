@@ -31,10 +31,11 @@ const CATS = [
   { key:'all',          label:'Todo',        emoji:'🏙️' },
   { key:'gasolinera',   label:'Gasolina',    emoji:'⛽' },
   { key:'supermercado', label:'Súper',        emoji:'🛒' },
+  { key:'farmacia',     label:'Farmacia',     emoji:'💊' },
+  { key:'restaurante',  label:'Restaurantes', emoji:'🍽️' },
   { key:'bar',          label:'Bares',        emoji:'🍺' },
   { key:'cafe',         label:'Cafés',        emoji:'☕' },
-  { key:'farmacia',     label:'Farmacias',    emoji:'💊' },
-  { key:'restaurante',  label:'Restaurantes', emoji:'🍕' },
+  { key:'evento',       label:'Eventos',      emoji:'🎭' },
 ];
 
 const SORT_OPTS = [
@@ -73,12 +74,14 @@ export default function MapScreen() {
   const [priceChangePlace, setPriceChangePlace] = useState(null);
   const [mapRegion, setMapRegion]   = useState(null); // current visible region
   const [allGas, setAllGas]         = useState([]);
+  const [nearbyGasLoaded, setNearbyGasLoaded] = useState(false); // carga progresiva
+  const [mapEvents, setMapEvents]   = useState([]); // eventos en el mapa
   const [serverFuelStats, setServerFuelStats] = useState(null);
   const [favStations, setFavStations] = useState([]); // from AsyncStorage
   const [showFavsOnly, setShowFavsOnly] = useState(false);
   const mapRef = useRef(null);
 
-  useEffect(() => { initLocation(); loadAllGasolineras(); loadFuelStats(); loadFavs(); }, []);
+  useEffect(() => { initLocation(); loadFuelStats(); loadFavs(); loadEvents(); }, []);
 
   // Show first-time hint after 3 seconds
   useEffect(() => {
@@ -101,27 +104,74 @@ export default function MapScreen() {
   // Load ALL gasolineras once into client cache (server already has them cached at 5ms)
   async function loadFuelStats() {
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
       const data = await apiGet('/api/gasolineras/stats');
+      clearTimeout(timeout);
       if (data?.stats) setServerFuelStats(data.stats);
-    } catch {}
+    } catch { setServerError(true); }
   }
 
-  async function loadAllGasolineras() {
+  async function loadAllGasolineras(userCoords) {
     setGasLoading(true);
     setLoadProgress(5);
-    // Fake progress animation while waiting for server cache
-    const prog = setInterval(() => setLoadProgress(p => Math.min(p + 3, 90)), 1000);
+    const prog = setInterval(() => setLoadProgress(p => {
+      if (p < 30) return p + 8;
+      if (p < 60) return p + 4;
+      if (p < 85) return p + 1;
+      return p;
+    }), 500);
     try {
+      // CARGA PROGRESIVA: primero las cercanas si tenemos ubicación
+      if (userCoords) {
+        const { lat, lng } = userCoords;
+        const nearbyData = await apiGet(`/api/gasolineras?lat=${lat}&lng=${lng}&radius=30`) || [];
+        if (nearbyData.length > 0) {
+          setAllGas(nearbyData);
+          setNearbyGasLoaded(true);
+          setLoadProgress(40);
+        }
+      }
+      // Luego carga completa en background
       const data = await apiGet('/api/gasolineras') || [];
       clearInterval(prog);
       setLoadProgress(100);
       setAllGas(data);
+      setNearbyGasLoaded(false);
       setServerError(false);
     } catch {
       clearInterval(prog);
       setServerError(true);
     }
     finally { setGasLoading(false); }
+  }
+
+  async function loadEvents() {
+    try {
+      const data = await apiGet('/api/events?limit=50&upcoming=1') || [];
+      // Geocode events by city using city coords lookup
+      const CITY_COORDS = {
+        'Madrid': {lat:40.4168,lng:-3.7038}, 'Barcelona': {lat:41.3851,lng:2.1734},
+        'Sevilla': {lat:37.3886,lng:-5.9823}, 'Valencia': {lat:39.4699,lng:-0.3763},
+        'Bilbao': {lat:43.2630,lng:-2.9350}, 'Málaga': {lat:36.7213,lng:-4.4213},
+        'Zaragoza': {lat:41.6488,lng:-0.8891}, 'Murcia': {lat:37.9838,lng:-1.1332},
+        'Palma': {lat:39.5696,lng:2.6502}, 'Granada': {lat:37.1773,lng:-3.5986},
+        'Córdoba': {lat:37.8882,lng:-4.7794}, 'Alicante': {lat:38.3452,lng:-0.4810},
+        'Valladolid': {lat:41.6523,lng:-4.7245}, 'Vigo': {lat:42.2314,lng:-8.7124},
+        'Gijón': {lat:43.5453,lng:-5.6615}, 'Pamplona': {lat:42.8125,lng:-1.6458},
+        'Jerez de la Frontera': {lat:36.6869,lng:-6.1372},
+        'Salamanca': {lat:40.9701,lng:-5.6635}, 'Toledo': {lat:39.8628,lng:-4.0273},
+        'San Sebastián': {lat:43.3183,lng:-1.9812},
+      };
+      const withCoords = data
+        .map(e => {
+          const coords = CITY_COORDS[e.city];
+          if (!coords && !e.lat) return null;
+          return { ...e, lat: e.lat || coords.lat, lng: e.lng || coords.lng };
+        })
+        .filter(Boolean);
+      setMapEvents(withCoords);
+    } catch {}
   }
 
   async function initLocation() {
@@ -132,8 +182,15 @@ export default function MapScreen() {
         const { latitude: lat, longitude: lng } = loc.coords;
         setUserLoc({ lat, lng });
         mapRef.current?.animateToRegion({ latitude:lat, longitude:lng, latitudeDelta:0.06, longitudeDelta:0.06 }, 1000);
+        // Carga progresiva — primero las cercanas al usuario
+        loadAllGasolineras({ lat, lng });
+      } else {
+        // Sin permiso de ubicación — carga directa de toda España
+        loadAllGasolineras(null);
       }
-    } catch {}
+    } catch {
+      loadAllGasolineras(null);
+    }
   }
 
   async function loadPlaces() {
@@ -236,19 +293,24 @@ export default function MapScreen() {
           {!Object.keys(fuelStats).length ? (
             <View style={{flex:1,alignItems:'center',justifyContent:'center',gap:16,paddingHorizontal:40}}>
               <Text style={{fontSize:48}}>⛽</Text>
-              <Text style={{fontSize:17,fontWeight:'700',color:COLORS.text}}>Conectando...</Text>
+              <Text style={{fontSize:17,fontWeight:'700',color:COLORS.text}}>Cargando precios...</Text>
               <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center'}}>
-                Obteniendo precios de 12.000+ estaciones del Ministerio
+                Conectando con el servidor de gasolineras del Ministerio
               </Text>
-              <ActivityIndicator color={COLORS.primary} style={{marginTop:8}}/>
-              {loadProgress > 0 && (
+              <ActivityIndicator color={COLORS.primary} size="large" style={{marginTop:4}}/>
+              {loadProgress > 0 && loadProgress < 100 && (
                 <>
                   <View style={{width:'100%',height:6,backgroundColor:COLORS.border,borderRadius:99,overflow:'hidden'}}>
                     <View style={{width:`${loadProgress}%`,height:'100%',backgroundColor:COLORS.primary,borderRadius:99}}/>
                   </View>
-                  <Text style={{fontSize:12,color:COLORS.text3}}>{loadProgress}%</Text>
+                  <Text style={{fontSize:12,color:COLORS.text3}}>{loadProgress}% · 12.214 gasolineras</Text>
                 </>
               )}
+              <TouchableOpacity
+                style={{marginTop:8,paddingHorizontal:24,paddingVertical:12,backgroundColor:COLORS.primaryLight,borderRadius:12,borderWidth:1.5,borderColor:COLORS.primary}}
+                onPress={() => { setLoadProgress(0); loadFuelStats(); loadAllGasolineras(); }}>
+                <Text style={{color:COLORS.primary,fontWeight:'700',fontSize:14}}>🔄 Reintentar</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <ScrollView contentContainerStyle={{padding:16,gap:10,paddingBottom:60}}>
@@ -362,6 +424,67 @@ export default function MapScreen() {
           ))}
         </ScrollView>
 
+        {/* Barra de búsqueda de producto — visible cuando se selecciona Súper o Farmacia */}
+        {(activeCat === 'supermercado' || activeCat === 'farmacia') && (
+          <View style={{paddingHorizontal:12,paddingBottom:8}}>
+            <View style={{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg3,borderRadius:12,borderWidth:1.5,borderColor:product?COLORS.primary:COLORS.border,paddingHorizontal:10,gap:6}}>
+              <Text style={{fontSize:16}}>{activeCat==='farmacia'?'💊':'🔍'}</Text>
+              <TextInput
+                style={{flex:1,paddingVertical:9,fontSize:14,color:COLORS.text}}
+                value={product}
+                onChangeText={setProduct}
+                placeholder={activeCat==='farmacia' ? 'Buscar medicamento... (ibuprofeno, paracetamol...)' : 'Buscar producto... (leche, huevos, aceite...)'}
+                placeholderTextColor={COLORS.text3}
+                returnKeyType="search"
+                onSubmitEditing={loadPlaces}
+              />
+              {product ? (
+                <TouchableOpacity onPress={()=>{setProduct('');loadPlaces();}}>
+                  <Ionicons name="close-circle" size={18} color={COLORS.text3}/>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+            {activeCat === 'supermercado' && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingTop:6}}>
+                {['leche','huevos','aceite','pan','agua','pollo','arroz','pasta','fruta','verdura','atún','yogur'].map(p=>(
+                  <TouchableOpacity key={p}
+                    style={{paddingHorizontal:10,paddingVertical:4,borderRadius:12,borderWidth:1,
+                      borderColor:product===p?COLORS.primary:COLORS.border,
+                      backgroundColor:product===p?COLORS.primaryLight:COLORS.bg}}
+                    onPress={()=>{setProduct(product===p?'':p); setTimeout(loadPlaces,100);}}>
+                    <Text style={{fontSize:12,fontWeight:'600',color:product===p?COLORS.primary:COLORS.text2}}>{p}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+            {activeCat === 'farmacia' && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingTop:6}}>
+                {['ibuprofeno','paracetamol','amoxicilina','omeprazol','loratadina','vitamina C','colágeno','magnesio'].map(p=>(
+                  <TouchableOpacity key={p}
+                    style={{paddingHorizontal:10,paddingVertical:4,borderRadius:12,borderWidth:1,
+                      borderColor:product===p?COLORS.primary:COLORS.border,
+                      backgroundColor:product===p?COLORS.primaryLight:COLORS.bg}}
+                    onPress={()=>{setProduct(product===p?'':p); setTimeout(loadPlaces,100);}}>
+                    <Text style={{fontSize:12,fontWeight:'600',color:product===p?COLORS.primary:COLORS.text2}}>{p}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        )}
+
+        {/* Eventos badge cuando está activo */}
+        {activeCat === 'evento' && (
+          <View style={{paddingHorizontal:12,paddingBottom:8,flexDirection:'row',alignItems:'center',gap:8}}>
+            <View style={{flex:1,backgroundColor:'#EDE9FE',borderRadius:10,padding:10,flexDirection:'row',gap:8,alignItems:'center'}}>
+              <Text style={{fontSize:16}}>🎭</Text>
+              <Text style={{fontSize:12,color:'#7C3AED',fontWeight:'600',flex:1}}>
+                {mapEvents.length} eventos próximos en el mapa · Toca un pin para ver detalles
+              </Text>
+            </View>
+          </View>
+        )}
+
         {/* City quick filter — shown when active or always in collapsed form */}
         <View style={{paddingHorizontal:12,paddingBottom:city ? 8 : 4}}>
           <CityPicker
@@ -463,6 +586,19 @@ export default function MapScreen() {
                 </Marker>
               );
             })}
+            {/* Eventos en el mapa */}
+            {(activeCat === 'all' || activeCat === 'evento') && mapEvents.map(e => (
+              <Marker key={`ev${e.id}`} coordinate={{latitude:e.lat, longitude:e.lng}}
+                onPress={() => Alert.alert(
+                  `🎭 ${e.title}`,
+                  `📍 ${e.city}\n📅 ${e.date ? new Date(e.date).toLocaleDateString('es-ES') : ''}\n💶 ${e.price ? `Desde ${e.price}€` : 'Gratis'}`,
+                  [{text:'Ver evento', onPress:()=>{}}, {text:'Cerrar'}]
+                )}>
+                <View style={[ms.marker, {backgroundColor:'#EDE9FE', borderColor:'#7C3AED', borderWidth:2}]}>
+                  <Text style={{fontSize:14}}>🎭</Text>
+                </View>
+              </Marker>
+            ))}
             {/* Gas stations — color based on G95 or Diesel ONLY (not GLP/GNC) */}
             {mapGas.map(s => {
               // Use selected fuel price if available, otherwise best available
@@ -529,11 +665,20 @@ export default function MapScreen() {
             </View>
           )}
 
-          {/* Loading bar — initial load of ALL stations */}
+          {/* Loading bar — initial load + progressive */}
           {gasLoading && (
             <View style={ms.loadBar}>
               <ActivityIndicator size="small" color={COLORS.warning}/>
-              <Text style={ms.loadTxt}>Cargando 12.000+ gasolineras de España...</Text>
+              <Text style={ms.loadTxt}>
+                {nearbyGasLoaded
+                  ? `Cargando toda España... ${loadProgress}%`
+                  : `Cargando gasolineras cercanas...`}
+              </Text>
+              {loadProgress > 0 && (
+                <View style={{width:60,height:4,backgroundColor:COLORS.border,borderRadius:99,marginLeft:6,overflow:'hidden'}}>
+                  <View style={{width:`${loadProgress}%`,height:'100%',backgroundColor:COLORS.warning,borderRadius:99}}/>
+                </View>
+              )}
             </View>
           )}
 

@@ -256,7 +256,7 @@ export default function ProfileScreen() {
           <Text style={s.guestSub}>La app de ahorro de España</Text>
         </View>
         <View style={s.statsRow}>
-          {[['11.000+','Gasolineras'],['🆓','100% Gratis'],['🇪🇸','Toda España']].map(([n,l])=>(
+          {[['12.214+','Gasolineras'],['🆓','100% Gratis'],['🇪🇸','Toda España']].map(([n,l])=>(
             <View key={l} style={s.statBox}><Text style={s.statNum}>{n}</Text><Text style={s.statLbl}>{l}</Text></View>
           ))}
         </View>
@@ -669,7 +669,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           ))}
           <Text style={{fontSize:11,color:COLORS.text3,marginTop:10,textAlign:'center'}}>
-            PreciMap v3.2.0 · Hecho con ❤️ en España
+            PreciMap v1.2.2 · Hecho con ❤️ en España
           </Text>
         </Section>
 

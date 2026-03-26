@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>PreciMap</title>
+  <style>
+    html,body,#root{width:100%;height:100%;margin:0;padding:0;}
+    #__error{display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#1a1a1a;color:#ff6b6b;font:12px monospace;padding:16px;max-height:60vh;overflow:auto;white-space:pre-wrap;border-bottom:2px solid #ff6b6b;}
+  </style>
+  <script>
+    var __capturedErrors = [];
+    function showError(msg) {
+      __capturedErrors.push(msg);
+      var el = document.getElementById('__error');
+      if (el) { el.style.display='block'; el.textContent = __capturedErrors.join('\n---\n'); }
+    }
+    window.onerror = function(msg,src,line,col,err) {
+      showError('ERROR: ' + msg + '\nAt: ' + src + ':' + line + '\n' + (err&&err.stack||''));
+      return false;
+    };
+    window.onunhandledrejection = function(e) {
+      showError('REJECTION: ' + (e.reason&&e.reason.stack||e.reason||'unknown'));
+    };
+    // Patch console.error too
+    var _ce = console.error;
+    console.error = function() {
+      var msg = Array.from(arguments).map(function(a){return typeof a==='object'?JSON.stringify(a):String(a);}).join(' ');
+      if (msg.indexOf('Warning') === -1) showError('console.error: ' + msg.slice(0,500));
+      _ce.apply(console, arguments);
+    };
+  </script>
+</head>
+<body>
+  <div id="__error"></div>
+  <div id="root"></div>
+</body>
+</html>

@@ -5,11 +5,13 @@ import { COLORS, apiGet } from '../utils';
 import BanksScreen from './BanksScreen';
 import SupermarketsScreen from './SupermarketsScreen';
 import FlightSearchScreen from './FlightSearchScreen';
+import AppsScreen from './AppsScreen';
 
 const SUBTABS = [
   { key: 'super',   label: '🛒 Supermercados' },
   { key: 'vuelos',  label: '✈️ Vuelos' },
   { key: 'bancos',  label: '🏦 Bancos' },
+  { key: 'apps',    label: '💰 Apps' },
 ];
 
 const FALLBACK_TIPS = [
@@ -23,7 +25,7 @@ const FALLBACK_TIPS = [
 
 export default function AhorroScreen() {
   const [sub, setSub] = useState('super');
-  const [visited, setVisited] = useState({ super: true, vuelos: false, bancos: false });
+  const [visited, setVisited] = useState({ super: true, vuelos: false, bancos: false, apps: false });
   const [tips, setTips] = useState(FALLBACK_TIPS);
   const [tipIdx, setTipIdx] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -94,6 +96,11 @@ export default function AhorroScreen() {
         {visited.bancos && (
           <View style={{ flex: 1, display: sub === 'bancos' ? 'flex' : 'none' }}>
             <BanksScreen embedded />
+          </View>
+        )}
+        {visited.apps && (
+          <View style={{ flex: 1, display: sub === 'apps' ? 'flex' : 'none' }}>
+            <AppsScreen embedded />
           </View>
         )}
       </View>

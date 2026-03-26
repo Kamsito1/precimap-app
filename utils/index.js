@@ -2,8 +2,21 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-// Production: Railway URL | Development: local IP
-export const API_BASE = process.env.EXPO_PUBLIC_API_BASE || process.env.API_BASE || 'https://web-production-a8023.up.railway.app';
+// API URL — hardcoded para producción (Railway)
+// En desarrollo local usa la IP del Mac
+const DEV_API = 'http://192.168.18.139:3000';
+const PROD_API = 'https://web-production-a8023.up.railway.app';
+
+export const API_BASE = (() => {
+  // Si hay variable de entorno, úsala
+  if (process.env.EXPO_PUBLIC_API_BASE) return process.env.EXPO_PUBLIC_API_BASE;
+  if (process.env.API_BASE) return process.env.API_BASE;
+  // En web usa Railway siempre
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') return PROD_API;
+  // En nativo: si __DEV__ es true = metro local, si no = producción (TestFlight/AppStore)
+  if (typeof __DEV__ !== 'undefined' && !__DEV__) return PROD_API;
+  return DEV_API;
+})();
 
 // ─── COLORS — Static light theme (used in StyleSheet.create) ─────────────────
 // For dark mode support in individual components, use useThemeColors() hook

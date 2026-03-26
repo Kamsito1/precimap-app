@@ -111,6 +111,58 @@ const PRODUCTOS = [
   // HUEVOS
   { name:'Huevos L x12',             cat:'huevos',    aldi:1.89, lidl:1.99, mercadona:2.15, dia:2.05, carrefour:2.45 },
   { name:'Huevos M x12',             cat:'huevos',    aldi:1.69, lidl:1.79, mercadona:1.95, dia:1.85, carrefour:2.25 },
+  // CARNE EXTRA
+  { name:'Pavo filetes 500g',        cat:'carne',     aldi:3.49, lidl:3.29, mercadona:3.99, dia:3.85, carrefour:4.35 },
+  { name:'Salchichas Frankfurt x6',  cat:'carne',     aldi:0.89, lidl:0.95, mercadona:1.19, dia:1.09, carrefour:1.45 },
+  { name:'Jamón York 200g',          cat:'carne',     aldi:1.35, lidl:1.45, mercadona:1.65, dia:1.55, carrefour:1.99 },
+  { name:'Chorizo extra 200g',       cat:'carne',     aldi:1.55, lidl:1.65, mercadona:1.89, dia:1.79, carrefour:2.25 },
+  // LÁCTEOS EXTRA
+  { name:'Yogur de frutas x4',       cat:'lácteos',   aldi:0.75, lidl:0.79, mercadona:0.99, dia:0.89, carrefour:1.25 },
+  { name:'Queso lonchas x8',         cat:'lácteos',   aldi:1.05, lidl:1.15, mercadona:1.35, dia:1.25, carrefour:1.65 },
+  { name:'Mozzarella 125g',          cat:'lácteos',   aldi:0.79, lidl:0.85, mercadona:0.99, dia:0.95, carrefour:1.19 },
+  { name:'Nata líquida 200ml',       cat:'lácteos',   aldi:0.69, lidl:0.75, mercadona:0.89, dia:0.85, carrefour:1.05 },
+  // VERDURA EXTRA
+  { name:'Lechuga iceberg',          cat:'verdura',   aldi:0.89, lidl:0.79, mercadona:0.99, dia:0.95, carrefour:1.19 },
+  { name:'Zanahorias 1kg',           cat:'verdura',   aldi:0.65, lidl:0.69, mercadona:0.85, dia:0.79, carrefour:0.99 },
+  { name:'Brócoli 500g',             cat:'verdura',   aldi:0.99, lidl:0.89, mercadona:1.25, dia:1.15, carrefour:1.45 },
+  { name:'Espinacas bolsa 300g',     cat:'verdura',   aldi:1.19, lidl:1.09, mercadona:1.35, dia:1.25, carrefour:1.59 },
+  { name:'Pimientos rojos 1kg',      cat:'verdura',   aldi:1.79, lidl:1.69, mercadona:2.15, dia:1.99, carrefour:2.45 },
+  { name:'Champiñones 500g',         cat:'verdura',   aldi:1.35, lidl:1.29, mercadona:1.59, dia:1.49, carrefour:1.89 },
+  // FRUTA EXTRA
+  { name:'Kiwis x6',                 cat:'fruta',     aldi:1.49, lidl:1.39, mercadona:1.79, dia:1.65, carrefour:1.99 },
+  { name:'Fresas 500g',              cat:'fruta',     aldi:1.89, lidl:1.79, mercadona:2.25, dia:2.09, carrefour:2.49 },
+  { name:'Uvas 500g',                cat:'fruta',     aldi:1.59, lidl:1.49, mercadona:1.99, dia:1.79, carrefour:2.19 },
+  { name:'Sandía 1/2',               cat:'fruta',     aldi:1.99, lidl:1.89, mercadona:2.45, dia:2.25, carrefour:2.79 },
+  // BÁSICOS EXTRA
+  { name:'Lentejas 500g',            cat:'básicos',   aldi:0.55, lidl:0.59, mercadona:0.75, dia:0.69, carrefour:0.89 },
+  { name:'Alubias blancas 500g',     cat:'básicos',   aldi:0.59, lidl:0.65, mercadona:0.79, dia:0.75, carrefour:0.95 },
+  { name:'Cous cous 500g',           cat:'básicos',   aldi:0.79, lidl:0.85, mercadona:0.99, dia:0.95, carrefour:1.19 },
+  { name:'Quinoa 400g',              cat:'básicos',   aldi:1.99, lidl:2.15, mercadona:2.45, dia:2.35, carrefour:2.89 },
+  { name:'Avena copos 500g',         cat:'desayuno',  aldi:0.89, lidl:0.95, mercadona:1.15, dia:1.05, carrefour:1.39 },
+  { name:'Miel 500g',                cat:'desayuno',  aldi:2.35, lidl:2.49, mercadona:2.79, dia:2.65, carrefour:3.15 },
+  // BEBIDAS EXTRA
+  { name:'Leche sin lactosa 1L',     cat:'bebidas',   aldi:0.89, lidl:0.95, mercadona:1.09, dia:1.05, carrefour:1.29 },
+  { name:'Té verde x20',             cat:'bebidas',   aldi:0.89, lidl:0.99, mercadona:1.15, dia:1.09, carrefour:1.45 },
+  { name:'Vino tinto 75cl',          cat:'bebidas',   aldi:2.99, lidl:3.25, mercadona:3.49, dia:3.35, carrefour:4.25 },
+  // LIMPIEZA EXTRA
+  { name:'Papel de cocina x3',       cat:'limpieza',  aldi:1.49, lidl:1.59, mercadona:1.75, dia:1.65, carrefour:2.15 },
+  { name:'Bolsas basura 30L x30',    cat:'limpieza',  aldi:1.19, lidl:1.25, mercadona:1.45, dia:1.35, carrefour:1.79 },
+  { name:'Fregasuelos 1.5L',         cat:'limpieza',  aldi:0.99, lidl:1.05, mercadona:1.19, dia:1.09, carrefour:1.45 },
+  // HIGIENE EXTRA
+  { name:'Desodorante roll-on 50ml', cat:'higiene',   aldi:0.99, lidl:1.05, mercadona:1.35, dia:1.25, carrefour:1.75 },
+  { name:'Afeitado gel 200ml',       cat:'higiene',   aldi:1.49, lidl:1.59, mercadona:1.89, dia:1.75, carrefour:2.35 },
+  { name:'Crema hidratante 200ml',   cat:'higiene',   aldi:1.89, lidl:2.05, mercadona:2.45, dia:2.25, carrefour:2.99 },
+  // ACEITES EXTRA
+  { name:'Aceite oliva suave 1L',    cat:'aceites',   aldi:3.99, lidl:4.19, mercadona:4.49, dia:4.35, carrefour:4.89 },
+  { name:'Vinagre de vino 750ml',    cat:'aceites',   aldi:0.59, lidl:0.65, mercadona:0.79, dia:0.75, carrefour:0.99 },
+  // CONSERVAS EXTRA
+  { name:'Guisantes 400g',           cat:'conservas', aldi:0.49, lidl:0.55, mercadona:0.65, dia:0.59, carrefour:0.79 },
+  { name:'Espárragos 200g',          cat:'conservas', aldi:1.09, lidl:1.19, mercadona:1.45, dia:1.35, carrefour:1.79 },
+  { name:'Almejas en salmuera',      cat:'conservas', aldi:1.85, lidl:1.99, mercadona:2.25, dia:2.15, carrefour:2.75 },
+  { name:'Mejillones escabeche',     cat:'conservas', aldi:0.99, lidl:1.09, mercadona:1.25, dia:1.19, carrefour:1.55 },
+  // CAFÉ EXTRA
+  { name:'Café cápsulas x10',        cat:'café',      aldi:1.89, lidl:2.09, mercadona:2.35, dia:2.25, carrefour:2.99 },
+  { name:'Café soluble 200g',        cat:'café',      aldi:3.49, lidl:3.75, mercadona:3.99, dia:3.89, carrefour:4.55 },
 ];
 
 // Best per category (computed from data above)

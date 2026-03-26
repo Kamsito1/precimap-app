@@ -1,0 +1,12 @@
+import React from 'react';
+import { View, Text } from 'react-native';
+const MapView = ({style, children}) => <View style={[{backgroundColor:'#e8f0e8',alignItems:'center',justifyContent:'center'}, style]}><Text style={{color:'#666',fontSize:13}}>🗺️ Mapa (solo disponible en iOS)</Text></View>;
+MapView.Marker = ({children}) => children || null;
+MapView.Callout = ({children}) => children || null;
+MapView.Circle = () => null;
+MapView.Polyline = () => null;
+export default MapView;
+export const Marker = MapView.Marker;
+export const Callout = MapView.Callout;
+export const Circle = MapView.Circle;
+export const PROVIDER_GOOGLE = 'google';
