@@ -163,7 +163,7 @@ export default function BanksScreen({ embedded = false }) {
 
         {/* Category filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{paddingHorizontal:12,gap:6,paddingBottom:10}}>
+          contentContainerStyle={{paddingHorizontal:12,gap:6,paddingBottom:6}}>
           {CATEGORIES.map(c => (
             <TouchableOpacity key={c.key} style={[s.catBtn, cat===c.key&&s.catBtnOn]} onPress={()=>setCat(c.key)}>
               <Text style={s.catEmoji}>{c.emoji}</Text>
