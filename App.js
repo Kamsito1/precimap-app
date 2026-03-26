@@ -61,7 +61,7 @@ function AppNavigator() {
             ? `🟢 G95 desde ${splashG95}€/L · ⛽ 12.213 gasolineras`
             : '🗺️ Gasolineras · Chollos · Supermercados'}
         </Text>
-        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v3.3.0</Text>
+        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v1.0.2</Text>
       </View>
     </View>
   );
