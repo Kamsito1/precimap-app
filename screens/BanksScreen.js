@@ -60,6 +60,57 @@ const BANK_OFFERS = [
     cta: 'Abrir cuenta BBVA',
     referral_type: 'code',
   },
+  {
+    id: 'myinvestor',
+    bank: 'MyInvestor',
+    logo: '🟣',
+    color: '#6D28D9',
+    emoji: '📊',
+    hot: true,
+    category: 'inversion',
+    title: 'Cuenta remunerada al 4.50% TAE + inversión sin comisión',
+    highlight: 'Hasta 4.50% TAE en cuenta remunerada + fondos indexados desde 10€',
+    conditions: [
+      'Cuenta remunerada al 4.50% TAE sin permanencia',
+      'Fondos indexados (Vanguard, iShares) sin comisión de custodia',
+      'Planes de pensiones y carteras indexadas',
+      'Sin comisiones de mantenimiento',
+      'Respaldado por Andbank — regulado por el BdE',
+    ],
+    bonus_label: '🎁 Código promocional: UNHO5',
+    url: 'https://newapp.myinvestor.es/do/signup?promotionalCode=UNHO5',
+    is_referral: true,
+    referral_note: '🟣 Usa el código promocional UNHO5 al registrarte',
+    referral_code: 'UNHO5',
+    last_checked: 'mar 2026',
+    cta: 'Abrir cuenta MyInvestor',
+    referral_type: 'code',
+  },
+  {
+    id: 'revolut',
+    bank: 'Revolut',
+    logo: '🖤',
+    color: '#191C1F',
+    emoji: '💳',
+    hot: false,
+    category: 'cuenta',
+    title: 'Revolut — sin comisiones en divisas + hasta 4% en ahorro',
+    highlight: 'Ideal para viajes y compras internacionales sin comisión de cambio',
+    conditions: [
+      'Sin comisiones en pagos en divisa extranjera (hasta 1.000€/mes en plan gratuito)',
+      'Cambio de divisa al tipo de mercado real',
+      'Hasta 4% anual en cuenta de ahorro (plan premium)',
+      'Tarjeta virtual instantánea, tarjeta física disponible',
+      'Transferencias internacionales baratas (SWIFT)',
+    ],
+    bonus_label: '🎁 Enlace de referido',
+    url: 'https://revolut.com/referral/?referral-code=juananmpu9&geo-redirect',
+    is_referral: true,
+    referral_note: '🖤 Regístrate con mi enlace y los dos obtenemos beneficios',
+    last_checked: 'mar 2026',
+    cta: 'Abrir cuenta Revolut',
+    referral_type: 'link',
+  },
 ];
 
 export default function BanksScreen({ embedded = false }) {
@@ -201,6 +252,8 @@ export default function BanksScreen({ embedded = false }) {
             </View>
             {[
               { bank:'Trade Republic', tae:4.00, color:'#0ADB83' },
+              { bank:'MyInvestor',     tae:4.50, color:'#6D28D9' },
+              { bank:'Revolut (premium)', tae:4.00, color:'#191C1F' },
               { bank:'BBVA (cuenta)', tae:0, color:'#004B9E', note:'Sin interés — sin comisiones + hasta 300€ bono' },
             ].map(({ bank, tae, color, note }) => {
               const amount = parseFloat(calcAmount) || 0;

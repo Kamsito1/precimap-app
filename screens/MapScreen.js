@@ -184,10 +184,20 @@ export default function MapScreen() {
         const { latitude: lat, longitude: lng } = loc.coords;
         setUserLoc({ lat, lng });
         mapRef.current?.animateToRegion({ latitude:lat, longitude:lng, latitudeDelta:0.06, longitudeDelta:0.06 }, 1000);
+        // Auto-set nearest city for non-gas categories
+        try {
+          const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+          const detectedCity = geo?.[0]?.city || geo?.[0]?.subregion || '';
+          if (detectedCity && !city) {
+            // Only auto-set if no city filter is already active
+            const KNOWN = ['Madrid','Barcelona','Sevilla','Valencia','Bilbao','Zaragoza','Málaga','Córdoba','Alicante','Murcia','Granada','Valladolid','Palma','Santander'];
+            const match = KNOWN.find(c => detectedCity.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(detectedCity.toLowerCase().slice(0,5)));
+            if (match) setCity(match);
+          }
+        } catch {}
         // Carga progresiva — primero las cercanas al usuario
         loadAllGasolineras({ lat, lng });
       } else {
-        // Sin permiso de ubicación — carga directa de toda España
         loadAllGasolineras(null);
       }
     } catch {

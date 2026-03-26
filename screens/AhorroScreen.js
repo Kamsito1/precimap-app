@@ -1,7 +1,8 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated, FlatList, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, FlatList, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, apiGet, openURL } from '../utils';
+import * as Location from 'expo-location';
+import { COLORS, apiGet, openURL, distanceKm } from '../utils';
 import BanksScreen from './BanksScreen';
 import SupermarketsScreen from './SupermarketsScreen';
 import FlightSearchScreen from './FlightSearchScreen';
@@ -126,94 +127,135 @@ const s = StyleSheet.create({
 });
 
 // ─── GymScreen embebido ────────────────────────────────────────────────────────
-const GYM_REF = 30; // media España cuota mensual ~30€
+const GYM_REF = 30;
 const CITIES_GYM = ['Toda España','Madrid','Barcelona','Sevilla','Valencia','Bilbao','Zaragoza','Málaga','Córdoba'];
 
 function GymScreen() {
-  const [gyms, setGyms]       = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [city, setCity]       = useState('');
-  const [sort, setSort]       = useState('price');
+  const [gyms, setGyms]         = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [city, setCity]         = useState('');
+  const [userLoc, setUserLoc]   = useState(null);
+  const [locCity, setLocCity]   = useState(''); // detected city from GPS
+
+  // Get user location on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') return;
+        const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        const { latitude: lat, longitude: lng } = loc.coords;
+        setUserLoc({ lat, lng });
+        // Reverse geocode to get city name
+        const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+        const detectedCity = geo?.[0]?.city || geo?.[0]?.subregion || '';
+        if (detectedCity) {
+          // Match to known cities
+          const match = CITIES_GYM.find(c => c !== 'Toda España' && detectedCity.toLowerCase().includes(c.toLowerCase()));
+          if (match) { setLocCity(match); setCity(match); }
+        }
+      } catch {}
+    })();
+  }, []);
 
   useEffect(() => { load(); }, [city]);
 
   async function load() {
     setLoading(true);
     try {
-      let url = `/api/places?cat=gimnasio&sort=${sort}`;
+      let url = `/api/places?cat=gimnasio&sort=price`;
       if (city) url += `&city=${encodeURIComponent(city)}`;
       const data = await apiGet(url);
-      setGyms(Array.isArray(data) ? data : []);
+      let list = Array.isArray(data) ? data : [];
+      // Add distance if user loc available
+      if (userLoc) {
+        list = list.map(g => ({ ...g, _dist: g.lat && g.lng ? distanceKm(userLoc.lat, userLoc.lng, g.lat, g.lng) : null }));
+      }
+      setGyms(list);
     } catch {} finally { setLoading(false); }
   }
 
   const badge = (price) => {
     if (!price) return null;
-    if (price < GYM_REF * 0.8)  return { label:'🟢 Barato',   bg:'#DCFCE7', color:'#16A34A' };
-    if (price > GYM_REF * 1.2)  return { label:'🔴 Caro',     bg:'#FEE2E2', color:'#DC2626' };
-    return                              { label:'🟡 Medio',    bg:'#FEF9C3', color:'#CA8A04' };
+    if (price < GYM_REF * 0.8) return { label:'🟢 Barato', bg:'#DCFCE7', color:'#16A34A' };
+    if (price > GYM_REF * 1.2) return { label:'🔴 Caro',   bg:'#FEE2E2', color:'#DC2626' };
+    return { label:'🟡 Precio medio', bg:'#FEF9C3', color:'#CA8A04' };
   };
 
   return (
     <View style={{ flex:1, backgroundColor: COLORS.bg }}>
-      {/* Header info */}
-      <View style={{ backgroundColor:'#EDE9FE', margin:12, borderRadius:12, padding:12, flexDirection:'row', gap:10, alignItems:'center' }}>
-        <Text style={{ fontSize:24 }}>💪</Text>
+      {/* Header */}
+      <View style={{ backgroundColor:'#EDE9FE', marginHorizontal:12, marginTop:10, marginBottom:8, borderRadius:12, padding:12, flexDirection:'row', gap:10, alignItems:'center' }}>
+        <Text style={{ fontSize:22 }}>💪</Text>
         <View style={{ flex:1 }}>
-          <Text style={{ fontSize:13, fontWeight:'700', color:'#4C1D95' }}>Gimnasios más baratos de España</Text>
-          <Text style={{ fontSize:11, color:'#6D28D9', marginTop:2 }}>Ordenados por cuota mensual · media ~30€/mes</Text>
+          <Text style={{ fontSize:13, fontWeight:'700', color:'#4C1D95' }}>
+            Gimnasios más baratos
+            {locCity ? ` · 📍 ${locCity}` : ' de España'}
+          </Text>
+          <Text style={{ fontSize:11, color:'#6D28D9', marginTop:1 }}>Ordenados por cuota mensual · media ~30€/mes</Text>
         </View>
       </View>
 
-      {/* City filter */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal:12, gap:8, paddingBottom:8 }}>
-        {CITIES_GYM.map(c => {
-          const active = (c === 'Toda España' ? '' : c) === city;
-          return (
-            <TouchableOpacity key={c}
-              style={{ paddingHorizontal:12, paddingVertical:6, borderRadius:99, borderWidth:1.5,
-                borderColor: active ? '#7C3AED' : COLORS.border,
-                backgroundColor: active ? '#EDE9FE' : COLORS.bg2 }}
-              onPress={() => setCity(c === 'Toda España' ? '' : c)}>
-              <Text style={{ fontSize:12, fontWeight:'700', color: active ? '#7C3AED' : COLORS.text2 }}>{c}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
+      {/* City pills — compact row */}
+      <View style={{ marginHorizontal:12, marginBottom:10 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap:6 }}>
+          {CITIES_GYM.map(c => {
+            const val = c === 'Toda España' ? '' : c;
+            const active = val === city;
+            const isDetected = c === locCity;
+            return (
+              <TouchableOpacity key={c}
+                style={{ paddingHorizontal:10, paddingVertical:5, borderRadius:8, borderWidth:1.5,
+                  borderColor: active ? '#7C3AED' : isDetected ? '#A78BFA' : COLORS.border,
+                  backgroundColor: active ? '#7C3AED' : isDetected ? '#F5F3FF' : COLORS.bg2,
+                  flexDirection:'row', alignItems:'center', gap:3 }}
+                onPress={() => setCity(val)}>
+                {isDetected && !active && <Text style={{ fontSize:9 }}>📍</Text>}
+                <Text style={{ fontSize:12, fontWeight:'700', color: active ? '#fff' : isDetected ? '#7C3AED' : COLORS.text2 }}>{c}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {loading
         ? <ActivityIndicator color="#7C3AED" style={{ marginTop:40 }} />
         : gyms.length === 0
-          ? <View style={{ alignItems:'center', paddingTop:60, gap:8 }}>
+          ? <View style={{ alignItems:'center', paddingTop:50, gap:8 }}>
               <Text style={{ fontSize:32 }}>💪</Text>
               <Text style={{ fontSize:15, color:COLORS.text2, fontWeight:'600' }}>Sin gimnasios en {city||'España'}</Text>
+              <TouchableOpacity onPress={() => setCity('')} style={{ marginTop:8, backgroundColor:COLORS.primaryLight, borderRadius:8, paddingHorizontal:14, paddingVertical:8 }}>
+                <Text style={{ fontSize:13, color:COLORS.primary, fontWeight:'700' }}>Ver toda España</Text>
+              </TouchableOpacity>
             </View>
           : <FlatList
               data={gyms}
               keyExtractor={g => String(g.id)}
-              contentContainerStyle={{ padding:12, gap:10, paddingBottom:100 }}
+              contentContainerStyle={{ paddingHorizontal:12, paddingBottom:100, gap:8 }}
               renderItem={({ item: g, index }) => {
                 const b = badge(g.repPrice);
+                const dist = g._dist != null && g._dist < 200 ? (g._dist < 1 ? `${Math.round(g._dist*1000)}m` : `${g._dist.toFixed(1)}km`) : null;
                 return (
-                  <View style={{ backgroundColor:COLORS.bg2, borderRadius:14, padding:14, borderWidth:1, borderColor:COLORS.border, flexDirection:'row', alignItems:'center', gap:12 }}>
-                    <View style={{ width:40, height:40, borderRadius:10, backgroundColor:'#EDE9FE', alignItems:'center', justifyContent:'center' }}>
-                      <Text style={{ fontSize:22 }}>💪</Text>
+                  <View style={{ backgroundColor:COLORS.bg2, borderRadius:12, padding:12, borderWidth:1, borderColor:COLORS.border, flexDirection:'row', alignItems:'center', gap:10 }}>
+                    <View style={{ width:36, height:36, borderRadius:8, backgroundColor:'#EDE9FE', alignItems:'center', justifyContent:'center' }}>
+                      <Text style={{ fontSize:18 }}>💪</Text>
                     </View>
-                    <View style={{ flex:1 }}>
-                      <View style={{ flexDirection:'row', alignItems:'center', gap:6, marginBottom:3 }}>
-                        <Text style={{ fontSize:11, fontWeight:'700', color:COLORS.text3 }}>#{index+1}</Text>
-                        {b && <View style={{ backgroundColor:b.bg, borderRadius:6, paddingHorizontal:6, paddingVertical:1 }}>
-                          <Text style={{ fontSize:10, fontWeight:'700', color:b.color }}>{b.label}</Text>
+                    <View style={{ flex:1, minWidth:0 }}>
+                      <View style={{ flexDirection:'row', alignItems:'center', gap:6, marginBottom:2, flexWrap:'wrap' }}>
+                        <Text style={{ fontSize:10, fontWeight:'700', color:COLORS.text3 }}>#{index+1}</Text>
+                        {b && <View style={{ backgroundColor:b.bg, borderRadius:5, paddingHorizontal:5, paddingVertical:1 }}>
+                          <Text style={{ fontSize:9, fontWeight:'700', color:b.color }}>{b.label}</Text>
                         </View>}
+                        {dist && <Text style={{ fontSize:10, color:COLORS.text3 }}>📍 {dist}</Text>}
                       </View>
-                      <Text style={{ fontSize:15, fontWeight:'700', color:COLORS.text }} numberOfLines={1}>{g.name}</Text>
-                      <Text style={{ fontSize:11, color:COLORS.text3, marginTop:2 }}>📍 {g.city || 'España'}</Text>
+                      <Text style={{ fontSize:14, fontWeight:'700', color:COLORS.text }} numberOfLines={1}>{g.name}</Text>
+                      <Text style={{ fontSize:11, color:COLORS.text3 }}>📍 {g.city||'España'}</Text>
                     </View>
                     <View style={{ alignItems:'flex-end' }}>
                       {g.repPrice
-                        ? <><Text style={{ fontSize:20, fontWeight:'800', color:'#7C3AED' }}>{g.repPrice.toFixed(2)}€</Text>
+                        ? <><Text style={{ fontSize:18, fontWeight:'800', color:'#7C3AED' }}>{g.repPrice.toFixed(2)}€</Text>
                             <Text style={{ fontSize:10, color:COLORS.text3 }}>/mes</Text></>
-                        : <Text style={{ fontSize:12, color:COLORS.text3 }}>Sin precio</Text>}
+                        : <Text style={{ fontSize:11, color:COLORS.text3 }}>Sin precio</Text>}
                     </View>
                   </View>
                 );
