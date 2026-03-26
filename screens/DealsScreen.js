@@ -37,6 +37,7 @@ export default function DealsScreen() {
   const [deals, setDeals]         = useState([]);
   const [cat, setCat]               = useState('all');
   const [sort, setSort]             = useState('hot');
+  const [minDiscount, setMinDiscount] = useState(0); // 0=all, 20, 30, 50
   const [search, setSearch]         = useState('');
   const [myVotes, setMyVotes]       = useState({});
   const [loading, setLoading]       = useState(true);
@@ -52,7 +53,7 @@ export default function DealsScreen() {
   const [editPrice, setEditPrice]   = useState('');
   const [editTitle, setEditTitle]   = useState('');
 
-  useEffect(() => { resetAndLoad(); }, [cat, sort]);
+  useEffect(() => { resetAndLoad(); }, [cat, sort, minDiscount]);
 
   // Debounced search — waits 400ms after typing stops before fetching
   useEffect(() => {
@@ -73,6 +74,7 @@ export default function DealsScreen() {
     try {
       let url = `/api/deals?cat=${cat}&sort=${sort}&limit=${PAGE}&offset=${off}`;
       if (search.trim()) url += `&search=${encodeURIComponent(search.trim())}`;
+      if (minDiscount > 0) url += `&min_discount=${minDiscount}`;
       const data = await apiGet(url) || [];
       if (reset) setDeals(data);
       else setDeals(prev => [...prev, ...data]);
@@ -160,6 +162,15 @@ export default function DealsScreen() {
           {SORTS.map(so => (
             <TouchableOpacity key={so.key} style={[s.sortBtn, sort===so.key && s.sortBtnOn]} onPress={() => setSort(so.key)}>
               <Text style={[s.sortTxt, sort===so.key && {color:'#fff',fontWeight:'700'}]}>{so.label}</Text>
+            </TouchableOpacity>
+          ))}
+          <View style={{flex:1}}/>
+          {[0,20,30,50].map(d => (
+            <TouchableOpacity key={d} style={[s.sortBtn, minDiscount===d && {backgroundColor:COLORS.danger,borderColor:COLORS.danger}]}
+              onPress={() => setMinDiscount(d)}>
+              <Text style={[s.sortTxt, minDiscount===d && {color:'#fff',fontWeight:'700'}]}>
+                {d===0 ? 'Todo' : `-${d}%+`}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>

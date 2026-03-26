@@ -31,6 +31,7 @@ export default function AuthModal({ visible, onClose }) {
     setError('');
     const em = email.trim().toLowerCase();
     if (!em) return setError('Introduce tu email');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return setError('El email no tiene formato válido');
 
     if (mode === MODES.forgot) {
       setLoading(true);

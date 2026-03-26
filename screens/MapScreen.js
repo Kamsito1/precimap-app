@@ -792,6 +792,35 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded }) {
             <Text style={pcs.actionTxtNav}>Cómo llegar</Text>
           </TouchableOpacity>
         </View>
+        {/* Price history panel */}
+        {Object.keys(history).length > 0 && (
+          <View style={{marginBottom:16}}>
+            <Text style={pcs.sectionTitle}>📈 TENDENCIA DE PRECIOS</Text>
+            {Object.entries(history).slice(0,4).map(([prod, pts]) => {
+              if (pts.length < 2) return null;
+              const last = pts[pts.length-1].price;
+              const prev = pts[pts.length-2].price;
+              const diff = last - prev;
+              const min = Math.min(...pts.map(p=>p.price));
+              const max = Math.max(...pts.map(p=>p.price));
+              return (
+                <View key={prod} style={{flexDirection:'row',alignItems:'center',paddingVertical:8,borderBottomWidth:0.5,borderBottomColor:COLORS.border,gap:10}}>
+                  <View style={{flex:1}}>
+                    <Text style={{fontSize:13,fontWeight:'600',color:COLORS.text}} numberOfLines={1}>{prod}</Text>
+                    <Text style={{fontSize:10,color:COLORS.text3,marginTop:1}}>min {min.toFixed(2)}€ · max {max.toFixed(2)}€ · {pts.length} reportes</Text>
+                  </View>
+                  <View style={{alignItems:'flex-end'}}>
+                    <Text style={{fontSize:16,fontWeight:'800',color:COLORS.text}}>{last.toFixed(2)}€</Text>
+                    <Text style={{fontSize:11,fontWeight:'700',color: Math.abs(diff)<0.01 ? COLORS.text3 : diff>0 ? COLORS.danger : COLORS.success}}>
+                      {Math.abs(diff)<0.01 ? '—' : diff>0 ? `↑${diff.toFixed(2)}€` : `↓${Math.abs(diff).toFixed(2)}€`}
+                    </Text>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
         <Text style={pcs.sectionTitle}>PRECIOS DE LA COMUNIDAD</Text>
         {prices.length===0
           ? <View style={pcs.emptyBox}><Text style={pcs.emptyTxt}>Sin precios aún{'\n'}¡Sé el primero en reportar!</Text></View>
