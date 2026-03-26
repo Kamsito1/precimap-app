@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   Linking, ActivityIndicator, RefreshControl, Modal,
-  ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert,
+  ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -271,6 +271,14 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh }) {
         ) : null}
         <TouchableOpacity style={ec.voteBtn} onPress={vote}>
           <Text style={ec.voteTxt}>👍 {ev.votes_up || 0}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={ec.voteBtn} onPress={() => {
+          const price = ev.is_free ? '🆓 Gratis' : ev.price_from ? `desde ${ev.price_from}€` : '';
+          Share.share({
+            message: `🎭 ${ev.title}\n📍 ${ev.city} · ${ev.date}${ev.time ? ' '+ev.time : ''}\n${price ? price+'\n' : ''}Via PreciMap 🗺️`,
+          }).catch(() => {});
+        }}>
+          <Ionicons name="share-outline" size={16} color={COLORS.text3}/>
         </TouchableOpacity>
         <Text style={ec.source}>{isOfficial ? '🏛️ Oficial' : `👤 ${ev.reporter_name || 'Comunidad'}`}</Text>
       </View>

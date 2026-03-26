@@ -512,7 +512,10 @@ export default function MapScreen() {
                 );
               })()}
               <Text style={ms.legendCount}>
-                {gasolineras.length.toLocaleString()} est.{city ? ' · '+city : ''}
+                {showFavsOnly
+                  ? `❤️ ${gasolineras.length} favoritas`
+                  : `${gasolineras.length.toLocaleString()} est.${city ? ' · '+city : ''}`
+                }
               </Text>
             </View>
           )}

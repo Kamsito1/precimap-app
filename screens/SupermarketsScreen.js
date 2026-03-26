@@ -107,6 +107,11 @@ export default function SupermarketsScreen({ embedded = false }) {
     const matchCat = catFilter === 'todos' || p.cat === catFilter;
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
+  }).sort((a,b) => {
+    // Sort by savings potential (descending)
+    const savA = parseFloat(savings(a));
+    const savB = parseFloat(savings(b));
+    return savB - savA;
   });
 
   const savings = (p) => {

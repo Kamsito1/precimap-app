@@ -107,10 +107,14 @@ export default function RankingScreen() {
             ) : null}
             ListFooterComponent={myRank ? (
               <View style={s.myRankBanner}>
-                <Text style={s.myRankEmoji}>📊</Text>
+                <Text style={s.myRankEmoji}>
+                  {(myRank.points||0)>=1000?'👑':(myRank.points||0)>=400?'🏆':(myRank.points||0)>=150?'⭐':(myRank.points||0)>=50?'💰':'🌱'}
+                </Text>
                 <View style={{flex:1}}>
-                  <Text style={s.myRankTitle}>Tu posición</Text>
-                  <Text style={s.myRankSub}>{myRank.points} pts · {myRank.reports} reportes</Text>
+                  <Text style={s.myRankTitle}>
+                    {(myRank.points||0)>=1000?'Leyenda':(myRank.points||0)>=400?'Gurú':(myRank.points||0)>=150?'Experto':(myRank.points||0)>=50?'Ahorrador':'Novato'} · Tu posición
+                  </Text>
+                  <Text style={s.myRankSub}>{myRank.points || 0} pts · {myRank.reports || 0} reportes</Text>
                 </View>
                 <Text style={s.myRankHint}>Sigue reportando precios{'\n'}para entrar en el top 30</Text>
               </View>

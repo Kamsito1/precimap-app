@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  Image, ActivityIndicator, RefreshControl, Linking, Alert, TextInput, Modal,
+  Image, ActivityIndicator, RefreshControl, Linking, Alert, TextInput, Modal, Share,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -300,6 +300,20 @@ export default function DealsScreen() {
                   <TouchableOpacity style={s.commentBtn} onPress={() => setCommentsFor(deal)}>
                     <Ionicons name="chatbubble-outline" size={17} color={COLORS.text2}/>
                     <Text style={s.commentCount}>{deal.comment_count||0}</Text>
+                  </TouchableOpacity>
+
+                  {/* Share deal */}
+                  <TouchableOpacity
+                    style={s.commentBtn}
+                    onPress={() => {
+                      const price = formatPrice(deal.deal_price);
+                      const disc  = deal.discount_percent ? ` (-${Math.round(deal.discount_percent)}%)` : '';
+                      const url   = deal.url ? `\n🔗 ${deal.url}` : '';
+                      Share.share({
+                        message: `🔥 ${deal.title}\n💰 ${price}${disc}${url}\n\nVía PreciMap — La app de ahorro de España`,
+                      }).catch(() => {});
+                    }}>
+                    <Ionicons name="share-outline" size={17} color={COLORS.text2}/>
                   </TouchableOpacity>
 
                   {affUrl && (

@@ -170,13 +170,10 @@ export default function ProfileScreen() {
     try {
       const [data, deals] = await Promise.all([
         apiGet('/api/users/me'),
-        apiGet('/api/deals?limit=50'),
+        apiGet('/api/users/me/deals'),  // dedicated endpoint — faster and accurate
       ]);
       setProfile(data);
-      // Filter deals by current user
-      if (data?.id && Array.isArray(deals)) {
-        setMyDeals(deals.filter(d => d.reported_by === data.id));
-      }
+      setMyDeals(Array.isArray(deals) ? deals : []);
       if ((data?.notifications||[]).some(n => !n.is_read)) {
         apiPost('/api/notifications/read', {}).catch(() => {});
       }
