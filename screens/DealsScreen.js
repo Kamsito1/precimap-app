@@ -36,6 +36,7 @@ const SORTS = [
 export default function DealsScreen() {
   const { isLoggedIn, user } = useAuth();
   const [deals, setDeals]         = useState([]);
+  const [trending, setTrending]   = useState([]);
   const [cat, setCat]               = useState('all');
   const [sort, setSort]             = useState('hot');
   const [minDiscount, setMinDiscount] = useState(0); // 0=all, 20, 30, 50
@@ -55,6 +56,11 @@ export default function DealsScreen() {
   const [editTitle, setEditTitle]   = useState('');
 
   useEffect(() => { resetAndLoad(); }, [cat, sort, minDiscount]);
+
+  // Load trending on mount
+  useEffect(() => {
+    apiGet('/api/deals/trending').then(t => { if (Array.isArray(t)) setTrending(t); }).catch(()=>{});
+  }, []);
 
   // Debounced search — waits 400ms after typing stops before fetching
   useEffect(() => {
@@ -123,6 +129,14 @@ export default function DealsScreen() {
         <View style={s.headerTop}>
           <View>
             <Text style={s.title}>🔥 Chollos</Text>
+            {trending.length > 0 && (
+              <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:2}}>
+                <Text style={{fontSize:10,color:COLORS.danger,fontWeight:'700'}}>TENDENCIA:</Text>
+                <Text style={{fontSize:10,color:COLORS.text2}} numberOfLines={1}>
+                  {trending[0].temperature} {trending[0].title.split('—')[0].trim().substring(0,28)}...
+                </Text>
+              </View>
+            )}
             <Text style={s.sub}>
               {deals.length > 0
                 ? (() => {
