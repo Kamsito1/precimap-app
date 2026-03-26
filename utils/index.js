@@ -62,7 +62,11 @@ export const Auth = {
     try {
       const token = await AsyncStorage.getItem('precimap_token');
       const user  = await AsyncStorage.getItem('precimap_user');
-      if (token) { this._token = token; this._user = user ? JSON.parse(user) : null; }
+      if (token) {
+        this._token = token;
+        try { this._user = user ? JSON.parse(user) : null; }
+        catch { this._user = null; }
+      }
     } catch {}
   },
 

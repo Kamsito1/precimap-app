@@ -384,7 +384,7 @@ export default function SupermarketsScreen({ embedded = false }) {
               const brand = Object.keys(brandColors).find(b => p.name.includes(b)) || null;
               const brandColor = brand ? brandColors[brand] : COLORS.primary;
               const prices = p.prices || [];
-              const cheapest = prices.length > 0 ? prices.sort((a,b) => a.price-b.price)[0] : null;
+              const cheapest = prices.length > 0 ? [...prices].sort((a,b) => a.price-b.price)[0] : null;
               return (
               <TouchableOpacity key={p.id} style={[s.communityRow,{paddingVertical:14}]} onPress={() => navigation?.navigate('Mapa')}>
                 <View style={{width:40,height:40,borderRadius:10,backgroundColor:brandColor+'15',borderWidth:1.5,borderColor:brandColor+'44',alignItems:'center',justifyContent:'center',marginRight:10}}>

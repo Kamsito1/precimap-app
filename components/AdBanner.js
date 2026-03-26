@@ -42,7 +42,7 @@ export default function AdBanner({ screen = 'unknown', style }) {
   const timersRef = useRef({ show: null, hide: null, cooldown: null, rotate: null });
 
   const clearAllTimers = useCallback(() => {
-    Object.values(timersRef.current).forEach(t => clearTimeout(t));
+    Object.values(timersRef.current).forEach(t => { clearTimeout(t); clearInterval(t); });
   }, []);
 
   // Phase 1: Wait SHOW_DELAY, then fade in

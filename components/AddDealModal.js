@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, apiUpload, apiPost, apiGet, detectStore, applyAffiliateTag } from '../utils';
+import { COLORS, apiUpload, apiPost, apiGet, detectStore, applyAffiliateTag, API_BASE } from '../utils';
 
 const CATS = [
   {key:'tecnologia',label:'Tecnología',emoji:'💻'},
@@ -144,7 +144,6 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
         clearTimeout(amazonTimerRef.current);
         amazonTimerRef.current = setTimeout(async () => {
           try {
-            const { API_BASE } = await import('../utils');
             const res = await fetch(`${API_BASE}/api/amazon/product?url=${encodeURIComponent(v)}`);
             if (res.ok) {
               const data = await res.json();

@@ -118,6 +118,9 @@ export default function MapScreen() {
 
   useEffect(() => { initLocation(); loadFuelStats(); loadFavs(); loadEvents(); }, []);
 
+  // Re-load favs when login state changes (e.g. user logs in after app opened)
+  useEffect(() => { loadFavs(); }, [isLoggedIn]);
+
   // Show first-time hint after 3 seconds
   useEffect(() => {
     AsyncStorage.getItem('map_hint_shown').then(v => {

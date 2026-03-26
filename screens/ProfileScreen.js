@@ -7,7 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, apiGet, apiPost, apiPatch, apiUpload, API_BASE, APP_VERSION, timeAgo } from '../utils';
+import { COLORS, apiGet, apiPost, apiPatch, apiUpload, API_BASE, APP_VERSION, timeAgo, openURL } from '../utils';
 import PrivacyScreen from './PrivacyScreen';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
@@ -463,7 +463,7 @@ export default function ProfileScreen() {
                       {d.url && (
                         <TouchableOpacity
                           style={{backgroundColor:COLORS.primary,borderRadius:8,paddingHorizontal:10,paddingVertical:4}}
-                          onPress={() => { const {openURL} = require('../utils'); openURL(d.url); }}>
+                          onPress={() => openURL(d.url)}>
                           <Text style={{fontSize:11,color:'#fff',fontWeight:'700'}}>Ver ↗</Text>
                         </TouchableOpacity>
                       )}
