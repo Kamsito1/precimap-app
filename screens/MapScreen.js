@@ -1025,9 +1025,17 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
         </TouchableOpacity>
         <TouchableOpacity
           style={[gcs.navBtn,{backgroundColor:COLORS.bg3,marginTop:8}]}
-          onPress={()=>{
+          onPress={async ()=>{
             const msg = `⛽ ${station.name}\nG95: ${station.prices?.g95?.toFixed(3)||'N/D'}€ | Diesel: ${station.prices?.diesel?.toFixed(3)||'N/D'}€\nVía PreciMap 🗺️`;
-            Share.share({ message: msg }).catch(()=>{});
+            try {
+              if (typeof navigator !== 'undefined' && navigator.share) {
+                await navigator.share({ title: station.name, text: msg });
+              } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+                await navigator.clipboard.writeText(msg);
+              } else {
+                Share.share({ message: msg }).catch(()=>{});
+              }
+            } catch {}
           }}>
           <Ionicons name="share-outline" size={18} color={COLORS.text2}/>
           <Text style={[gcs.navBtnTxt,{color:COLORS.text2}]}>Compartir precio</Text>
@@ -1079,7 +1087,8 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onPr
             : cat==='farmacia' ? 'precio medio medicamento'
             : cat==='supermercado' ? 'precio más barato'
             : 'precio medio';
-          const detail = cat==='restaurante'
+          const detail = place.repContext ||
+            (cat==='restaurante'
             ? `Media de ${prices.filter(p=>p.price>=3).length || prices.length} platos · media España ~12€`
             : cat==='farmacia'
             ? `Media de ${prices.filter(p=>p.price>=1).length || prices.length} medicamentos · media España ~4-8€`

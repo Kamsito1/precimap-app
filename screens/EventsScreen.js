@@ -337,9 +337,19 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
         <TouchableOpacity style={ec.voteBtn} onPress={vote}>
           <Text style={ec.voteTxt}>👍 {ev?.votes_up || 0}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={ec.voteBtn} onPress={() => {
+        <TouchableOpacity style={ec.voteBtn} onPress={async () => {
           const price = ev?.is_free ? '🆓 Gratis' : ev?.price_from ? `desde ${ev.price_from}€` : '';
-          Share.share({ message: `🎭 ${ev?.title||''}\n📍 ${ev?.city||''} · ${ev?.date||''}\n${price ? price+'\n' : ''}Via PreciMap 🗺️` }).catch(()=>{});
+          const msg = `🎭 ${ev?.title||''}\n📍 ${ev?.city||''} · ${ev?.date||''}\n${price ? price+'\n' : ''}Via PreciMap 🗺️`;
+          try {
+            if (typeof navigator !== 'undefined' && navigator.share) {
+              await navigator.share({ title: ev?.title||'', text: msg, url: ev?.url||'' });
+            } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
+              await navigator.clipboard.writeText(msg);
+              Alert.alert('✅ Copiado', 'Enlace copiado al portapapeles');
+            } else {
+              Share.share({ message: msg }).catch(()=>{});
+            }
+          } catch {}
         }}>
           <Ionicons name="share-outline" size={14} color={COLORS.text3}/>
         </TouchableOpacity>
