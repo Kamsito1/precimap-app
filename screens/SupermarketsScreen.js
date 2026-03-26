@@ -289,10 +289,9 @@ export default function SupermarketsScreen({ embedded = false }) {
                     </Text>
                   );
                 })}
-              </View>
-            </TouchableOpacity>
-          ))
-        }
+              </TouchableOpacity>
+            ))
+          }
           <View style={s.disclaimer}>
             <Text style={s.disclaimerTxt}>ℹ️ Precios orientativos octubre 2024. Pueden variar por zona y oferta.</Text>
           </View>

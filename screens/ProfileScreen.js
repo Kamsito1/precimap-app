@@ -369,14 +369,14 @@ export default function ProfileScreen() {
               <Text style={{fontSize:15}}>🔥</Text>
               <Text style={s.streakTxt}>{u.streak} días de racha</Text>
             </View>
-            {profile?._rankPos && (
-              <View style={[s.streakBadge,{backgroundColor:'rgba(255,255,255,0.12)',marginTop:6}]}>
-                <Text style={{fontSize:13}}>🏆</Text>
-                <Text style={s.streakTxt}>
-                  Puesto #{profile._rankPos} de {profile._rankTotal} usuarios
-                </Text>
-              </View>
-            )}
+          )}
+          {profile?._rankPos && (
+            <View style={[s.streakBadge,{backgroundColor:'rgba(255,255,255,0.12)',marginTop:6}]}>
+              <Text style={{fontSize:13}}>🏆</Text>
+              <Text style={s.streakTxt}>
+                Puesto #{profile._rankPos} de {profile._rankTotal} usuarios
+              </Text>
+            </View>
           )}
 
           {/* Quick action buttons */}

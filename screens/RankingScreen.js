@@ -143,10 +143,10 @@ export default function RankingScreen() {
       )}
 
       {/* Tab: Ranking */}
-      {mainTab !== 'comunidad' && (loading
-        ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: 50 }}/>
-        : (
-          <FlatList
+      {mainTab !== 'comunidad' && (
+        loading
+          ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: 50 }}/>
+          : <FlatList
             data={leaders}
             keyExtractor={u => String(u.id)}
             contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: 100 }}
@@ -247,8 +247,7 @@ export default function RankingScreen() {
               </View>
             }
           />
-        )
-      }
+      )}
     </SafeAreaView>
   );
 }
