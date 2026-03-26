@@ -45,6 +45,29 @@ export default function PrivacyScreen({ onClose }) {
         <Text style={s.h2}>8. Cambios en esta política</Text>
         <Text style={s.p}>Te notificaremos en la app si hay cambios materiales en esta política de privacidad.</Text>
 
+        <View style={{height:1,backgroundColor:COLORS.border,marginVertical:28}}/>
+
+        <Text style={{fontSize:18,fontWeight:'800',color:COLORS.text,marginBottom:6}}>Términos de Uso</Text>
+        <Text style={s.updated}>En vigor desde: marzo 2025</Text>
+
+        <Text style={s.h2}>1. Aceptación</Text>
+        <Text style={s.p}>Al usar PreciMap aceptas estos términos. El uso de la app implica la aceptación de estas condiciones y de la Política de Privacidad.</Text>
+
+        <Text style={s.h2}>2. Uso permitido</Text>
+        <Text style={s.p}>PreciMap es una herramienta de comparación de precios para uso personal. Queda prohibido usar la app para fines comerciales, scraping automatizado o publicación masiva de precios falsos.</Text>
+
+        <Text style={s.h2}>3. Contenido del usuario</Text>
+        <Text style={s.p}>Al publicar precios, chollos o eventos, garantizas que la información es veraz y actual. PreciMap puede eliminar contenido incorrecto o inapropiado sin previo aviso.</Text>
+
+        <Text style={s.h2}>4. Exactitud de datos</Text>
+        <Text style={s.p}>Los precios son aportados por la comunidad y el Ministerio de Energía. PreciMap no garantiza su exactitud. Verifica siempre el precio en el establecimiento antes de comprar.</Text>
+
+        <Text style={s.h2}>5. Limitación de responsabilidad</Text>
+        <Text style={s.p}>PreciMap no se hace responsable de decisiones económicas tomadas basándose en los datos de la app. Los precios de bancos y productos financieros pueden cambiar sin previo aviso.</Text>
+
+        <Text style={s.h2}>6. Propiedad intelectual</Text>
+        <Text style={s.p}>El código y diseño de PreciMap son propiedad de sus desarrolladores. Los datos de gasolineras son del Ministerio para la Transición Ecológica (datos abiertos).</Text>
+
         <View style={{ height: 40 }}/>
       </ScrollView>
     </SafeAreaView>
