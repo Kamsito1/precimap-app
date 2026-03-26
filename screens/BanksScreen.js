@@ -134,6 +134,16 @@ export default function BanksScreen({ embedded = false }) {
   const [showCalc, setShowCalc] = useState(false);
   const [calcAmount, setCalcAmount] = useState('10000');
   const [calcMonths, setCalcMonths] = useState('12');
+  const [bankTip, setBankTip]   = useState(null);
+
+  // Load a bank tip from server
+  useEffect(() => {
+    apiGet('/api/tips?category=bancos').then(tips => {
+      if (Array.isArray(tips) && tips.length > 0) {
+        setBankTip(tips[Math.floor(Math.random()*tips.length)]);
+      }
+    }).catch(() => {});
+  }, []);
 
   const filtered = cat === 'all' ? BANK_OFFERS : BANK_OFFERS.filter(o => o.category === cat);
   const hot = BANK_OFFERS.find(o => o.hot);
@@ -153,6 +163,13 @@ export default function BanksScreen({ embedded = false }) {
           <View>
             <Text style={s.title}>🏦 Bancos y Finanzas</Text>
             <Text style={s.sub}>Las mejores ofertas actuales</Text>
+            {bankTip && (
+              <View style={{backgroundColor:COLORS.primaryLight,borderRadius:8,padding:8,marginTop:6}}>
+                <Text style={{fontSize:11,color:COLORS.primaryDark,fontWeight:'600'}} numberOfLines={1}>
+                  💡 {bankTip.title} — <Text style={{fontWeight:'400'}}>{bankTip.saves}</Text>
+                </Text>
+              </View>
+            )}
             <Text style={s.updated}>Actualizado: marzo 2025 · Verifica condiciones antes de contratar</Text>
           </View>
           <TouchableOpacity style={s.calcBtn} onPress={() => setShowCalc(true)}>
