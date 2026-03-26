@@ -7,8 +7,12 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "ios": { "simulator": true },
-      "env": { "NODE_ENV": "development" }
+      "ios": {
+        "simulator": true
+      },
+      "env": {
+        "NODE_ENV": "development"
+      }
     },
     "preview": {
       "distribution": "internal",
@@ -16,14 +20,12 @@
         "simulator": false
       },
       "env": {
-        "NODE_ENV": "production",
         "EXPO_PUBLIC_API_BASE": "https://web-production-a8023.up.railway.app"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "NODE_ENV": "production",
         "EXPO_PUBLIC_API_BASE": "https://web-production-a8023.up.railway.app"
       }
     }
