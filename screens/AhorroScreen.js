@@ -4,10 +4,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, apiGet } from '../utils';
 import BanksScreen from './BanksScreen';
 import SupermarketsScreen from './SupermarketsScreen';
+import FlightSearchScreen from './FlightSearchScreen';
 
 const SUBTABS = [
-  { key: 'super',  label: '🛒 Supermercados' },
-  { key: 'bancos', label: '🏦 Bancos' },
+  { key: 'super',   label: '🛒 Supermercados' },
+  { key: 'vuelos',  label: '✈️ Vuelos' },
+  { key: 'bancos',  label: '🏦 Bancos' },
 ];
 
 const FALLBACK_TIPS = [
@@ -21,7 +23,7 @@ const FALLBACK_TIPS = [
 
 export default function AhorroScreen() {
   const [sub, setSub] = useState('super');
-  const [visited, setVisited] = useState({ super: true, bancos: false });
+  const [visited, setVisited] = useState({ super: true, vuelos: false, bancos: false });
   const [tips, setTips] = useState(FALLBACK_TIPS);
   const [tipIdx, setTipIdx] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -82,6 +84,11 @@ export default function AhorroScreen() {
         {visited.super && (
           <View style={{ flex: 1, display: sub === 'super' ? 'flex' : 'none' }}>
             <SupermarketsScreen embedded />
+          </View>
+        )}
+        {visited.vuelos && (
+          <View style={{ flex: 1, display: sub === 'vuelos' ? 'flex' : 'none' }}>
+            <FlightSearchScreen embedded />
           </View>
         )}
         {visited.bancos && (

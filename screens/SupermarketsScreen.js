@@ -148,17 +148,18 @@ export default function SupermarketsScreen({ embedded = false }) {
   const [search, setSearch]       = useState('');
   const [catFilter, setCatFilter] = useState('todos');
   const [community, setCommunity] = useState([]);
+  const [communityCity, setCommunityCity] = useState('');  // city filter
   const [refreshing, setRefreshing] = useState(false);
   const [showAuth, setShowAuth]   = useState(false);
-  const [priceHistory, setPriceHistory] = useState({}); // { productName: [{date,price}] }
+  const [priceHistory, setPriceHistory] = useState({});
   const [selectedProd, setSelectedProd] = useState(null);
+  const [allCities, setAllCities] = useState([]);
 
-  useEffect(() => { loadCommunity(); loadPriceHistory(); }, []);
-  const onRefresh = useCallback(() => { setRefreshing(true); loadCommunity(); loadPriceHistory(); }, []);
+  useEffect(() => { loadCommunity(); loadPriceHistory(); }, [communityCity]);
+  const onRefresh = useCallback(() => { setRefreshing(true); loadCommunity(); loadPriceHistory(); }, [communityCity]);
 
   async function loadPriceHistory() {
     try {
-      // Load history from Mercadona (place_id=1) as reference
       const data = await apiGet('/api/places/1/price-history') || {};
       if (data.history) setPriceHistory(data.history);
     } catch {}
@@ -166,12 +167,26 @@ export default function SupermarketsScreen({ embedded = false }) {
 
   async function loadCommunity() {
     try {
-      // Load user-reported supermarket prices from the Map
-      const data = await apiGet('/api/places?cat=supermercado&sort=price') || [];
-      setCommunity(data);
+      let url = '/api/places?cat=supermercado&sort=price';
+      if (communityCity) url += `&city=${encodeURIComponent(communityCity)}`;
+      const data = await apiGet(url) || [];
+      setCommunity(Array.isArray(data) ? data : []);
+      // Extract unique cities for filter
+      const cities = [...new Set((Array.isArray(data) ? data : []).map(p => p.city).filter(Boolean))];
+      if (cities.length > 0) setAllCities(prev => [...new Set([...prev, ...cities])]);
     } catch {}
     finally { setRefreshing(false); }
   }
+
+  // Load all cities on mount
+  useEffect(() => {
+    apiGet('/api/places?cat=supermercado&limit=200').then(data => {
+      if (Array.isArray(data)) {
+        const cities = [...new Set(data.map(p => p.city).filter(Boolean))].sort();
+        setAllCities(cities);
+      }
+    }).catch(() => {});
+  }, []);
 
   // MUST be declared before filteredProds (no hoisting for arrow functions)
   const savings = (p) => {
@@ -281,20 +296,49 @@ export default function SupermarketsScreen({ embedded = false }) {
               </View>
             </View>
           ))}
-          {/* Community prices */}
-          {community.length > 0 && <>
-            <Text style={s.sectionTitle}>📍 Supermercados reportados por la comunidad</Text>
-            {community.map(p => (
-              <View key={p.id} style={s.communityRow}>
+          {/* Community prices with city filter */}
+          <View style={{marginHorizontal:12,marginTop:16}}>
+            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+              <Text style={s.sectionTitle}>📍 Supermercados en el mapa</Text>
+              <Text style={{fontSize:11,color:COLORS.text3}}>{community.length} encontrados</Text>
+            </View>
+            {/* City filter pills */}
+            {allCities.length > 1 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingBottom:8}}>
+                {['', ...allCities].map(city => (
+                  <TouchableOpacity key={city||'all'} style={[
+                    {paddingHorizontal:12,paddingVertical:5,borderRadius:99,borderWidth:1.5,borderColor:communityCity===city?COLORS.primary:COLORS.border,backgroundColor:communityCity===city?COLORS.primary:COLORS.bg},
+                  ]} onPress={() => setCommunityCity(city)}>
+                    <Text style={{fontSize:12,fontWeight:'600',color:communityCity===city?'#fff':COLORS.text2}}>
+                      {city || '🇪🇸 Toda España'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+          {community.length > 0 ? community.map(p => (
+              <TouchableOpacity key={p.id} style={s.communityRow} onPress={() => navigation?.navigate('Mapa')}>
                 <View style={s.communityDot}/>
                 <View style={{flex:1}}>
                   <Text style={s.communityName}>{p.name}</Text>
-                  <Text style={s.communityCity}>{p.city}</Text>
+                  <Text style={s.communityCity}>📍 {p.city || 'España'}{p.address ? ` · ${p.address}` : ''}</Text>
                 </View>
-                {p.minPrice && <Text style={s.communityPrice}>desde {p.minPrice.toFixed(2)}€</Text>}
+                <View style={{alignItems:'flex-end',gap:2}}>
+                  {p.minPrice ? <Text style={s.communityPrice}>desde {p.minPrice?.toFixed(2)}€</Text> : null}
+                  <Ionicons name="chevron-forward" size={12} color={COLORS.text3}/>
+                </View>
+              </TouchableOpacity>
+            )) : (
+              <View style={{alignItems:'center',padding:20}}>
+                <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center'}}>
+                  {communityCity ? `No hay supermercados reportados en ${communityCity}` : 'Sin datos de comunidad aún'}
+                </Text>
+                <TouchableOpacity style={{marginTop:8,backgroundColor:COLORS.primaryLight,borderRadius:99,paddingHorizontal:16,paddingVertical:8}} onPress={() => navigation?.navigate('Mapa')}>
+                  <Text style={{fontSize:12,color:COLORS.primary,fontWeight:'700'}}>Añadir en el mapa →</Text>
+                </TouchableOpacity>
               </View>
-            ))}
-          </>}
+            )}
         </>}
 
         {/* ── PRODUCTOS TAB ── */}
