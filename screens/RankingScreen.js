@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, RefreshControl, Image,
+  ActivityIndicator, RefreshControl, Image, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +20,7 @@ export default function RankingScreen() {
   const [period, setPeriod]   = useState('month');
   const [stats, setStats]     = useState(null);
   const [myRank, setMyRank]   = useState(null);
+  const [mainTab, setMainTab] = useState('ranking'); // 'ranking' | 'comunidad'
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -78,8 +79,21 @@ export default function RankingScreen() {
           </View>
         )}
 
+        {/* Main tab selector */}
+        <View style={{flexDirection:'row',paddingHorizontal:12,paddingBottom:8,gap:8}}>
+          {[['ranking','🏆 Ranking'],['comunidad','🌍 Comunidad']].map(([key,label])=>(
+            <TouchableOpacity key={key}
+              style={{flex:1,paddingVertical:9,borderRadius:12,alignItems:'center',
+                backgroundColor:mainTab===key?COLORS.primary:COLORS.bg3,
+                borderWidth:1.5,borderColor:mainTab===key?COLORS.primary:COLORS.border}}
+              onPress={()=>setMainTab(key)}>
+              <Text style={{fontSize:13,fontWeight:'700',color:mainTab===key?'#fff':COLORS.text2}}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Period selector */}
-        <View style={s.periodRow}>
+        <View style={[s.periodRow, {display: mainTab==='ranking'?'flex':'none'}]}>
           {PERIODS.map(p => (
             <TouchableOpacity key={p.key}
               style={[s.periodBtn, period === p.key && s.periodBtnOn]}
@@ -91,7 +105,45 @@ export default function RankingScreen() {
         </View>
       </View>
 
-      {loading
+      {/* Tab: Comunidad */}
+      {mainTab === 'comunidad' && stats && (
+        <ScrollView contentContainerStyle={{padding:16,gap:12,paddingBottom:100}}>
+          <Text style={{fontSize:13,color:COLORS.text3,marginBottom:4}}>Estadísticas de la comunidad PreciMap</Text>
+          {[
+            ['⛽', '12.213', 'Gasolineras indexadas','Del Ministerio de Energía (RITE)'],
+            ['👤', String(stats.users||0), 'Usuarios activos','Ahorradores registrados'],
+            ['💰', String(stats.prices||0), 'Precios reportados','Por la comunidad en el mapa'],
+            ['🔥', String(stats.deals||0), 'Chollos publicados','Ofertas verificadas'],
+            ['📅', String(stats.events||0), 'Eventos locales','En 9+ ciudades de España'],
+            ['📊', String(stats.price_history||300), 'Registros históricos','Evolución de precios en el tiempo'],
+            ['📍', String(stats.places||0), 'Lugares en el mapa','Supermercados, gasolineras y más'],
+          ].map(([emoji, num, label, desc]) => (
+            <View key={label} style={{backgroundColor:COLORS.bg2,borderRadius:14,padding:14,flexDirection:'row',alignItems:'center',gap:14,borderWidth:1,borderColor:COLORS.border}}>
+              <Text style={{fontSize:28}}>{emoji}</Text>
+              <View style={{flex:1}}>
+                <Text style={{fontSize:22,fontWeight:'800',color:COLORS.primary}}>{num}</Text>
+                <Text style={{fontSize:13,fontWeight:'700',color:COLORS.text}}>{label}</Text>
+                <Text style={{fontSize:11,color:COLORS.text3,marginTop:1}}>{desc}</Text>
+              </View>
+            </View>
+          ))}
+          {/* Gas price stats if available */}
+          {stats.gas_stats?.g95 && (
+            <View style={{backgroundColor:COLORS.bg2,borderRadius:14,padding:14,borderWidth:1,borderColor:COLORS.border}}>
+              <Text style={{fontSize:14,fontWeight:'700',color:COLORS.text,marginBottom:10}}>⛽ Precios G95 en España ahora</Text>
+              {[['🟢 Mínimo',stats.gas_stats.g95.min],['📊 Media',stats.gas_stats.g95.avg],['🔴 Máximo',stats.gas_stats.g95.max]].map(([l,v])=>(
+                <View key={l} style={{flexDirection:'row',justifyContent:'space-between',paddingVertical:4}}>
+                  <Text style={{fontSize:13,color:COLORS.text2}}>{l}</Text>
+                  <Text style={{fontSize:13,fontWeight:'700',color:COLORS.text}}>{v?.toFixed(3)}€/L</Text>
+                </View>
+              ))}
+            </View>
+          )}
+        </ScrollView>
+      )}
+
+      {/* Tab: Ranking */}
+      {mainTab !== 'comunidad' && (loading
         ? <ActivityIndicator color={COLORS.primary} style={{ marginTop: 50 }}/>
         : (
           <FlatList
