@@ -99,9 +99,12 @@ export default function EventsScreen() {
           </View>
         </View>
 
-        {/* Next event highlight banner */}
+        {/* Next event highlight banner — shows most voted upcoming event */}
         {events.length > 0 && (() => {
-          const next = events[0];
+          // Show most popular upcoming event (highest votes)
+          const upcoming = events.filter(e => new Date(e.date) >= new Date());
+          const next = upcoming.reduce((best, e) => (e.votes_up||0) > (best.votes_up||0) ? e : best, upcoming[0] || events[0]);
+          if (!next) return null;
           const daysUntil = Math.ceil((new Date(next.date) - new Date()) / 86400000);
           return (
             <TouchableOpacity
