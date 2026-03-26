@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View, Text, Modal, TextInput, TouchableOpacity, StyleSheet,
   ScrollView, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, FlatList,
@@ -37,6 +37,9 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
   const [duplicates, setDuplicates] = useState([]);
   const [dupLoading, setDupLoading] = useState(false);
   const [confirmed,  setConfirmed]  = useState(false); // user confirmed despite duplicate
+  const dupTimerRef = useRef(null);
+  const amazonTimerRef = useRef(null);
+  const dupTitleTimerRef = useRef(null);
 
   function reset() {
     setTitle(''); setUrl(''); setPrice(''); setOriginal('');
@@ -133,13 +136,13 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
 
     if (v.startsWith('http') && v.length > 20) {
       // Duplicate check
-      clearTimeout(window._dupTimer);
-      window._dupTimer = setTimeout(() => checkDuplicates(v, title), 800);
+      clearTimeout(dupTimerRef.current);
+      dupTimerRef.current = setTimeout(() => checkDuplicates(v, title), 800);
 
       // Amazon PA API autofill — if Amazon URL and no title yet
       if ((v.includes('amazon.es') || v.includes('amazon.com') || v.includes('amzn')) && !title) {
-        clearTimeout(window._amazonTimer);
-        window._amazonTimer = setTimeout(async () => {
+        clearTimeout(amazonTimerRef.current);
+        amazonTimerRef.current = setTimeout(async () => {
           try {
             const { API_BASE } = await import('../utils');
             const res = await fetch(`${API_BASE}/api/amazon/product?url=${encodeURIComponent(v)}`);
@@ -158,8 +161,8 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
   function handleTitleChange(v) {
     setTitle(v);
     if (v.length > 8) {
-      clearTimeout(window._dupTitleTimer);
-      window._dupTitleTimer = setTimeout(() => checkDuplicates(url, v), 1200);
+      clearTimeout(dupTitleTimerRef.current);
+      dupTitleTimerRef.current = setTimeout(() => checkDuplicates(url, v), 1200);
     }
   }
 

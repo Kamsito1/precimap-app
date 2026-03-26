@@ -11,6 +11,7 @@ import { COLORS, apiGet, apiPost, timeAgo, MONTHS_ES, openURL } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
 import CityPicker from '../components/CityPicker';
+import AdBanner from '../components/AdBanner';
 
 const CATS = [
   { key:'all',         label:'Todos',      emoji:'🎭' },
@@ -53,8 +54,10 @@ export default function EventsScreen() {
 
   useEffect(() => { loadEvents(); }, [cat, sort, source, city]);
 
-  // Debounced search
+  // Debounced search — skip initial render
+  const searchMounted = React.useRef(false);
   useEffect(() => {
+    if (!searchMounted.current) { searchMounted.current = true; return; }
     const t = setTimeout(() => loadEvents(), 400);
     return () => clearTimeout(t);
   }, [search]);
@@ -236,6 +239,8 @@ export default function EventsScreen() {
 
       <AddEventModal visible={showAdd} onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); loadEvents(); }}/>
       <AuthModal visible={showAuth} onClose={() => setShowAuth(false)}/>
+
+      <AdBanner screen="events"/>
 
       {/* FAB */}
       <TouchableOpacity

@@ -215,7 +215,7 @@ export default function BanksScreen({ embedded = false }) {
         <View style={s.disclaimer}>
           <Ionicons name="information-circle-outline" size={14} color={COLORS.text3}/>
           <Text style={s.disclaimerTxt}>
-            Condiciones actualizadas mar 2025. Comprueba siempre las condiciones en la web oficial antes de contratar. Los enlaces y códigos son de referido.
+            Condiciones actualizadas mar 2026. Comprueba siempre las condiciones en la web oficial antes de contratar. Los enlaces y códigos son de referido.
           </Text>
         </View>
 

@@ -1343,8 +1343,8 @@ function AddPlaceModal({ visible, onClose, userLoc, onSuccess }) {
     if (!name.trim()) return setError('El nombre es obligatorio');
     setLoading(true);
     try {
-      const lat = userLoc?.latitude || 40.416775;
-      const lng = userLoc?.longitude || -3.703790;
+      const lat = userLoc?.lat || 40.416775;
+      const lng = userLoc?.lng || -3.703790;
       await apiPost('/api/places', { name: name.trim(), category: cat, lat, lng, address: address.trim(), city: city.trim() });
       reset();
       onSuccess?.();

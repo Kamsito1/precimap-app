@@ -1,6 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 
+// ─── APP VERSION (single source of truth) ─────────────────────────────────────
+export const APP_VERSION = '1.3.0';
+
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 // API URL — hardcoded para producción (Railway)
 // En desarrollo local usa la IP del Mac
@@ -103,19 +106,25 @@ export async function apiPost(path, body) {
   const r = await fetch(API_BASE + path, {
     method: 'POST', headers: Auth.headers(), body: JSON.stringify(body),
   });
-  return r.json();
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok && !data.ok) { throw new Error(data.error || `HTTP ${r.status}`); }
+  return data;
 }
 
 export async function apiPatch(path, body) {
   const r = await fetch(API_BASE + path, {
     method: 'PATCH', headers: Auth.headers(), body: JSON.stringify(body),
   });
-  return r.json();
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok && !data.ok) { throw new Error(data.error || `HTTP ${r.status}`); }
+  return data;
 }
 
 export async function apiDelete(path) {
   const r = await fetch(API_BASE + path, { method: 'DELETE', headers: Auth.headers() });
-  return r.json();
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok && !data.ok) { throw new Error(data.error || `HTTP ${r.status}`); }
+  return data;
 }
 
 export async function apiUpload(path, fields, fileUri, fieldName = 'image') {

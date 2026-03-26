@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, Modal, TouchableOpacity, TextInput,
   StyleSheet, ActivityIndicator, ScrollView, Alert, KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, apiPost } from '../utils';
+import { COLORS, apiPost, API_BASE } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import * as WebBrowser from 'expo-web-browser';
+import * as Google from 'expo-auth-session/providers/google';
+
+WebBrowser.maybeCompleteAuthSession();
+
+const GOOGLE_IOS_CLIENT_ID = '720920708096-e0eiit32bknduqv1brf3ec3e4fu1kbj3.apps.googleusercontent.com';
 
 const MODES = { login: 'login', register: 'register', forgot: 'forgot', reset: 'reset' };
 
@@ -21,6 +27,49 @@ export default function AuthModal({ visible, onClose }) {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  // ── Google OAuth ──────────────────────────────────────────────────────────
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    iosClientId: GOOGLE_IOS_CLIENT_ID,
+  });
+
+  useEffect(() => {
+    if (response?.type === 'success') {
+      handleGoogleAuth(response.authentication?.accessToken);
+    }
+  }, [response]);
+
+  async function handleGoogleAuth(accessToken) {
+    if (!accessToken) return;
+    setGoogleLoading(true);
+    try {
+      // Get Google user info
+      const userInfoRes = await fetch('https://www.googleapis.com/userinfo/v2/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const googleUser = await userInfoRes.json();
+      if (!googleUser.email) { setError('No se pudo obtener el email de Google'); setGoogleLoading(false); return; }
+
+      // Send to our backend — it will create or login the user
+      const res = await apiPost('/api/auth/google', {
+        email: googleUser.email,
+        name: googleUser.name || googleUser.given_name || 'Usuario',
+        google_id: googleUser.id,
+        avatar_url: googleUser.picture || null,
+      });
+
+      if (res.error) { setError(res.error); setGoogleLoading(false); return; }
+      if (!res.token) { setError('Error al iniciar sesión con Google'); setGoogleLoading(false); return; }
+
+      await login(res.token, res.user);
+      setGoogleLoading(false);
+      onClose(); reset();
+    } catch (e) {
+      setError(`Error Google: ${e.message}`);
+      setGoogleLoading(false);
+    }
+  }
 
   function reset(nextMode = MODES.login) {
     setMode(nextMode); setError('');
@@ -120,6 +169,31 @@ export default function AuthModal({ visible, onClose }) {
             {mode === MODES.register && (
               <View style={s.benefitsBox}>
                 {BENEFITS.map(b=><Text key={b} style={s.benefit}>{b}</Text>)}
+              </View>
+            )}
+
+            {/* GOOGLE SIGN-IN — Principal, arriba del form */}
+            {(mode === MODES.login || mode === MODES.register) && (
+              <View style={{marginBottom:16}}>
+                <TouchableOpacity
+                  style={[s.googleBtn, (googleLoading || !request) && {opacity:0.6}]}
+                  onPress={() => promptAsync()}
+                  disabled={googleLoading || !request}
+                  activeOpacity={0.85}>
+                  {googleLoading ? (
+                    <ActivityIndicator color="#4285F4" size="small"/>
+                  ) : (
+                    <>
+                      <Text style={{fontSize:20}}>G</Text>
+                      <Text style={s.googleBtnTxt}>Continuar con Google</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+                <View style={s.dividerRow}>
+                  <View style={s.dividerLine}/>
+                  <Text style={s.dividerTxt}>o con email</Text>
+                  <View style={s.dividerLine}/>
+                </View>
               </View>
             )}
 
@@ -261,4 +335,9 @@ const s = StyleSheet.create({
   link:{paddingVertical:8},
   linkTxt:{fontSize:14,color:COLORS.text2},
   linkTxt2:{fontSize:13,color:COLORS.text3},
+  googleBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10,backgroundColor:'#fff',borderRadius:14,paddingVertical:15,borderWidth:1.5,borderColor:'#DADCE0',shadowColor:'#000',shadowOffset:{width:0,height:1},shadowOpacity:0.1,shadowRadius:3,elevation:2},
+  googleBtnTxt:{fontSize:15,fontWeight:'600',color:'#3C4043'},
+  dividerRow:{flexDirection:'row',alignItems:'center',gap:12,marginTop:16},
+  dividerLine:{flex:1,height:0.5,backgroundColor:COLORS.border},
+  dividerTxt:{fontSize:12,color:COLORS.text3},
 });

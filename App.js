@@ -13,6 +13,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import AhorroScreen from './screens/AhorroScreen';
 import { useEffect, useState } from 'react';
 import { apiGet } from './utils';
+import { APP_VERSION } from './utils';
 
 const Tab = createBottomTabNavigator();
 
@@ -79,7 +80,7 @@ function AppNavigator() {
             ? `⛽ G95 desde ${splashG95}€/L · 🔥 ${splashStats?.deals||50} chollos · 🎭 ${splashStats?.events||30} eventos`
             : '🗺️ Gasolineras · Chollos · Supermercados · Bancos'}
         </Text>
-        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v1.2.4 · La app de ahorro de España</Text>
+        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v{APP_VERSION} · La app de ahorro de España</Text>
       </View>
     </View>
   );

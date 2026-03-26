@@ -31,7 +31,6 @@ export function AuthProvider({ children }) {
   function updateUser(patch) {
     const updated = { ...user, ...patch };
     setUser(updated);
-    Auth._user = updated;
     Auth.save(Auth._token, updated).catch(() => {});
   }
 

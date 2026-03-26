@@ -7,7 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, apiGet, apiPost, apiPatch, apiUpload, API_BASE } from '../utils';
+import { COLORS, apiGet, apiPost, apiPatch, apiUpload, API_BASE, APP_VERSION, timeAgo } from '../utils';
 import PrivacyScreen from './PrivacyScreen';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
@@ -718,7 +718,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           ))}
           <Text style={{fontSize:11,color:COLORS.text3,marginTop:10,textAlign:'center'}}>
-            PreciMap v1.2.4 · Hecho con ❤️ en España
+            PreciMap v{APP_VERSION} · Hecho con ❤️ en España
           </Text>
         </Section>
 

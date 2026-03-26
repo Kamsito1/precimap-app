@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, apiGet } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import AdBanner from '../components/AdBanner';
 
 const PERIODS = [
   { key:'week',  label:'Esta semana', emoji:'📅' },
@@ -174,7 +175,8 @@ export default function RankingScreen() {
             data={leaders}
             keyExtractor={u => String(u.id)}
             contentContainerStyle={{ padding: 12, gap: 8, paddingBottom: 100 }}
-            ListHeaderComponent={leaders.length > 0 && leaders[0]?.period_fallback && period !== 'all' ? (
+            ListHeaderComponent={<>
+              {leaders.length > 0 && leaders[0]?.period_fallback && period !== 'all' ? (
               <View style={{backgroundColor:'#FEF3C7',borderRadius:12,padding:12,marginBottom:8,flexDirection:'row',gap:8,alignItems:'center'}}>
                 <Text style={{fontSize:18}}>📅</Text>
                 <View style={{flex:1}}>
@@ -187,22 +189,7 @@ export default function RankingScreen() {
                 </View>
               </View>
             ) : null}
-            ListFooterComponent={myRank ? (
-              <View style={s.myRankBanner}>
-                <Text style={s.myRankEmoji}>
-                  {(myRank.points||0)>=1000?'👑':(myRank.points||0)>=400?'🏆':(myRank.points||0)>=150?'⭐':(myRank.points||0)>=50?'💰':'🌱'}
-                </Text>
-                <View style={{flex:1}}>
-                  <Text style={s.myRankTitle}>
-                    {(myRank.points||0)>=1000?'Leyenda':(myRank.points||0)>=400?'Gurú':(myRank.points||0)>=150?'Experto':(myRank.points||0)>=50?'Ahorrador':'Novato'} · Tu posición
-                  </Text>
-                  <Text style={s.myRankSub}>{myRank.points || 0} pts · {myRank.reports || 0} {(myRank.reports||0) === 1 ? 'reporte' : 'reportes'}</Text>
-                </View>
-                <Text style={s.myRankHint}>Sigue reportando precios{'\n'}para entrar en el top 30</Text>
-              </View>
-            ) : null}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary}/>}
-            ListHeaderComponent={leaders.length > 0 ? (
+              {leaders.length > 0 ? (
               <View style={s.podium}>
                 {leaders.slice(0, 3).map((u, i) => (
                   <View key={u.id} style={[s.podiumCard,
@@ -227,7 +214,23 @@ export default function RankingScreen() {
                 ))}
               </View>
             ) : null}
-            renderItem={({ item: u, index: i }) => {
+            </>}
+            ListFooterComponent={myRank ? (
+              <View style={s.myRankBanner}>
+                <Text style={s.myRankEmoji}>
+                  {(myRank.points||0)>=1000?'👑':(myRank.points||0)>=400?'🏆':(myRank.points||0)>=150?'⭐':(myRank.points||0)>=50?'💰':'🌱'}
+                </Text>
+                <View style={{flex:1}}>
+                  <Text style={s.myRankTitle}>
+                    {(myRank.points||0)>=1000?'Leyenda':(myRank.points||0)>=400?'Gurú':(myRank.points||0)>=150?'Experto':(myRank.points||0)>=50?'Ahorrador':'Novato'} · Tu posición
+                  </Text>
+                  <Text style={s.myRankSub}>{myRank.points || 0} pts · {myRank.reports || 0} {(myRank.reports||0) === 1 ? 'reporte' : 'reportes'}</Text>
+                </View>
+                <Text style={s.myRankHint}>Sigue reportando precios{'\n'}para entrar en el top 30</Text>
+              </View>
+            ) : null}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary}/>}
+            ListFooterComponent={myRank ? (
               if (i < 3) return null;
               const progress = Math.min(100, (u.reports || 0) * 4);
               const isMe = user && u.id === user.id;
@@ -272,6 +275,7 @@ export default function RankingScreen() {
             }
           />
       )}
+      <AdBanner screen="ranking"/>
     </SafeAreaView>
   );
 }

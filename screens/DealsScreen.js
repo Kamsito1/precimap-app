@@ -10,6 +10,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
 import CommentsModal from '../components/CommentsModal';
 import AddDealModal from '../components/AddDealModal';
+import AdBanner from '../components/AdBanner';
 
 const CARD_W = Dimensions.get('window').width - 24; // card width for carousel
 
@@ -137,7 +138,7 @@ export default function DealsScreen() {
               <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:2}}>
                 <Text style={{fontSize:10,color:COLORS.danger,fontWeight:'700'}}>TENDENCIA:</Text>
                 <Text style={{fontSize:10,color:COLORS.text2}} numberOfLines={1}>
-                  {trending[0].temperature} {trending[0].title.split('—')[0].trim().substring(0,28)}...
+                  {trending[0]?.temperature} {(trending[0]?.title || '').substring(0,30)}...
                 </Text>
               </View>
             )}
@@ -573,6 +574,8 @@ export default function DealsScreen() {
           </View>
         </View>
       </Modal>
+
+      <AdBanner screen="deals"/>
 
       {/* FAB — Publicar chollo */}
       <TouchableOpacity
