@@ -60,10 +60,10 @@ function AppNavigator() {
       <View style={{ position: 'absolute', bottom: 40, alignItems: 'center', gap: 4 }}>
         <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
           {splashG95
-            ? `⛽ G95 desde ${splashG95}€/L · 🔥 ${splashStats?.deals||35} chollos`
-            : '🗺️ Gasolineras · Chollos · Supermercados'}
+            ? `⛽ G95 desde ${splashG95}€/L · 🔥 ${splashStats?.deals||50} chollos · 🎭 ${splashStats?.events||30} eventos`
+            : '🗺️ Gasolineras · Chollos · Supermercados · Bancos'}
         </Text>
-        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v1.0.2</Text>
+        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v1.0.2 · La app de ahorro de España</Text>
       </View>
     </View>
   );

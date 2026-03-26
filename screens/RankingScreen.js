@@ -225,7 +225,8 @@ export default function RankingScreen() {
                     </View>
                     <View style={s.rowMeta}>
                       <Text style={s.rowMetaTxt}>📍 {u.reports || 0} reportes</Text>
-                      {(u.streak || 0) > 0 && <Text style={s.rowMetaTxt}>🔥 {u.streak}d racha</Text>}
+                      {(u.streak || 0) > 0 && <Text style={s.rowMetaTxt}>🔥 {u.streak}d</Text>}
+                      {u.rank_title && <Text style={{fontSize:10,color:COLORS.primary,fontWeight:'700'}}>{u.rank_title}</Text>}
                     </View>
                     <View style={s.progressBg}>
                       <View style={[s.progressFill, { width: `${progress}%` }]}/>
