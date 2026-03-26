@@ -3,7 +3,7 @@ import { useColorScheme } from 'react-native';
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 // Production: Railway URL | Development: local IP
-export const API_BASE = process.env.API_BASE || process.env.EXPO_PUBLIC_API_BASE || 'http://192.168.18.139:3000';
+export const API_BASE = process.env.EXPO_PUBLIC_API_BASE || process.env.API_BASE || 'https://web-production-a8023.up.railway.app';
 
 // ─── COLORS — Static light theme (used in StyleSheet.create) ─────────────────
 // For dark mode support in individual components, use useThemeColors() hook

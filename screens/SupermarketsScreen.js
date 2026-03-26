@@ -369,6 +369,28 @@ export default function SupermarketsScreen({ embedded = false }) {
 
         {/* ── PRODUCTOS TAB ── */}
         {tab==='productos' && <>
+          {/* City filter pills — same state as community */}
+          {allCities.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{paddingHorizontal:12,paddingTop:10,paddingBottom:4,gap:6}}>
+              {['', ...allCities].map(city => (
+                <TouchableOpacity key={city||'all'} style={[
+                  {paddingHorizontal:12,paddingVertical:5,borderRadius:99,borderWidth:1.5,
+                   borderColor:communityCity===city?COLORS.primary:COLORS.border,
+                   backgroundColor:communityCity===city?COLORS.primary:COLORS.bg},
+                ]} onPress={() => setCommunityCity(city)}>
+                  <Text style={{fontSize:12,fontWeight:'600',color:communityCity===city?'#fff':COLORS.text2}}>
+                    {city || '🇪🇸 Toda España'}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
+          {communityCity ? (
+            <View style={{paddingHorizontal:12,paddingBottom:4}}>
+              <Text style={{fontSize:11,color:COLORS.text3}}>📍 Mostrando precios de comunidad para <Text style={{fontWeight:'700',color:COLORS.primary}}>{communityCity}</Text></Text>
+            </View>
+          ) : null}
           <View style={s.searchBox}>
             <Ionicons name="search-outline" size={15} color={COLORS.text3}/>
             <TextInput style={s.searchInput} value={search} onChangeText={setSearch}
