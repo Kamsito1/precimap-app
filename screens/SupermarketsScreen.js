@@ -90,9 +90,19 @@ export default function SupermarketsScreen({ embedded = false }) {
   const [community, setCommunity] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
   const [showAuth, setShowAuth]   = useState(false);
+  const [priceHistory, setPriceHistory] = useState({}); // { productName: [{date,price}] }
+  const [selectedProd, setSelectedProd] = useState(null);
 
-  useEffect(() => { loadCommunity(); }, []);
-  const onRefresh = useCallback(() => { setRefreshing(true); loadCommunity(); }, []);
+  useEffect(() => { loadCommunity(); loadPriceHistory(); }, []);
+  const onRefresh = useCallback(() => { setRefreshing(true); loadCommunity(); loadPriceHistory(); }, []);
+
+  async function loadPriceHistory() {
+    try {
+      // Load history from Mercadona (place_id=1) as reference
+      const data = await apiGet('/api/places/1/price-history') || {};
+      if (data.history) setPriceHistory(data.history);
+    } catch {}
+  }
 
   async function loadCommunity() {
     try {
@@ -247,6 +257,20 @@ export default function SupermarketsScreen({ embedded = false }) {
                       🏆 {p.best}
                     </Text>
                     <Text style={{fontSize:9,color:COLORS.text3}}>-{savings(p)}% ahorro</Text>
+                    {/* Price trend from history */}
+                    {priceHistory[p.name] && (() => {
+                      const hist = priceHistory[p.name];
+                      if (hist.length < 2) return null;
+                      const last = hist[hist.length-1].price;
+                      const prev = hist[hist.length-2].price;
+                      const diff = last - prev;
+                      if (Math.abs(diff) < 0.01) return null;
+                      return (
+                        <Text style={{fontSize:9, color: diff > 0 ? COLORS.danger : COLORS.success, fontWeight:'700'}}>
+                          {diff > 0 ? '↑' : '↓'}{Math.abs(diff).toFixed(2)}€
+                        </Text>
+                      );
+                    })()}
                   </View>
                 </View>
                 {[['mercadona',p.mercadona],['lidl',p.lidl],['aldi',p.aldi],['carrefour',p.carrefour]].map(([store,price])=>{
