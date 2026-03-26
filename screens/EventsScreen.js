@@ -156,12 +156,17 @@ export default function EventsScreen() {
         {/* Category pills */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={{paddingHorizontal:12,gap:6,paddingBottom:8}}>
-          {CATS.map(c => (
-            <TouchableOpacity key={c.key} style={[s.catBtn, cat===c.key && s.catBtnOn]} onPress={() => setCat(c.key)}>
-              <Text style={s.catEmoji}>{c.emoji}</Text>
-              <Text style={[s.catTxt, cat===c.key && {color:'#fff'}]}>{c.label}</Text>
-            </TouchableOpacity>
-          ))}
+          {CATS.map(c => {
+            const count = c.key === 'all' ? events.length : events.filter(e => e.category === c.key).length;
+            if (c.key !== 'all' && count === 0) return null;
+            return (
+              <TouchableOpacity key={c.key} style={[s.catBtn, cat===c.key && s.catBtnOn]} onPress={() => setCat(c.key)}>
+                <Text style={s.catEmoji}>{c.emoji}</Text>
+                <Text style={[s.catTxt, cat===c.key && {color:'#fff'}]}>{c.label}</Text>
+                {count > 0 && c.key !== 'all' && <Text style={{fontSize:9,color:cat===c.key?'rgba(255,255,255,0.8)':COLORS.text3,fontWeight:'700'}}>{count}</Text>}
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
         {/* Filter panel */}
