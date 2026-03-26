@@ -16,6 +16,7 @@ import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
 import AddGasStationModal from '../components/AddGasStationModal';
 import CityPicker from '../components/CityPicker';
+import PriceChangeModal from '../components/PriceChangeModal';
 
 const FUELS = [
   { key:'g95',         label:'Gasolina 95',  emoji:'🟢', color:'#3B82F6', bg:'#EFF6FF' },
@@ -57,7 +58,8 @@ export default function MapScreen() {
   const [sort, setSort]             = useState('proximity');
   const [radius, setRadius]         = useState(25);
   const [product, setProduct]       = useState('');
-  const [gasSearch, setGasSearch]   = useState(''); // separate search for list view gas stations  const [city, setCity]             = useState('');
+  const [gasSearch, setGasSearch]   = useState('');
+  const [city, setCity]             = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [activeFuel, setActiveFuel]   = useState(null); // null = must choose first
   const [loading, setLoading]         = useState(false);
@@ -68,6 +70,7 @@ export default function MapScreen() {
   const [selectedStation, setSelectedStation] = useState(null);
   const [showAuth, setShowAuth]     = useState(false);
   const [showAddGas, setShowAddGas] = useState(false);
+  const [priceChangePlace, setPriceChangePlace] = useState(null);
   const [mapRegion, setMapRegion]   = useState(null); // current visible region
   const [allGas, setAllGas]         = useState([]);
   const [serverFuelStats, setServerFuelStats] = useState(null);
@@ -223,7 +226,7 @@ export default function MapScreen() {
             <Text style={{fontSize:22,fontWeight:'800',color:'#fff',marginBottom:6}}>⛽ Elige tu carburante</Text>
             {fuelStats?.g95 && (
               <Text style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginBottom:2}}>
-                G95 ahora desde {fuelStats.g95.min?.toFixed(3)}€/L · media {fuelStats.g95.avg?.toFixed(3)}€/L
+                G95 ahora desde {fuelStats?.g95?.min?.toFixed(3)}€/L · media {fuelStats?.g95?.avg?.toFixed(3)}€/L
               </Text>
             )}
             <Text style={{fontSize:14,color:'rgba(255,255,255,0.8)',lineHeight:20}}>
@@ -264,15 +267,15 @@ export default function MapScreen() {
                     <View style={{alignItems:'flex-end',gap:4}}>
                       <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
                         <Text style={{fontSize:11,color:COLORS.text3,width:32}}>🟢 min</Text>
-                        <Text style={{fontSize:13,fontWeight:'800',color:'#16A34A',minWidth:56,textAlign:'right'}}>{st.min.toFixed(3)}€</Text>
+                        <Text style={{fontSize:13,fontWeight:'800',color:'#16A34A',minWidth:56,textAlign:'right'}}>{st.min?.toFixed(3)}€</Text>
                       </View>
                       <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
                         <Text style={{fontSize:11,color:COLORS.text3,width:32}}>🟡 med</Text>
-                        <Text style={{fontSize:13,fontWeight:'700',color:'#D97706',minWidth:56,textAlign:'right'}}>{st.avg.toFixed(3)}€</Text>
+                        <Text style={{fontSize:13,fontWeight:'700',color:'#D97706',minWidth:56,textAlign:'right'}}>{st.avg?.toFixed(3)}€</Text>
                       </View>
                       <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
                         <Text style={{fontSize:11,color:COLORS.text3,width:32}}>🔴 max</Text>
-                        <Text style={{fontSize:13,fontWeight:'700',color:'#DC2626',minWidth:56,textAlign:'right'}}>{st.max.toFixed(3)}€</Text>
+                        <Text style={{fontSize:13,fontWeight:'700',color:'#DC2626',minWidth:56,textAlign:'right'}}>{st.max?.toFixed(3)}€</Text>
                       </View>
                     </View>
                     <Ionicons name="chevron-forward" size={16} color={COLORS.text3}/>
@@ -318,7 +321,7 @@ export default function MapScreen() {
               </Text>
               {activeFuel && fuelStats[activeFuel] && (
                 <Text style={{fontSize:9,color:COLORS.text3}}>
-                  {' '}🟢{fuelStats[activeFuel].min.toFixed(3)}€
+                  {' '}🟢{fuelStats[activeFuel].min?.toFixed(3)}€
                 </Text>
               )}
               <Text style={{fontSize:9,color:COLORS.text3}}> · cambiar</Text>
@@ -562,9 +565,9 @@ export default function MapScreen() {
                 return (
                   <>
                     <View style={ms.legendSep}/>
-                    <Text style={ms.legendStat}>🟢{st.min.toFixed(3)}</Text>
-                    <Text style={ms.legendStat}>🟡{st.avg.toFixed(3)}</Text>
-                    <Text style={ms.legendStat}>🔴{st.max.toFixed(3)}</Text>
+                    <Text style={ms.legendStat}>🟢{st.min?.toFixed(3)}</Text>
+                    <Text style={ms.legendStat}>🟡{st.avg?.toFixed(3)}</Text>
+                    <Text style={ms.legendStat}>🔴{st.max?.toFixed(3)}</Text>
                   </>
                 );
               })()}
@@ -683,8 +686,9 @@ export default function MapScreen() {
 
       {/* Modals */}
       <Modal visible={!!selectedPlace} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedPlace(null)}>
-        {selectedPlace && <PlaceModal place={selectedPlace} onClose={()=>setSelectedPlace(null)} onNavigate={navigateTo} isLoggedIn={isLoggedIn} onAuthNeeded={()=>setShowAuth(true)}/>}
+        {selectedPlace && <PlaceModal place={selectedPlace} onClose={()=>setSelectedPlace(null)} onNavigate={navigateTo} isLoggedIn={isLoggedIn} onAuthNeeded={()=>setShowAuth(true)} onProposePrice={(p)=>{setSelectedPlace(null); setPriceChangePlace(p);}}/>}
       </Modal>
+      <PriceChangeModal visible={!!priceChangePlace} onClose={()=>setPriceChangePlace(null)} place={priceChangePlace}/>
       <Modal visible={!!selectedStation} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedStation(null)}>
         {selectedStation && <GasModal station={selectedStation} onClose={()=>setSelectedStation(null)} onNavigate={navigateTo} onFavChange={loadFavs}/>}
       </Modal>
@@ -830,7 +834,7 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
 }
 
 // === PLACE MODAL (bars, supermarkets, etc.) ===
-function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded }) {
+function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onProposePrice }) {
   const info = CATEGORY_INFO[place.category]||CATEGORY_INFO.default;
   const prices = place.prices||[];
   const [history, setHistory] = React.useState({});
@@ -854,9 +858,9 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded }) {
       </View>
       <ScrollView contentContainerStyle={{padding:16,paddingBottom:40}}>
         <View style={pcs.actions}>
-          <TouchableOpacity style={pcs.actionBtn} onPress={()=>{isLoggedIn?Alert.alert('Añadir precio','Próximamente desde la app'):onAuthNeeded();}}>
-            <Ionicons name="add-circle-outline" size={18} color={COLORS.primary}/>
-            <Text style={pcs.actionTxt}>Añadir precio</Text>
+          <TouchableOpacity style={pcs.actionBtn} onPress={() => onProposePrice(place)}>
+            <Ionicons name="pricetag-outline" size={18} color={COLORS.primary}/>
+            <Text style={pcs.actionTxt}>💰 Ver precios y cambios</Text>
           </TouchableOpacity>
           <TouchableOpacity style={pcs.actionBtnNav} onPress={()=>{onClose();onNavigate(place.lat,place.lng,place.name);}}>
             <Ionicons name="navigate" size={18} color="#fff"/>

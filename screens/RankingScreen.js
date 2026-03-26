@@ -23,8 +23,12 @@ export default function RankingScreen() {
   const [mainTab, setMainTab] = useState('ranking'); // 'ranking' | 'comunidad'
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [serverLevels, setServerLevels] = useState(null);
 
   useEffect(() => { load(); }, [period]);
+  useEffect(() => {
+    apiGet('/api/levels').then(d => { if (d?.levels) setServerLevels(d); }).catch(() => {});
+  }, []);
 
   async function load() {
     try {

@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, apiGet } from '../utils';
 import BanksScreen from './BanksScreen';
@@ -12,49 +12,59 @@ const SUBTABS = [
 
 const FALLBACK_TIPS = [
   '💡 Aldi es un 22% más barato que Mercadona en media',
-  '💡 Trade Republic da 3.62% TAE en cuenta remunerada',
+  '💡 Trade Republic da un 4% TAE sin condiciones',
   '💡 Con Revolut ahorras comisiones en divisas',
   '💡 Comprar en Lidl ahorra ~35€/mes en una familia',
-  '💡 El depósito de Bankinter da 3.75% TAE garantizado',
+  '💡 Tarifa nocturna de luz: ahorra un 30%',
+  '💡 Vuelos baratos: búscalos en martes o miércoles',
 ];
 
 export default function AhorroScreen() {
   const [sub, setSub] = useState('super');
   const [visited, setVisited] = useState({ super: true, bancos: false });
   const [tips, setTips] = useState(FALLBACK_TIPS);
-  const [tipIdx, setTipIdx] = useState(Math.floor(Math.random() * FALLBACK_TIPS.length));
+  const [tipIdx, setTipIdx] = useState(0);
+  const fadeAnim = useRef(new Animated.Value(1)).current;
 
-  // Load tips from server
   useEffect(() => {
+    let cancelled = false;
     apiGet('/api/tips').then(t => {
+      if (cancelled) return;
       if (Array.isArray(t) && t.length > 0) {
-        const mapped = t.map(item => `${item.emoji} ${item.title} — ${item.saves}`);
+        const mapped = t.map(item => `${item.emoji || '💡'} ${item.title} — ${item.saves}`);
         setTips(mapped);
-        setTipIdx(Math.floor(Math.random() * mapped.length));
+        setTipIdx(0);
       }
     }).catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
-  // Rotate tip every 8 seconds
   useEffect(() => {
-    const id = setInterval(() => setTipIdx(i => (i + 1) % tips.length), 8000);
+    if (!tips || tips.length === 0) return;
+    const id = setInterval(() => {
+      Animated.sequence([
+        Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
+      setTipIdx(i => (i + 1) % tips.length);
+    }, 6000);
     return () => clearInterval(id);
-  }, [tips]);
+  }, [tips, fadeAnim]);
 
   const switchTab = useCallback((key) => {
     setSub(key);
     setVisited(v => ({ ...v, [key]: true }));
   }, []);
 
+  const currentTip = (tips && tips.length > 0) ? (tips[tipIdx] || tips[0]) : '💡 Ahorra con PreciMap';
+
   return (
     <View style={{ flex: 1, backgroundColor: COLORS.bg }}>
-      <SafeAreaView edges={['top']} style={{ backgroundColor: COLORS.bg2, borderBottomWidth: 0.5, borderBottomColor: COLORS.border }}>
-        {/* Rotating tip bar — fed from /api/tips */}
-        <View style={{ backgroundColor: COLORS.primaryLight, paddingHorizontal: 14, paddingVertical: 7 }}>
-          <Text style={{ fontSize: 12, color: COLORS.primaryDark, fontWeight: '500' }} numberOfLines={1}>
-            {tips[tipIdx]}
-          </Text>
-        </View>
+      {/* Header fijo */}
+      <SafeAreaView edges={['top']} style={s.header}>
+        <Animated.View style={[s.tipBar, { opacity: fadeAnim }]}>
+          <Text style={s.tipTxt} numberOfLines={1}>{currentTip}</Text>
+        </Animated.View>
         <View style={s.subTabRow}>
           {SUBTABS.map(t => (
             <TouchableOpacity
@@ -67,21 +77,27 @@ export default function AhorroScreen() {
         </View>
       </SafeAreaView>
 
-      {visited.super && (
-        <View style={{ flex: 1, display: sub === 'super' ? 'flex' : 'none' }}>
-          <SupermarketsScreen embedded />
-        </View>
-      )}
-      {visited.bancos && (
-        <View style={{ flex: 1, display: sub === 'bancos' ? 'flex' : 'none' }}>
-          <BanksScreen embedded />
-        </View>
-      )}
+      {/* Contenido con keep-alive para no recargar al cambiar tab */}
+      <View style={{ flex: 1 }}>
+        {visited.super && (
+          <View style={{ flex: 1, display: sub === 'super' ? 'flex' : 'none' }}>
+            <SupermarketsScreen embedded />
+          </View>
+        )}
+        {visited.bancos && (
+          <View style={{ flex: 1, display: sub === 'bancos' ? 'flex' : 'none' }}>
+            <BanksScreen embedded />
+          </View>
+        )}
+      </View>
     </View>
   );
 }
 
 const s = StyleSheet.create({
+  header:      { backgroundColor: COLORS.bg2, borderBottomWidth: 0.5, borderBottomColor: COLORS.border },
+  tipBar:      { backgroundColor: COLORS.primaryLight, paddingHorizontal: 14, paddingVertical: 8 },
+  tipTxt:      { fontSize: 12, color: COLORS.primaryDark, fontWeight: '600' },
   subTabRow:   { flexDirection: 'row', paddingHorizontal: 12, paddingVertical: 8, gap: 8 },
   subTab:      { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center', backgroundColor: COLORS.bg3, borderWidth: 1.5, borderColor: COLORS.border },
   subTabOn:    { backgroundColor: COLORS.primary, borderColor: COLORS.primary },

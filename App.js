@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { View, Text, ActivityIndicator, useColorScheme } from 'react-native';
+import { View, Text, ActivityIndicator, useColorScheme, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import MapScreen from './screens/MapScreen';
@@ -92,11 +92,16 @@ function AppNavigator() {
           backgroundColor: '#FFFFFF',
           borderTopColor: '#E2E8F0',
           borderTopWidth: 0.5,
-          height: 54,
-          paddingBottom: 6,
-          paddingTop: 4,
+          height: Platform.OS === 'ios' ? 84 : 64,
+          paddingBottom: Platform.OS === 'ios' ? 26 : 10,
+          paddingTop: 8,
+          elevation: 10,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 10,
         },
-        tabBarLabelStyle: { fontSize: 9.5, fontWeight: '600', marginTop: 0 },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '600', marginTop: 0 },
         tabBarIconStyle: { marginBottom: -2 },
       }}
     >
@@ -107,11 +112,11 @@ function AppNavigator() {
       <Tab.Screen name="Ahorro" component={AhorroScreen}
         options={{ tabBarIcon: p => <TabIcon name="wallet" {...p} /> }} />
       <Tab.Screen name="Eventos" component={EventsScreen}
-        options={{ tabBarIcon: p => <TabIcon name="calendar" {...p} /> }} />
+        options={{ tabBarLabel: 'Eventos', tabBarIcon: p => <TabIcon name="calendar" {...p} /> }} />
       <Tab.Screen name="Ranking" component={RankingScreen}
-        options={{ tabBarIcon: p => <TabIcon name="trophy" {...p} /> }} />
+        options={{ tabBarLabel: 'Top', tabBarIcon: p => <TabIcon name="trophy" {...p} /> }} />
       <Tab.Screen name="Perfil" component={ProfileScreen}
-        options={{ tabBarIcon: p => <TabIcon name="person" {...p} badge={unreadCount} /> }} />
+        options={{ tabBarLabel: 'Perfil', tabBarIcon: p => <TabIcon name="person" {...p} badge={unreadCount} /> }} />
     </Tab.Navigator>
   );
 }

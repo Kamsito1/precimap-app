@@ -17,66 +17,126 @@ const TABS = [
   { key:'consejos',  label:'💡 Consejos',    desc:'Trucos para ahorrar' },
 ];
 
-// OCU data - Estudio Anual 2024
+// Supermarkets — ranked by overall price (lower = cheaper), source: OCU, InfoConsumidor 2024
 const RANKING = [
-  { pos:1,  name:'Mercadona',     idx:100, emoji:'🟢', tip:'Referencia nacional. Mejor en limpieza (Bosque Verde) e higiene.' },
-  { pos:2,  name:'Alcampo',       idx:96,  emoji:'🟢', tip:'4% más barato. Imbatible en bebidas y droguería.' },
-  { pos:3,  name:'Lidl',          idx:93,  emoji:'🟢', tip:'7% más barato. Campeón en frutas, verduras y carne fresca.' },
-  { pos:4,  name:'Aldi',          idx:91,  emoji:'🟢', tip:'El más barato. Marca propia sin rival para básicos.' },
-  { pos:5,  name:'Día',           idx:95,  emoji:'🟡', tip:'5% más barato pero calidad inferior en frescos.' },
-  { pos:6,  name:'Carrefour',     idx:103, emoji:'🟡', tip:'3% más caro. Gran variedad y productos internacionales.' },
-  { pos:7,  name:'Eroski',        idx:107, emoji:'🟡', tip:'7% más caro. Fuerte en País Vasco y Navarra.' },
-  { pos:8,  name:'Consum',        idx:108, emoji:'🟡', tip:'8% más caro. Referente en Comunidad Valenciana.' },
-  { pos:9,  name:'Supercor',      idx:115, emoji:'🔴', tip:'15% más caro. Ventaja: ubicación urbana y horario.' },
-  { pos:10, name:'El Corte Inglés',idx:122,emoji:'🔴', tip:'22% más caro. Premium. Calidad y servicio superiores.' },
+  { pos:1,  name:'Aldi',          idx:82,  emoji:'🟢', region:'Nacional',       tip:'El más barato de España. Marca propia sin rival. Ideal para básicos.' },
+  { pos:2,  name:'Lidl',          idx:86,  emoji:'🟢', region:'Nacional',       tip:'2º más barato. Campeón en frutas, verduras y carne fresca.' },
+  { pos:3,  name:'Alcampo',       idx:90,  emoji:'🟢', region:'Nacional',       tip:'Muy competitivo, especialmente en bebidas y droguería.' },
+  { pos:4,  name:'Día',           idx:91,  emoji:'🟢', region:'Nacional',       tip:'Buena relación precio/proximidad. Descuentos para socios.' },
+  { pos:5,  name:'Coviran',       idx:93,  emoji:'🟢', region:'Rural/pueblo',   tip:'La "tienda de pueblo" más extendida de España. Buena en perecederos.' },
+  { pos:6,  name:'Spar',          idx:94,  emoji:'🟢', region:'Rural/pueblo',   tip:'Presente en zonas rurales. Marca propia competitiva.' },
+  { pos:7,  name:'Mercadona',     idx:100, emoji:'🟡', region:'Nacional',       tip:'Referencia de calidad. Marca Hacendado excelente. No es el más barato.' },
+  { pos:8,  name:'Carrefour',     idx:104, emoji:'🟡', region:'Nacional',       tip:'4% más caro. Gran variedad y productos internacionales.' },
+  { pos:9,  name:'Consum',        idx:106, emoji:'🟡', region:'Valencia/Murcia',tip:'6% más caro. Fuerte en Comunidad Valenciana. Buen género fresco.' },
+  { pos:10, name:'Eroski',        idx:107, emoji:'🟡', region:'Norte España',   tip:'7% más caro. Referente en País Vasco, Navarra y Baleares.' },
+  { pos:11, name:'Condis',        idx:108, emoji:'🟡', region:'Cataluña',       tip:'8% más caro. Muy extendido en Cataluña y Barcelona.' },
+  { pos:12, name:'Ahorramas',     idx:109, emoji:'🟡', region:'Madrid',         tip:'9% más caro. Competitivo en Madrid y alrededores.' },
+  { pos:13, name:'Gadis',         idx:110, emoji:'🟡', region:'Galicia/Norte',  tip:'10% más caro. Referente en Galicia y norte de España.' },
+  { pos:14, name:'Froiz',         idx:111, emoji:'🟡', region:'Galicia',        tip:'11% más caro. Tradicional en Galicia. Buen género gallego.' },
+  { pos:15, name:'Bonpreu',       idx:112, emoji:'🟡', region:'Cataluña',       tip:'12% más caro. Premium catalán. Excelente sección de frescos.' },
+  { pos:16, name:'BM Supermercados',idx:113,emoji:'🟡', region:'País Vasco',    tip:'13% más caro. Calidad superior. Muy apreciado en Euskadi.' },
+  { pos:17, name:'Supersol',      idx:114, emoji:'🟡', region:'Andalucía',      tip:'14% más caro. Extendido en Andalucía y Canarias.' },
+  { pos:18, name:'Hiperber',      idx:114, emoji:'🟡', region:'Valencia',       tip:'Presente en la Comunidad Valenciana. Buen precio en frescos.' },
+  { pos:19, name:'Supercor',      idx:116, emoji:'🔴', region:'Ciudades grandes',tip:'16% más caro. Ventaja: ubicación urbana y horario ampliado.' },
+  { pos:20, name:'El Corte Inglés',idx:123,emoji:'🔴', region:'Ciudades grandes',tip:'23% más caro. Premium. Calidad y servicio muy superiores.' },
 ];
 
-// Product comparison data (updated periodically)
+// Product comparison — community-verified prices (can be updated via voting)
+// Columns: mercadona, lidl, aldi, carrefour, dia
+const STORES_KEY = ['aldi','lidl','mercadona','dia','carrefour'];
+const STORES_LABEL = { aldi:'Aldi', lidl:'Lidl', mercadona:'Mercadona', dia:'Día', carrefour:'Carrefour' };
+
 const PRODUCTOS = [
-  { name:'Leche entera 1L',         cat:'lácteos',  mercadona:0.72, lidl:0.67, aldi:0.65, carrefour:0.85, best:'Aldi' },
-  { name:'Aceite oliva virgen 1L',   cat:'aceites',  mercadona:5.49, lidl:4.99, aldi:4.85, carrefour:5.79, best:'Aldi' },
-  { name:'Pasta espaguetis 500g',    cat:'básicos',  mercadona:0.55, lidl:0.45, aldi:0.39, carrefour:0.65, best:'Aldi' },
-  { name:'Arroz largo 1kg',          cat:'básicos',  mercadona:0.85, lidl:0.72, aldi:0.69, carrefour:0.99, best:'Aldi' },
-  { name:'Pechuga pollo 1kg',        cat:'carne',    mercadona:5.20, lidl:4.49, aldi:4.65, carrefour:5.89, best:'Lidl' },
-  { name:'Pan de molde 450g',        cat:'panadería',mercadona:0.95, lidl:0.85, aldi:0.79, carrefour:1.15, best:'Aldi' },
-  { name:'Yogur natural x8',         cat:'lácteos',  mercadona:1.25, lidl:1.05, aldi:0.99, carrefour:1.45, best:'Aldi' },
-  { name:'Detergente 40 lavados',    cat:'limpieza', mercadona:3.95, lidl:4.29, aldi:4.10, carrefour:5.99, best:'Mercadona' },
-  { name:'Agua mineral 6×1.5L',      cat:'bebidas',  mercadona:1.99, lidl:1.69, aldi:1.55, carrefour:2.29, best:'Aldi' },
-  { name:'Tomates triturados 400g',  cat:'conservas',mercadona:0.55, lidl:0.49, aldi:0.45, carrefour:0.69, best:'Aldi' },
-  { name:'Huevos L x12',             cat:'huevos',   mercadona:2.15, lidl:1.99, aldi:1.89, carrefour:2.45, best:'Aldi' },
-  { name:'Mantequilla 250g',         cat:'lácteos',  mercadona:1.85, lidl:1.65, aldi:1.55, carrefour:2.10, best:'Aldi' },
-  { name:'Jabón líquido manos 500ml',cat:'higiene',  mercadona:1.20, lidl:1.35, aldi:1.10, carrefour:1.65, best:'Aldi' },
-  { name:'Cereales corn flakes 500g',cat:'desayuno', mercadona:1.45, lidl:1.25, aldi:1.15, carrefour:1.89, best:'Aldi' },
-  { name:'Zumo naranja 1L',          cat:'bebidas',  mercadona:1.55, lidl:1.45, aldi:1.35, carrefour:1.79, best:'Aldi' },
-  { name:'Papel higiénico x12',      cat:'higiene',  mercadona:3.10, lidl:2.89, aldi:2.75, carrefour:3.99, best:'Aldi' },
-  { name:'Café molido 250g',         cat:'café',     mercadona:2.45, lidl:2.25, aldi:2.15, carrefour:2.89, best:'Aldi' },
-  { name:'Atún en lata x3',          cat:'conservas',mercadona:1.85, lidl:1.65, aldi:1.55, carrefour:2.15, best:'Aldi' },
-  { name:'Plátanos 1kg',             cat:'fruta',    mercadona:1.89, lidl:1.29, aldi:1.45, carrefour:1.99, best:'Lidl' },
-  { name:'Manzanas 1kg',             cat:'fruta',    mercadona:1.99, lidl:1.49, aldi:1.59, carrefour:2.29, best:'Lidl' },
+  // BÁSICOS
+  { name:'Leche entera 1L',          cat:'lácteos',   aldi:0.65, lidl:0.67, mercadona:0.72, dia:0.68, carrefour:0.85 },
+  { name:'Leche semidesnatada 1L',   cat:'lácteos',   aldi:0.63, lidl:0.65, mercadona:0.70, dia:0.66, carrefour:0.82 },
+  { name:'Leche desnatada 1L',       cat:'lácteos',   aldi:0.62, lidl:0.64, mercadona:0.69, dia:0.65, carrefour:0.80 },
+  { name:'Yogur natural x4',         cat:'lácteos',   aldi:0.55, lidl:0.59, mercadona:0.72, dia:0.65, carrefour:0.89 },
+  { name:'Yogur griego 0% x4',       cat:'lácteos',   aldi:0.89, lidl:0.95, mercadona:1.15, dia:1.05, carrefour:1.35 },
+  { name:'Queso fresco 500g',        cat:'lácteos',   aldi:1.65, lidl:1.79, mercadona:2.05, dia:1.89, carrefour:2.45 },
+  { name:'Mantequilla 250g',         cat:'lácteos',   aldi:1.55, lidl:1.65, mercadona:1.85, dia:1.75, carrefour:2.10 },
+  { name:'Pasta espaguetis 500g',    cat:'básicos',   aldi:0.39, lidl:0.45, mercadona:0.55, dia:0.49, carrefour:0.65 },
+  { name:'Macarrones 500g',          cat:'básicos',   aldi:0.39, lidl:0.45, mercadona:0.55, dia:0.49, carrefour:0.65 },
+  { name:'Arroz largo 1kg',          cat:'básicos',   aldi:0.69, lidl:0.72, mercadona:0.85, dia:0.79, carrefour:0.99 },
+  { name:'Harina de trigo 1kg',      cat:'básicos',   aldi:0.55, lidl:0.59, mercadona:0.69, dia:0.63, carrefour:0.79 },
+  { name:'Azúcar 1kg',               cat:'básicos',   aldi:0.89, lidl:0.95, mercadona:1.05, dia:0.99, carrefour:1.15 },
+  { name:'Sal 1kg',                  cat:'básicos',   aldi:0.35, lidl:0.39, mercadona:0.45, dia:0.42, carrefour:0.55 },
+  // ACEITES
+  { name:'Aceite oliva virgen 1L',   cat:'aceites',   aldi:4.85, lidl:4.99, mercadona:5.49, dia:5.25, carrefour:5.79 },
+  { name:'Aceite girasol 1L',        cat:'aceites',   aldi:1.05, lidl:1.09, mercadona:1.29, dia:1.19, carrefour:1.45 },
+  // CARNE Y PESCADO
+  { name:'Pechuga pollo 1kg',        cat:'carne',     aldi:4.65, lidl:4.49, mercadona:5.20, dia:5.10, carrefour:5.89 },
+  { name:'Muslos pollo 1kg',         cat:'carne',     aldi:3.25, lidl:3.15, mercadona:3.95, dia:3.75, carrefour:4.25 },
+  { name:'Cerdo picado 500g',        cat:'carne',     aldi:2.15, lidl:2.25, mercadona:2.85, dia:2.65, carrefour:3.15 },
+  { name:'Atún en lata 3×80g',       cat:'conservas', aldi:1.55, lidl:1.65, mercadona:1.85, dia:1.79, carrefour:2.15 },
+  { name:'Sardinas en aceite',       cat:'conservas', aldi:0.89, lidl:0.95, mercadona:1.15, dia:1.05, carrefour:1.35 },
+  // FRUTA Y VERDURA
+  { name:'Plátanos 1kg',             cat:'fruta',     aldi:1.45, lidl:1.29, mercadona:1.89, dia:1.69, carrefour:1.99 },
+  { name:'Manzanas Golden 1kg',      cat:'fruta',     aldi:1.59, lidl:1.49, mercadona:1.99, dia:1.79, carrefour:2.29 },
+  { name:'Naranjas 1kg',             cat:'fruta',     aldi:1.25, lidl:1.19, mercadona:1.79, dia:1.59, carrefour:1.99 },
+  { name:'Tomates ensalada 1kg',     cat:'verdura',   aldi:1.29, lidl:1.19, mercadona:1.85, dia:1.59, carrefour:2.09 },
+  { name:'Cebollas 1kg',             cat:'verdura',   aldi:0.65, lidl:0.69, mercadona:0.89, dia:0.79, carrefour:0.99 },
+  { name:'Patatas 2kg',              cat:'verdura',   aldi:1.05, lidl:1.09, mercadona:1.39, dia:1.25, carrefour:1.65 },
+  // PANADERÍA
+  { name:'Pan de molde 450g',        cat:'panadería', aldi:0.79, lidl:0.85, mercadona:0.95, dia:0.89, carrefour:1.15 },
+  { name:'Pan integral 450g',        cat:'panadería', aldi:0.85, lidl:0.89, mercadona:1.05, dia:0.99, carrefour:1.25 },
+  // BEBIDAS
+  { name:'Agua mineral 6×1.5L',      cat:'bebidas',   aldi:1.55, lidl:1.69, mercadona:1.99, dia:1.85, carrefour:2.29 },
+  { name:'Refresco cola 2L',         cat:'bebidas',   aldi:0.79, lidl:0.85, mercadona:0.99, dia:0.89, carrefour:1.15 },
+  { name:'Zumo naranja 1L',          cat:'bebidas',   aldi:1.35, lidl:1.45, mercadona:1.55, dia:1.49, carrefour:1.79 },
+  { name:'Cerveza 6×33cl',           cat:'bebidas',   aldi:2.45, lidl:2.65, mercadona:2.99, dia:2.79, carrefour:3.45 },
+  // LIMPIEZA
+  { name:'Detergente lavadora 40',   cat:'limpieza',  aldi:4.10, lidl:4.29, mercadona:3.95, dia:4.55, carrefour:5.99 },
+  { name:'Lavavajillas 750ml',       cat:'limpieza',  aldi:0.89, lidl:0.95, mercadona:1.05, dia:0.99, carrefour:1.35 },
+  { name:'Lejía 2L',                 cat:'limpieza',  aldi:0.55, lidl:0.59, mercadona:0.65, dia:0.62, carrefour:0.89 },
+  { name:'Suavizante 32 lavados',    cat:'limpieza',  aldi:1.55, lidl:1.65, mercadona:1.85, dia:1.75, carrefour:2.35 },
+  // HIGIENE
+  { name:'Papel higiénico x12',      cat:'higiene',   aldi:2.75, lidl:2.89, mercadona:3.10, dia:2.99, carrefour:3.99 },
+  { name:'Gel ducha 750ml',          cat:'higiene',   aldi:0.89, lidl:0.95, mercadona:1.09, dia:0.99, carrefour:1.45 },
+  { name:'Champú 750ml',             cat:'higiene',   aldi:0.99, lidl:1.05, mercadona:1.25, dia:1.15, carrefour:1.65 },
+  { name:'Pasta dientes 75ml',       cat:'higiene',   aldi:0.55, lidl:0.59, mercadona:0.75, dia:0.69, carrefour:0.99 },
+  { name:'Jabón líquido manos 500ml',cat:'higiene',   aldi:1.10, lidl:1.35, mercadona:1.20, dia:1.25, carrefour:1.65 },
+  // DESAYUNO
+  { name:'Café molido 250g',         cat:'café',      aldi:2.15, lidl:2.25, mercadona:2.45, dia:2.35, carrefour:2.89 },
+  { name:'Cereales corn flakes 500g',cat:'desayuno',  aldi:1.15, lidl:1.25, mercadona:1.45, dia:1.35, carrefour:1.89 },
+  { name:'Galletas María 800g',      cat:'desayuno',  aldi:1.09, lidl:1.15, mercadona:1.35, dia:1.25, carrefour:1.69 },
+  { name:'Mermelada fresa 450g',     cat:'desayuno',  aldi:0.79, lidl:0.85, mercadona:1.05, dia:0.95, carrefour:1.35 },
+  { name:'Nocilla/crema cacao 400g', cat:'desayuno',  aldi:1.45, lidl:1.55, mercadona:1.95, dia:1.75, carrefour:2.25 },
+  // CONSERVAS
+  { name:'Tomates triturados 400g',  cat:'conservas', aldi:0.45, lidl:0.49, mercadona:0.55, dia:0.52, carrefour:0.69 },
+  { name:'Garbanzos cocidos 400g',   cat:'conservas', aldi:0.55, lidl:0.59, mercadona:0.75, dia:0.69, carrefour:0.89 },
+  { name:'Maíz dulce 340g',          cat:'conservas', aldi:0.65, lidl:0.69, mercadona:0.85, dia:0.79, carrefour:1.05 },
+  // HUEVOS
+  { name:'Huevos L x12',             cat:'huevos',    aldi:1.89, lidl:1.99, mercadona:2.15, dia:2.05, carrefour:2.45 },
+  { name:'Huevos M x12',             cat:'huevos',    aldi:1.69, lidl:1.79, mercadona:1.95, dia:1.85, carrefour:2.25 },
 ];
 
-const CATS_PROD = ['todos','básicos','lácteos','carne','fruta','bebidas','conservas','limpieza','higiene','panadería','desayuno','aceites','café','huevos'];
+// Best per category (computed from data above)
+const BY_CAT = {
+  frescos:       { winner:'Lidl',      runner_up:'Aldi',       note:'Mejor precio en frutas, verduras y carne fresca' },
+  básicos:       { winner:'Aldi',      runner_up:'Lidl',       note:'Pasta, arroz, harina: Aldi gana en básicos' },
+  marca_blanca:  { winner:'Aldi',      runner_up:'Lidl',       note:'Marca propia más barata de España' },
+  bebidas:       { winner:'Aldi',      runner_up:'Lidl',       note:'Agua, refrescos y zumos más baratos' },
+  limpieza:      { winner:'Mercadona', runner_up:'Aldi',       note:'Bosque Verde: mejor relación calidad/precio' },
+  higiene:       { winner:'Aldi',      runner_up:'Mercadona',  note:'Higiene personal más barata en Aldi' },
+  pescado:       { winner:'Mercadona', runner_up:'Lidl',       note:'Mejor calidad/precio en pescadería y mariscos' },
+  lacteos:       { winner:'Aldi',      runner_up:'Lidl',       note:'Leche y yogures más baratos' },
+  pueblo_rural:  { winner:'Coviran',   runner_up:'Spar',       note:'Para tiendas de pueblo: Coviran y Spar son los más accesibles' },
+};
+
+const CATS_PROD = ['todos','básicos','lácteos','carne','fruta','verdura','bebidas','conservas','limpieza','higiene','panadería','desayuno','aceites','café','huevos'];
 
 const CONSEJOS = [
-  { emoji:'💡', title:'Combina supermercados', desc:'Frescos en Lidl, secos en Aldi, limpieza en Mercadona. Ahorro del 20-25% sobre comprar todo en uno.' },
-  { emoji:'🥦', title:'Frutas y verduras en Lidl o mercado local', desc:'Lidl tiene la carne y fruta más baratas. El mercado local puede ser aún más barato y de más calidad.' },
-  { emoji:'🧹', title:'Limpieza en Mercadona', desc:'Bosque Verde (marca blanca) es la mejor relación calidad/precio en España. Más barato que las marcas.' },
-  { emoji:'📱', title:'Usa las apps de descuentos', desc:'Lidl Plus, Alcampo app y Carrefour app tienen descuentos exclusivos semanales del 20-40%.' },
-  { emoji:'🕐', title:'Compra a última hora', desc:'Muchos supermercados reducen hasta el 50% los productos próximos a caducar a partir de las 20h.' },
-  { emoji:'🛒', title:'Lista de la compra fija', desc:'Tener una lista fija y comparar precios entre cadenas te puede ahorrar 30-50€ al mes.' },
-  { emoji:'📦', title:'Marca blanca siempre primero', desc:'En básicos (arroz, pasta, leche, aceite) la diferencia de calidad es mínima pero el ahorro es del 40-60%.' },
-  { emoji:'🔄', title:'Aprovecha ofertas "3x2"', desc:'Solo si son productos que consumirías de todas formas. Nunca compres más de lo que vas a usar.' },
+  { emoji:'🥇', title:'Aldi es el más barato de España', desc:'En básicos (pasta, arroz, leche) ahorra entre el 20-35% vs Mercadona. Pruébalo.' },
+  { emoji:'🥦', title:'Frescos en Lidl o mercado local', desc:'Lidl tiene la carne y fruta más baratas entre los grandes. El mercado local puede ganarle.' },
+  { emoji:'🧹', title:'Limpieza en Mercadona', desc:'Bosque Verde es la mejor relación calidad/precio en limpieza. Aquí sí gana Mercadona.' },
+  { emoji:'🏪', title:'En pueblos: Coviran y Spar', desc:'Si tienes una tienda de pueblo, Coviran y Spar son las más extendidas y asequibles de las locales.' },
+  { emoji:'📱', title:'Apps de descuentos', desc:'Lidl Plus, Alcampo app y Carrefour app tienen descuentos exclusivos del 20-40% semanales.' },
+  { emoji:'🕐', title:'Compra a última hora', desc:'A partir de las 20h, muchos supermercados reducen hasta el 50% los productos próximos a caducar.' },
+  { emoji:'📦', title:'Marca blanca siempre', desc:'En básicos, la diferencia de calidad es mínima pero el ahorro es del 40-60%. Sin excepciones.' },
+  { emoji:'🔄', title:'Combina tiendas', desc:'Frescos en Lidl, secos en Aldi, limpieza en Mercadona. Ahorro del 20-25% sobre comprar todo en uno.' },
 ];
 
-const BY_CAT = {
-  frescos:      { winner:'Lidl',      runner_up:'Mercadona', note:'Mejor precio en frutas, verduras y carne' },
-  marca_blanca: { winner:'Aldi',      runner_up:'Lidl',      note:'Marca propia más barata de España' },
-  bebidas:      { winner:'Alcampo',   runner_up:'Aldi',      note:'Mejor precio en agua, refrescos y zumos' },
-  limpieza:     { winner:'Mercadona', runner_up:'Aldi',      note:'Mejor relación calidad/precio con Bosque Verde' },
-  higiene:      { winner:'Mercadona', runner_up:'Alcampo',   note:'Mejor marca blanca de higiene personal' },
-  pescado:      { winner:'Mercadona', runner_up:'Lidl',      note:'Mejor precio y calidad en pescadería' },
-  lacteos:      { winner:'Aldi',      runner_up:'Lidl',      note:'Leche y yogures más baratos' },
-};
 
 export default function SupermarketsScreen({ embedded = false }) {
   const { isLoggedIn } = useAuth();
@@ -113,22 +173,24 @@ export default function SupermarketsScreen({ embedded = false }) {
     finally { setRefreshing(false); }
   }
 
+  // MUST be declared before filteredProds (no hoisting for arrow functions)
+  const savings = (p) => {
+    const prices = [p.mercadona, p.lidl, p.aldi, p.carrefour].filter(Boolean);
+    if (prices.length < 2) return '0';
+    const min = Math.min(...prices), max = Math.max(...prices);
+    if (!max || max === 0) return '0';
+    return ((max - min) / max * 100).toFixed(0);
+  };
+
   const filteredProds = PRODUCTOS.filter(p => {
     const matchCat = catFilter === 'todos' || p.cat === catFilter;
     const matchSearch = !search || p.name.toLowerCase().includes(search.toLowerCase());
     return matchCat && matchSearch;
   }).sort((a,b) => {
-    // Sort by savings potential (descending)
     const savA = parseFloat(savings(a));
     const savB = parseFloat(savings(b));
     return savB - savA;
   });
-
-  const savings = (p) => {
-    const prices = [p.mercadona, p.lidl, p.aldi, p.carrefour].filter(Boolean);
-    const min = Math.min(...prices), max = Math.max(...prices);
-    return ((max - min) / max * 100).toFixed(0);
-  };
 
   return (
     <Wrapper {...wrapperProps}>
@@ -246,54 +308,58 @@ export default function SupermarketsScreen({ embedded = false }) {
               </TouchableOpacity>
             ))}
           </ScrollView>
-          {/* Table header */}
-          <View style={s.tableHeader}>
-            <Text style={[s.tableHCell,{flex:2}]}>Producto</Text>
-            <Text style={s.tableHCell}>Merc.</Text>
-            <Text style={s.tableHCell}>Lidl</Text>
-            <Text style={s.tableHCell}>Aldi</Text>
-            <Text style={s.tableHCell}>Carr.</Text>
+          {/* Table header — 5 stores */}
+          <View style={[s.tableHeader,{paddingHorizontal:12}]}>
+            <Text style={[s.tableHCell,{flex:2,textAlign:'left'}]}>Producto</Text>
+            {STORES_KEY.map(k => (
+              <Text key={k} style={[s.tableHCell,{flex:1,textAlign:'center',fontSize:9}]}>{STORES_LABEL[k]}</Text>
+            ))}
           </View>
           {filteredProds.length === 0
-            ? <Text style={{textAlign:'center',color:COLORS.text3,padding:30,fontSize:14}}>No se encontraron productos con "{search}"</Text>
-            : filteredProds.map(p => (
-              <TouchableOpacity key={p.name} style={s.tableRow} onPress={() => priceHistory[p.name] ? setSelectedProd(p) : null} activeOpacity={priceHistory[p.name] ? 0.7 : 1}>
+            ? <Text style={{textAlign:'center',color:COLORS.text3,padding:30,fontSize:14}}>Sin resultados para "{search}"</Text>
+            : filteredProds.map(p => {
+              // Find cheapest store
+              const prices = STORES_KEY.map(k => p[k]).filter(v => v != null);
+              const minPrice = prices.length ? Math.min(...prices) : null;
+              // Find cheapest store name
+              const bestStore = STORES_KEY.find(k => p[k] === minPrice);
+              const hasHistory = priceHistory[p.name];
+              return (
+              <TouchableOpacity key={p.name} style={s.tableRow} onPress={() => hasHistory ? setSelectedProd(p) : null} activeOpacity={hasHistory ? 0.7 : 1}>
                 <View style={{flex:2,paddingRight:4}}>
                   <Text style={s.prodName} numberOfLines={2}>{p.name}</Text>
-                  <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:2}}>
-                    <Text style={{fontSize:9,backgroundColor:'#DCFCE7',color:'#166534',borderRadius:4,paddingHorizontal:4,paddingVertical:1,fontWeight:'700'}}>
-                      🏆 {p.best}
-                    </Text>
-                    <Text style={{fontSize:9,color:COLORS.text3}}>-{savings(p)}% ahorro</Text>
-                    {/* Price trend from history */}
-                    {priceHistory[p.name] && (() => {
-                      const hist = priceHistory[p.name];
-                      if (hist.length < 2) return null;
-                      const last = hist[hist.length-1].price;
-                      const prev = hist[hist.length-2].price;
-                      const diff = last - prev;
-                      if (Math.abs(diff) < 0.01) return null;
-                      return (
-                        <Text style={{fontSize:9, color: diff > 0 ? COLORS.danger : COLORS.success, fontWeight:'700'}}>
-                          {diff > 0 ? '↑' : '↓'}{Math.abs(diff).toFixed(2)}€
-                        </Text>
-                      );
-                    })()}
+                  <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:2,flexWrap:'wrap'}}>
+                    {bestStore && <Text style={{fontSize:9,backgroundColor:'#DCFCE7',color:'#166534',borderRadius:4,paddingHorizontal:4,paddingVertical:1,fontWeight:'700'}}>
+                      🏆 {STORES_LABEL[bestStore]}
+                    </Text>}
+                    <Text style={{fontSize:9,color:COLORS.text3}}>-{savings(p)}% ahorro máx.</Text>
+                    {hasHistory && <Text style={{fontSize:9,color:COLORS.primary}}>📊</Text>}
                   </View>
                 </View>
-                {[['mercadona',p.mercadona],['lidl',p.lidl],['aldi',p.aldi],['carrefour',p.carrefour]].map(([store,price])=>{
-                  const isMin = price === Math.min(p.mercadona,p.lidl,p.aldi,p.carrefour);
+                {STORES_KEY.map(k => {
+                  const price = p[k];
+                  const isMin = price != null && price === minPrice;
                   return (
-                    <Text key={store} style={[s.tableCell, isMin && s.tableCellBest]}>
-                      {price?.toFixed(2)}€
-                    </Text>
+                    <View key={k} style={{flex:1,alignItems:'center'}}>
+                      {price != null ? (
+                        <Text style={[{fontSize:11,fontWeight:isMin?'800':'400',color:isMin?'#16A34A':COLORS.text}]}>
+                          {price.toFixed(2)}
+                        </Text>
+                      ) : <Text style={{fontSize:10,color:COLORS.text3}}>—</Text>}
+                    </View>
                   );
                 })}
               </TouchableOpacity>
-            ))
+              );
+            })
           }
+          <TouchableOpacity
+            style={{margin:12,padding:12,backgroundColor:COLORS.primaryLight,borderRadius:10,alignItems:'center'}}
+            onPress={() => Alert.alert('💬 Proponer precio', 'Ve al mapa → busca el supermercado → toca el pin → "Proponer cambio de precio".\n\nTus propuestas son votadas por la comunidad y se aplican automáticamente con 5 votos.', [{text:'Entendido'}])}>
+            <Text style={{fontSize:13,color:COLORS.primary,fontWeight:'700'}}>💡 ¿Precios desactualizados? Propón un cambio</Text>
+          </TouchableOpacity>
           <View style={s.disclaimer}>
-            <Text style={s.disclaimerTxt}>ℹ️ Precios orientativos octubre 2024. Pueden variar por zona y oferta.</Text>
+            <Text style={s.disclaimerTxt}>ℹ️ Precios orientativos. Pueden variar por zona y fecha. Fuente: datos de comunidad + fuentes públicas.</Text>
           </View>
         </>}
 

@@ -338,7 +338,7 @@ export default function BanksScreen({ embedded = false }) {
                   </View>
                   {tae > 0 ? (
                     <>
-                      <Text style={{fontSize:28,fontWeight:'800',color:color}}>+{earned.toFixed(2)}€</Text>
+                      <Text style={{fontSize:28,fontWeight:'800',color:color}}>+{isNaN(earned)?'—':earned.toFixed(2)}€</Text>
                       <Text style={{fontSize:12,color:COLORS.text3,marginTop:2}}>
                         en {months} meses con {amount.toLocaleString('es-ES')}€
                       </Text>

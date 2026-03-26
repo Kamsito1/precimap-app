@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  Image, ActivityIndicator, RefreshControl, Linking, Alert, TextInput, Modal, Share, ScrollView,
+  Image, ActivityIndicator, RefreshControl, Linking, Alert, TextInput, Modal, Share, ScrollView, Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,8 @@ import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
 import CommentsModal from '../components/CommentsModal';
 import AddDealModal from '../components/AddDealModal';
+
+const CARD_W = Dimensions.get('window').width - 24; // card width for carousel
 
 const CATS = [
   { key:'all',          label:'Todos',        emoji:'🔥' },
@@ -274,18 +276,46 @@ export default function DealsScreen() {
                   <Text style={[s.tempTxt, {color: temp.color}]}>{temp.label}</Text>
                 </View>
 
-                {/* Image or category placeholder */}
-                {deal.image_url ? (
-                  <TouchableOpacity onPress={() => affUrl && Linking.openURL(affUrl)} activeOpacity={0.9}>
-                    <Image source={{uri: deal.image_url.startsWith('/') ? `${API_BASE}${deal.image_url}` : deal.image_url}}
-                      style={s.img} resizeMode="cover" progressiveRenderingEnabled={true}/>
-                  </TouchableOpacity>
-                ) : (
-                  <View style={[s.imgPlaceholder, {backgroundColor: catColor+'18'}]}>
-                    <Text style={{fontSize:52}}>{catEmoji}</Text>
-                    {deal.store && <Text style={{fontSize:13,color:catColor,fontWeight:'700',marginTop:8}}>{deal.store}</Text>}
-                  </View>
-                )}
+                {/* Image carousel — supports multiple images */}
+                {(() => {
+                  const imgs = Array.isArray(deal.images) && deal.images.length > 0
+                    ? deal.images
+                    : deal.image_url ? [deal.image_url] : [];
+                  if (imgs.length === 0) return (
+                    <View style={[s.imgPlaceholder, {backgroundColor: catColor+'18'}]}>
+                      <Text style={{fontSize:52}}>{catEmoji}</Text>
+                      {deal.store && <Text style={{fontSize:13,color:catColor,fontWeight:'700',marginTop:8}}>{deal.store}</Text>}
+                    </View>
+                  );
+                  if (imgs.length === 1) return (
+                    <TouchableOpacity onPress={() => affUrl && Linking.openURL(affUrl)} activeOpacity={0.9}>
+                      <Image source={{uri: imgs[0].startsWith('/') ? `${API_BASE}${imgs[0]}` : imgs[0]}}
+                        style={s.img} resizeMode="cover"/>
+                    </TouchableOpacity>
+                  );
+                  // Multi-image carousel
+                  return (
+                    <View style={{position:'relative'}}>
+                      <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}
+                        style={{width: CARD_W}} contentContainerStyle={{width: CARD_W * imgs.length}}>
+                        {imgs.map((uri,idx) => (
+                          <TouchableOpacity key={idx} onPress={() => affUrl && Linking.openURL(affUrl)} activeOpacity={0.9}>
+                            <Image source={{uri: uri.startsWith('/') ? `${API_BASE}${uri}` : uri}}
+                              style={[s.img, {width: CARD_W}]} resizeMode="cover"/>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                      <View style={{position:'absolute',bottom:8,left:0,right:0,flexDirection:'row',justifyContent:'center',gap:4}}>
+                        {imgs.map((_,idx) => (
+                          <View key={idx} style={{width:6,height:6,borderRadius:3,backgroundColor:'rgba(255,255,255,0.9)'}}/>
+                        ))}
+                      </View>
+                      <View style={{position:'absolute',top:8,right:8,backgroundColor:'rgba(0,0,0,0.5)',borderRadius:99,paddingHorizontal:8,paddingVertical:3}}>
+                        <Text style={{color:'#fff',fontSize:11,fontWeight:'700'}}>📷 {imgs.length}</Text>
+                      </View>
+                    </View>
+                  );
+                })()}
 
                 <View style={s.cardBody}>
                   {/* Store + category */}
@@ -391,40 +421,67 @@ export default function DealsScreen() {
                     </TouchableOpacity>
                   )}
 
-                  {/* Report as expired — any logged in user */}
-                  {isLoggedIn && deal.reported_by !== user?.id && (
+                  {/* Report as expired — any logged in user can vote */}
+                  {isLoggedIn && (
                     <TouchableOpacity
-                      style={s.expiredBtn}
-                      onPress={() => Alert.alert(
-                        '⏰ ¿Ya no disponible?',
-                        'Si el precio ha subido o la oferta ya no está activa, marca el chollo como frío con ❄️ para que baje de temperatura.',
-                        [{ text: 'Marcar como frío ❄️', onPress: () => vote(deal.id, -1) }, { text: 'Cancelar', style: 'cancel' }]
-                      )}>
-                      <Ionicons name="alert-circle-outline" size={16} color={COLORS.text3}/>
+                      style={[s.expiredBtn, {flexDirection:'row',alignItems:'center',gap:4}]}
+                      onPress={async () => {
+                        if (user?.is_admin) {
+                          // Admin: direct delete
+                          Alert.alert('🛡️ Admin', '¿Eliminar este chollo?', [
+                            { text:'Cancelar', style:'cancel' },
+                            { text:'Eliminar', style:'destructive', onPress: async () => {
+                              await apiDelete(`/api/deals/${deal.id}`);
+                              setDeals(prev => prev.filter(d => d.id !== deal.id));
+                            }},
+                          ]);
+                        } else if (deal.reported_by === user?.id) {
+                          // Own deal: can retract
+                          Alert.alert('Tu chollo', '¿Qué quieres hacer?', [
+                            { text:'Cancelar', style:'cancel' },
+                            { text:'Retirar oferta', style:'destructive', onPress: async () => {
+                              await apiDelete(`/api/deals/${deal.id}`);
+                              setDeals(prev => prev.filter(d => d.id !== deal.id));
+                            }},
+                          ]);
+                        } else {
+                          // Others: expire vote
+                          Alert.alert(
+                            '⏰ ¿Ya no disponible?',
+                            `Tu voto se suma a los demás. Si 5 personas votan que ya expiró, se retira automáticamente.\nVotos actuales: ${deal.expire_reports || 0}/5`,
+                            [
+                              { text:'Sí, ya expiró', onPress: async () => {
+                                const res = await apiPost(`/api/deals/${deal.id}/report-expired`, {});
+                                if (res.ok) {
+                                  if (res.deactivated) {
+                                    setDeals(prev => prev.filter(d => d.id !== deal.id));
+                                    Alert.alert('✅ Retirada', 'La comunidad ha confirmado que esta oferta expiró.');
+                                  } else {
+                                    setDeals(prev => prev.map(d => d.id === deal.id
+                                      ? {...d, expire_reports: res.expire_reports} : d));
+                                    Alert.alert('Gracias', `Voto registrado (${res.expire_reports}/5)`);
+                                  }
+                                } else Alert.alert('Aviso', res.error || 'No se pudo registrar el voto');
+                              }},
+                              { text:'Cancelar', style:'cancel' },
+                            ]
+                          );
+                        }
+                      }}>
+                      <Ionicons name={user?.is_admin ? 'shield' : deal.reported_by===user?.id ? 'close-circle-outline' : 'alert-circle-outline'} size={16} color={user?.is_admin ? '#DC2626' : COLORS.text3}/>
+                      {(deal.expire_reports||0) > 0 && !user?.is_admin && <Text style={{fontSize:9,color:COLORS.danger,fontWeight:'700'}}>{deal.expire_reports}/5</Text>}
                     </TouchableOpacity>
                   )}
 
-                  {isLoggedIn && deal.reported_by === user?.id && (
-                    <View style={{flexDirection:'row',gap:8,alignItems:'center'}}>
-                      <TouchableOpacity onPress={() => {
-                        setEditDeal(deal);
-                        setEditPrice(String(deal.deal_price||''));
-                        setEditTitle(deal.title||'');
-                      }}>
-                        <Ionicons name="pencil-outline" size={17} color={COLORS.primary}/>
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => {
-                        Alert.alert('¿Eliminar chollo?', 'Esta acción no se puede deshacer.', [
-                          { text: 'Cancelar', style: 'cancel' },
-                          { text: 'Eliminar', style: 'destructive', onPress: async () => {
-                            await apiDelete(`/api/deals/${deal.id}`);
-                            setDeals(prev => prev.filter(d => d.id !== deal.id));
-                          }},
-                        ]);
-                      }}>
-                        <Ionicons name="trash-outline" size={17} color={COLORS.danger}/>
-                      </TouchableOpacity>
-                    </View>
+                  {/* Owner edit */}
+                  {isLoggedIn && (deal.reported_by === user?.id || user?.is_admin) && (
+                    <TouchableOpacity onPress={() => {
+                      setEditDeal(deal);
+                      setEditPrice(String(deal.deal_price||''));
+                      setEditTitle(deal.title||'');
+                    }}>
+                      <Ionicons name="pencil-outline" size={17} color={COLORS.primary}/>
+                    </TouchableOpacity>
                   )}
                 </View>
               </View>

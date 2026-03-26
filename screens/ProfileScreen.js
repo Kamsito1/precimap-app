@@ -14,16 +14,19 @@ import AuthModal from '../components/AuthModal';
 
 // ─── Badge definitions ────────────────────────────────────────────────────────
 const BADGES_DEF = [
-  { key:'primer_reporte', emoji:'🌟', name:'Primer Reporte',  desc:'1er precio reportado',   pts:5  },
-  { key:'diez_reportes',  emoji:'📊', name:'10 Reportes',     desc:'10 precios reportados',  pts:15 },
-  { key:'cincuenta',      emoji:'🏅', name:'Experto Local',   desc:'50 precios reportados',  pts:50 },
-  { key:'primer_chollo',  emoji:'💥', name:'Primer Chollo',   desc:'1er chollo publicado',   pts:10 },
-  { key:'racha_7',        emoji:'🔥', name:'Racha 7 días',    desc:'7 días seguidos activo', pts:15 },
-  { key:'racha_30',       emoji:'💎', name:'Mes Constante',   desc:'30 días seguidos',       pts:50 },
-  { key:'guru_gasolina',  emoji:'⛽', name:'Gurú Gasolina',   desc:'10 gasolineras añadidas',pts:20 },
-  { key:'verificador',    emoji:'✅', name:'Verificador',     desc:'20 precios verificados', pts:30 },
-  { key:'comentador',     emoji:'💬', name:'Comentador',      desc:'20 comentarios',         pts:10 },
-  { key:'ahorrador',      emoji:'💰', name:'Gran Ahorrador',  desc:'500 puntos acumulados',  pts:0  },
+  { key:'primer_reporte',  emoji:'📍', name:'Primer Reporte',     desc:'Reportaste tu primer precio',          pts:5   },
+  { key:'diez_reportes',   emoji:'📊', name:'Reportero',          desc:'10 precios reportados',                pts:15  },
+  { key:'cincuenta',       emoji:'🌟', name:'Experto Local',      desc:'50 precios reportados',                pts:50  },
+  { key:'cien_reportes',   emoji:'💎', name:'Maestro Ahorro',     desc:'100 precios reportados',               pts:100 },
+  { key:'primer_chollo',   emoji:'🔥', name:'Cazachollos',        desc:'Publicaste tu primer chollo',          pts:10  },
+  { key:'cinco_chollos',   emoji:'🎯', name:'Chollero',           desc:'5 chollos publicados',                 pts:25  },
+  { key:'chollo_viral',    emoji:'🚀', name:'Viral',              desc:'Un chollo tuyo superó 50 votos',       pts:50  },
+  { key:'racha_7',         emoji:'🔥', name:'Racha Semanal',      desc:'7 días consecutivos activo',           pts:15  },
+  { key:'racha_30',        emoji:'📅', name:'Mes Constante',      desc:'30 días consecutivos activo',          pts:50  },
+  { key:'primer_voto',     emoji:'👍', name:'Votante',            desc:'Votaste por primera vez',              pts:2   },
+  { key:'precio_aprobado', emoji:'✅', name:'Verificador',        desc:'Un cambio de precio fue aprobado',     pts:20  },
+  { key:'madrugador',      emoji:'🌅', name:'Madrugador',         desc:'Reportaste precio antes de las 8am',  pts:10  },
+  { key:'explorador',      emoji:'🗺️', name:'Explorador',         desc:'Reportaste en 5 ciudades distintas',  pts:30  },
 ];
 
 // ─── Edit Profile Modal ───────────────────────────────────────────────────────
@@ -324,6 +327,11 @@ export default function ProfileScreen() {
             <View style={s.avatarEdit}><Ionicons name="camera" size={12} color="#fff"/></View>
           </TouchableOpacity>
           <Text style={s.profileName}>{u?.name}</Text>
+          {u?.is_admin && (
+            <View style={{backgroundColor:'#DC2626',borderRadius:99,paddingHorizontal:10,paddingVertical:3,marginTop:4}}>
+              <Text style={{fontSize:11,fontWeight:'800',color:'#fff'}}>🛡️ ADMINISTRADOR</Text>
+            </View>
+          )}
           <Text style={s.profileEmail}>{u?.email}</Text>
           {u?.created_at && (
             <Text style={{fontSize:10,color:'rgba(255,255,255,0.5)',marginTop:2}}>
@@ -549,11 +557,11 @@ export default function ProfileScreen() {
         {/* ── Ventajas por nivel ── */}
         <Section title="🎁 VENTAJAS POR NIVEL">
           {[
-            {lvl:'Novato 🌱',     pts:'0',     color:'#6B7280', perks:['Ver el mapa de gasolineras','Ver chollos de la comunidad','Consultar comparativa de supermercados']},
-            {lvl:'Ahorrador 💰',  pts:'50',    color:'#16A34A', perks:['Votar chollos y comentar','Reportar precios','Badge exclusivo en el ranking']},
-            {lvl:'Experto ⭐',    pts:'150',   color:'#D97706', perks:['Publicar chollos propios','Añadir lugares al mapa','Perfil destacado en ranking']},
-            {lvl:'Gurú 🏆',       pts:'400',   color:'#DC2626', perks:['Badge dorado en el perfil','Prioridad en verificación de precios','Mención especial en el ranking']},
-            {lvl:'Leyenda 👑',    pts:'1000',  color:'#7C3AED', perks:['Perfil de leyenda 👑 permanente','Nombre destacado en el ranking nacional','Las futuras recompensas se priorizan para este nivel']},
+            {lvl:'Novato 🌱',    pts:'0',    color:'#6B7280', perks:['Ver el mapa de gasolineras','Consultar ranking de supermercados','Ver chollos de la comunidad']},
+            {lvl:'Ahorrador 💰', pts:'50',   color:'#16A34A', perks:['Reportar precios','Votar chollos y comentar','Badge exclusivo en el ranking']},
+            {lvl:'Experto ⭐',   pts:'150',  color:'#D97706', perks:['Publicar chollos propios','Añadir lugares al mapa','Proponer cambios de precio']},
+            {lvl:'Gurú 🏆',      pts:'400',  color:'#DC2626', perks:['Badge dorado en el perfil','Prioridad en verificación de precios','Mención especial en el ranking']},
+            {lvl:'Leyenda 👑',   pts:'1000', color:'#7C3AED', perks:['Perfil de leyenda permanente 👑','Top posición en ranking nacional','Acceso anticipado a nuevas funciones']},
           ].map(({lvl,pts,color,perks})=>(
             <View key={lvl} style={{backgroundColor:color+'10',borderRadius:12,padding:12,marginBottom:8,borderLeftWidth:3,borderLeftColor:color}}>
               <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
