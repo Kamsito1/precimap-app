@@ -260,6 +260,9 @@ export default function DealsScreen() {
                     {deal.store && <View style={s.storeBadge}><Text style={s.storeTxt}>{deal.store}</Text></View>}
                     <View style={s.catTag}><Text style={s.catTagTxt}>{CATS.find(c=>c.key===deal.category)?.emoji} {deal.category}</Text></View>
                     <Text style={s.ageTag}>{timeAgo(deal.detected_at)}</Text>
+                    {deal.users?.name && (
+                      <Text style={[s.ageTag,{color:COLORS.text3}]}>por {deal.users.name.split(' ')[0]}</Text>
+                    )}
                     {deal.expires_at && (() => {
                       const daysLeft = Math.ceil((new Date(deal.expires_at) - Date.now()) / 86400000);
                       if (daysLeft <= 3) return <Text style={s.expireTag}>⏰ {daysLeft}d</Text>;
