@@ -482,9 +482,11 @@ export default function MapScreen() {
                     {displayPrice > 0 && <Text style={ms.gasPrice}>{displayPrice.toFixed(3)}</Text>}
                     {userLoc && (() => {
                       const d = distanceKm(userLoc.lat, userLoc.lng, s.lat, s.lng);
-                      if (d > 5) return null; // only show if <5km
+                      if (d > 3) return null; // only show if <3km
                       const label = d < 1 ? `${Math.round(d*1000)}m` : `${d.toFixed(1)}km`;
-                      return <Text style={{fontSize:8,color:col.text,fontWeight:'600',opacity:0.8}}>{label}</Text>;
+                      // Green if <500m, yellow if <1.5km, white otherwise
+                      const distColor = d < 0.5 ? '#22C55E' : d < 1.5 ? '#FCD34D' : col.text;
+                      return <Text style={{fontSize:8,color:distColor,fontWeight:'700',opacity:0.9}}>{label}</Text>;
                     })()}
                   </View>
                 </Marker>

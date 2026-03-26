@@ -262,6 +262,11 @@ export default function DealsScreen() {
                     {deal.store && <View style={s.storeBadge}><Text style={s.storeTxt}>{deal.store}</Text></View>}
                     <View style={s.catTag}><Text style={s.catTagTxt}>{CATS.find(c=>c.key===deal.category)?.emoji} {deal.category}</Text></View>
                     <Text style={s.ageTag}>{timeAgo(deal.detected_at)}</Text>
+                    {(() => {
+                      const hoursOld = (Date.now() - new Date(deal.detected_at)) / 3600000;
+                      if (hoursOld < 24) return <Text style={{fontSize:10,fontWeight:'700',color:'#fff',backgroundColor:COLORS.success,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>NUEVO</Text>;
+                      return null;
+                    })()}
                     {deal.users?.name && (
                       <Text style={[s.ageTag,{color:COLORS.text3}]}>por {deal.users.name.split(' ')[0]}</Text>
                     )}

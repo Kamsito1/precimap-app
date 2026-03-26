@@ -319,6 +319,11 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           <Text style={s.profileName}>{u?.name}</Text>
           <Text style={s.profileEmail}>{u?.email}</Text>
+          {u?.created_at && (
+            <Text style={{fontSize:10,color:'rgba(255,255,255,0.5)',marginTop:2}}>
+              Miembro desde {new Date(u.created_at).toLocaleDateString('es-ES',{month:'long',year:'numeric'})}
+            </Text>
+          )}
           {(() => {
             const pts = u?.points || 0;
             const lvls = [
