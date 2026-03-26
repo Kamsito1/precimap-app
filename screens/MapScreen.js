@@ -31,11 +31,12 @@ const CATS = [
   { key:'all',          label:'Todo',        emoji:'🏙️' },
   { key:'gasolinera',   label:'Gasolina',    emoji:'⛽' },
   { key:'supermercado', label:'Súper',        emoji:'🛒' },
-  { key:'farmacia',     label:'Farmacia',     emoji:'💊' },
-  { key:'restaurante',  label:'Restaurantes', emoji:'🍽️' },
-  { key:'bar',          label:'Bares',        emoji:'🍺' },
-  { key:'cafe',         label:'Cafés',        emoji:'☕' },
-  { key:'evento',       label:'Eventos',      emoji:'🎭' },
+  { key:'gimnasio',     label:'Gimnasios',   emoji:'💪' },
+  { key:'farmacia',     label:'Farmacia',    emoji:'💊' },
+  { key:'restaurante',  label:'Restaurantes',emoji:'🍽️' },
+  { key:'bar',          label:'Bares',       emoji:'🍺' },
+  { key:'cafe',         label:'Cafés',       emoji:'☕' },
+  { key:'evento',       label:'Eventos',     emoji:'🎭' },
 ];
 
 const SORT_OPTS = [
@@ -452,7 +453,7 @@ export default function MapScreen() {
         </ScrollView>
 
         {/* Barra de búsqueda de producto — visible cuando se selecciona Súper o Farmacia */}
-        {(activeCat === 'supermercado' || activeCat === 'farmacia') && (
+        {(activeCat === 'supermercado' || activeCat === 'farmacia' || activeCat === 'gimnasio') && (
           <View style={{paddingHorizontal:12,paddingBottom:8}}>
             <View style={{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg3,borderRadius:12,borderWidth:1.5,borderColor:product?COLORS.primary:COLORS.border,paddingHorizontal:10,gap:6}}>
               <Text style={{fontSize:16}}>{activeCat==='farmacia'?'💊':'🔍'}</Text>
@@ -460,7 +461,7 @@ export default function MapScreen() {
                 style={{flex:1,paddingVertical:9,fontSize:14,color:COLORS.text}}
                 value={product}
                 onChangeText={setProduct}
-                placeholder={activeCat==='farmacia' ? 'Buscar medicamento... (ibuprofeno, paracetamol...)' : 'Buscar producto... (leche, huevos, aceite...)'}
+                placeholder={activeCat==='farmacia' ? 'Buscar medicamento... (ibuprofeno, paracetamol...)' : activeCat==='gimnasio' ? 'Buscar cadena... (mcfit, basic-fit...)' : 'Buscar producto... (leche, huevos, aceite...)'}
                 placeholderTextColor={COLORS.text3}
                 returnKeyType="search"
                 onSubmitEditing={loadPlaces}
@@ -486,7 +487,7 @@ export default function MapScreen() {
             )}
             {activeCat === 'farmacia' && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingTop:6}}>
-                {['ibuprofeno','paracetamol','amoxicilina','omeprazol','loratadina','vitamina C','colágeno','magnesio'].map(p=>(
+                {['ibuprofeno','paracetamol','amoxicilina','omeprazol','loratadina','vitamina C','colágeno','magnesio','anticonceptivos','termómetro','tensiómetro','mascarilla'].map(p=>(
                   <TouchableOpacity key={p}
                     style={{paddingHorizontal:10,paddingVertical:4,borderRadius:12,borderWidth:1,
                       borderColor:product===p?COLORS.primary:COLORS.border,
@@ -608,7 +609,7 @@ export default function MapScreen() {
               const repP = p.minPrice || p.repPrice;
               let borderColor = info.color;
               if (repP > 0) {
-                const AVG_PRICES = { restaurante:12, farmacia:4, supermercado:1.5 };
+                const AVG_PRICES = { restaurante:12, farmacia:4, supermercado:100, gimnasio:30 };
                 const avg = AVG_PRICES[p.category] || null;
                 if (avg) {
                   if (repP < avg * 0.85) borderColor = '#16A34A';       // barato
@@ -899,9 +900,10 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
     const p = item.minPrice;
     if (item.isGas) return `${fuelLabel} ${p.toFixed(3)}€`;
     const cat = item.category;
-    if (cat === 'restaurante') return `~${p.toFixed(2)}€ plato`;
-    if (cat === 'farmacia')    return `~${p.toFixed(2)}€ media`;
-    if (cat === 'supermercado') return `desde ${p.toFixed(2)}€`;
+    if (cat === 'restaurante')  return `~${p.toFixed(2)}€ plato`;
+    if (cat === 'farmacia')     return `~${p.toFixed(2)}€ media`;
+    if (cat === 'supermercado') return `~${p.toFixed(0)}€/semana`;
+    if (cat === 'gimnasio')     return `desde ${p.toFixed(2)}€/mes`;
     return `~${p.toFixed(2)}€`;
   }
   const pLabel = priceLabel();
@@ -1085,7 +1087,8 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onPr
           const cat = place.category;
           const label = cat==='restaurante' ? 'precio medio plato'
             : cat==='farmacia' ? 'precio medio medicamento'
-            : cat==='supermercado' ? 'precio más barato'
+            : cat==='supermercado' ? 'cesta semanal estimada'
+            : cat==='gimnasio' ? 'cuota mensual desde'
             : 'precio medio';
           const detail = place.repContext ||
             (cat==='restaurante'
@@ -1093,10 +1096,12 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onPr
             : cat==='farmacia'
             ? `Media de ${prices.filter(p=>p.price>=1).length || prices.length} medicamentos · media España ~4-8€`
             : cat==='supermercado'
-            ? `${prices.length} productos reportados · OCU 2024`
-            : `${prices.length} productos reportados por la comunidad`;
-          // Color: green=barato, orange=medio, red=caro
-          const REF = {restaurante:12, farmacia:5, supermercado:1.5};
+            ? `Estimado sobre ${prices.length} productos reportados · media España ~100€/semana`
+            : cat==='gimnasio'
+            ? `${prices.length} tarifas reportadas · media España ~25-40€/mes`
+            : `${prices.length} productos reportados por la comunidad`);
+          // Color refs per category
+          const REF = {restaurante:12, farmacia:5, supermercado:100, gimnasio:30};
           const ref = REF[cat];
           const priceColor = !ref ? COLORS.primary
             : place.repPrice < ref*0.85 ? '#16A34A'

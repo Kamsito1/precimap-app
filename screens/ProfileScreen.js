@@ -480,10 +480,16 @@ export default function ProfileScreen() {
 
         {/* ── Notificaciones ── */}
         {(profile?.notifications||[]).filter(n=>!n.is_read).length > 0 && (
-          <Section title="🔔 NOTIFICACIONES">
-            {profile.notifications.filter(n=>!n.is_read).slice(0,5).map(n=>(
-              <View key={n.id} style={s.notif}>
-                <Text style={s.notifTxt}>{n.message}</Text>
+          <Section title={`🔔 NOTIFICACIONES (${(profile?.notifications||[]).filter(n=>!n.is_read).length})`}>
+            {profile.notifications.filter(n=>!n.is_read).slice(0,8).map(n=>(
+              <View key={n.id} style={[s.notif, {flexDirection:'row', gap:10, alignItems:'flex-start'}]}>
+                <Text style={{fontSize:20}}>
+                  {n.type==='badge' ? '🎖️' : n.type==='comment' ? '💬' : n.type==='vote' ? '🔥' : n.type==='price_approved' ? '✅' : '🔔'}
+                </Text>
+                <View style={{flex:1}}>
+                  <Text style={s.notifTxt}>{n.message}</Text>
+                  {n.created_at && <Text style={{fontSize:10,color:COLORS.text3,marginTop:2}}>{timeAgo(n.created_at)}</Text>}
+                </View>
               </View>
             ))}
           </Section>

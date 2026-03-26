@@ -226,12 +226,13 @@ export const FUEL_LABELS = {
 };
 
 export const CATEGORY_INFO = {
-  gasolinera:   { emoji: '⛽', bg: '#FEF3C7', text: '#92400E', label: 'Gasolinera' },
-  supermercado: { emoji: '🛒', bg: '#ECFDF5', text: '#065F46', label: 'Supermercado' },
-  bar:          { emoji: '🍺', bg: '#FEF3C7', text: '#92400E', label: 'Bar' },
-  cafe:         { emoji: '☕', bg: '#FFF7ED', text: '#9A3412', label: 'Café' },
-  farmacia:     { emoji: '💊', bg: '#EFF6FF', text: '#1E40AF', label: 'Farmacia' },
-  restaurante:  { emoji: '🍕', bg: '#FFF1F2', text: '#9F1239', label: 'Restaurante' },
-  panaderia:    { emoji: '🥖', bg: '#FFFBEB', text: '#92400E', label: 'Panadería' },
-  default:      { emoji: '📍', bg: '#F8FAFC', text: '#475569', label: 'Lugar' },
+  gasolinera:   { emoji: '⛽', bg: '#FEF3C7', text: '#92400E',  color: '#F59E0B', label: 'Gasolinera' },
+  supermercado: { emoji: '🛒', bg: '#ECFDF5', text: '#065F46',  color: '#16A34A', label: 'Supermercado' },
+  gimnasio:     { emoji: '💪', bg: '#EDE9FE', text: '#4C1D95',  color: '#7C3AED', label: 'Gimnasio' },
+  bar:          { emoji: '🍺', bg: '#FEF3C7', text: '#92400E',  color: '#D97706', label: 'Bar' },
+  cafe:         { emoji: '☕', bg: '#FFF7ED', text: '#9A3412',  color: '#EA580C', label: 'Café' },
+  farmacia:     { emoji: '💊', bg: '#EFF6FF', text: '#1E40AF',  color: '#2563EB', label: 'Farmacia' },
+  restaurante:  { emoji: '🍕', bg: '#FFF1F2', text: '#9F1239',  color: '#E11D48', label: 'Restaurante' },
+  panaderia:    { emoji: '🥖', bg: '#FFFBEB', text: '#92400E',  color: '#B45309', label: 'Panadería' },
+  default:      { emoji: '📍', bg: '#F8FAFC', text: '#475569',  color: '#64748B', label: 'Lugar' },
 };
