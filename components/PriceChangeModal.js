@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, apiGet, apiPost, timeAgo } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 
-export default function PriceChangeModal({ visible, onClose, place, product = null }) {
+export default function PriceChangeModal({ visible, onClose, place, product = null, initialProduct = null }) {
   const { isLoggedIn, user } = useAuth();
   const [tab, setTab] = useState('changes'); // 'changes' | 'propose'
   const [changes, setChanges] = useState([]);
@@ -21,7 +21,9 @@ export default function PriceChangeModal({ visible, onClose, place, product = nu
 
   useEffect(() => {
     if (visible && place) loadChanges();
-    if (product) setNewProduct(product);
+    const prod = initialProduct || product;
+    if (prod) { setNewProduct(prod); setTab('propose'); }
+    else setTab('changes');
   }, [visible, place]);
 
   async function loadChanges() {

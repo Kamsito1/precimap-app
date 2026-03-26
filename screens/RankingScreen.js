@@ -110,8 +110,9 @@ export default function RankingScreen() {
       </View>
 
       {/* Tab: Comunidad */}
-      {mainTab === 'comunidad' && stats && (
+      {mainTab === 'comunidad' && (
         <ScrollView contentContainerStyle={{padding:16,gap:12,paddingBottom:100}}>
+          {!stats ? <ActivityIndicator color={COLORS.primary} style={{marginTop:40}}/> : (<>
           <Text style={{fontSize:13,color:COLORS.text3,marginBottom:4}}>Estadísticas de la comunidad PreciMap</Text>
           {[
             ['⛽', '12.213', 'Gasolineras indexadas','Del Ministerio de Energía (RITE)'],
@@ -120,7 +121,7 @@ export default function RankingScreen() {
             ['🔥', String(stats.deals||0), 'Chollos publicados','Ofertas verificadas'],
             ['📅', String(stats.events||0), 'Eventos locales','En 9+ ciudades de España'],
             ['📊', String(stats.price_history||300), 'Registros históricos','Evolución de precios en el tiempo'],
-            ['📍', String(stats.places||0), 'Lugares en el mapa','Supermercados, gasolineras y más'],
+            ['📍', String(stats.places||0), 'Lugares en el mapa','Supermercados, farmacias, restaurantes y más'],
           ].map(([emoji, num, label, desc]) => (
             <View key={label} style={{backgroundColor:COLORS.bg2,borderRadius:14,padding:14,flexDirection:'row',alignItems:'center',gap:14,borderWidth:1,borderColor:COLORS.border}}>
               <Text style={{fontSize:28}}>{emoji}</Text>
@@ -131,7 +132,7 @@ export default function RankingScreen() {
               </View>
             </View>
           ))}
-          {/* Gas price stats if available */}
+          {/* Gas price stats */}
           {stats.gas_stats?.g95 && (
             <View style={{backgroundColor:COLORS.bg2,borderRadius:14,padding:14,borderWidth:1,borderColor:COLORS.border}}>
               <Text style={{fontSize:14,fontWeight:'700',color:COLORS.text,marginBottom:10}}>⛽ Precios G95 en España ahora</Text>
@@ -143,6 +144,25 @@ export default function RankingScreen() {
               ))}
             </View>
           )}
+          {/* Levels from server */}
+          {(serverLevels?.levels || [
+            {min:0,   title:'Novato',    emoji:'🌱', color:'#6B7280', perks:['Ver el mapa','Ver chollos']},
+            {min:50,  title:'Ahorrador', emoji:'💰', color:'#16A34A', perks:['Reportar precios','Votar chollos']},
+            {min:150, title:'Experto',   emoji:'⭐', color:'#D97706', perks:['Publicar chollos','Añadir lugares','Proponer cambios de precio']},
+            {min:400, title:'Gurú',      emoji:'🏆', color:'#DC2626', perks:['Badge dorado','Prioridad en verificaciones']},
+            {min:1000,title:'Leyenda',   emoji:'👑', color:'#7C3AED', perks:['Perfil leyenda permanente','Top ranking nacional']},
+          ]).map(lvl => (
+            <View key={lvl.title} style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:12,borderWidth:1,borderColor:COLORS.border,borderLeftWidth:4,borderLeftColor:lvl.color||COLORS.primary}}>
+              <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
+                <Text style={{fontSize:16,fontWeight:'800',color:lvl.color||COLORS.primary}}>{lvl.emoji} {lvl.title}</Text>
+                <Text style={{fontSize:11,color:COLORS.text3,fontWeight:'600'}}>{lvl.min}+ pts</Text>
+              </View>
+              {(lvl.perks||[]).map(p=>(
+                <Text key={p} style={{fontSize:12,color:COLORS.text2,marginTop:2}}>✓ {p}</Text>
+              ))}
+            </View>
+          ))}
+          </>)}
         </ScrollView>
       )}
 

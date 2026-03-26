@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
   View, Text, Modal, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform,
+  ScrollView, ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { COLORS, apiUpload, detectStore, applyAffiliateTag } from '../utils';
+import { COLORS, apiUpload, apiPost, detectStore, applyAffiliateTag } from '../utils';
 
 const CATS = [
   {key:'tecnologia',label:'Tecnología',emoji:'💻'},
@@ -23,13 +23,13 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
   const [original, setOriginal] = useState('');
   const [store,    setStore]    = useState('');
   const [cat,      setCat]      = useState('otros');
-  const [image,    setImage]    = useState(null);
+  const [images,   setImages]   = useState([]); // multiple photos
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
 
   function reset() {
     setTitle(''); setUrl(''); setPrice(''); setOriginal('');
-    setStore(''); setCat('otros'); setImage(null); setError('');
+    setStore(''); setCat('otros'); setImages([]); setError('');
   }
 
   async function pickImage() {
@@ -37,9 +37,20 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
     if (status !== 'granted') return Alert.alert('Permiso necesario', 'Necesitamos acceso a tu galería.');
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true, aspect: [4, 3], quality: 0.8,
+      allowsMultipleSelection: true,
+      selectionLimit: 5,
+      quality: 0.8,
     });
-    if (!result.canceled) setImage(result.assets[0]);
+    if (!result.canceled && result.assets?.length > 0) {
+      setImages(prev => {
+        const combined = [...prev, ...result.assets];
+        return combined.slice(0, 5); // max 5 photos
+      });
+    }
+  }
+
+  function removeImage(idx) {
+    setImages(prev => prev.filter((_,i) => i !== idx));
   }
 
   async function submit() {
@@ -58,7 +69,7 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
         original_price: original && parseFloat(original) > 0 ? parseFloat(original) : '',
         store: detectedStore,
         category: cat,
-      }, image.uri, 'image');
+      }, images[0]?.uri || null, 'image');
       if (res.error) return setError(res.error);
       reset(); onSuccess?.();
     } catch(e) { setError(`Error: ${e.message || 'Sin conexión'}`); }
@@ -100,23 +111,39 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
             </TouchableOpacity>
           </View>
           <ScrollView contentContainerStyle={s.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-            {/* Image picker */}
-            <TouchableOpacity style={[s.imgPicker, image && s.imgPickerFilled]} onPress={pickImage} activeOpacity={0.85}>
-              {image
-                ? <Image source={{uri:image.uri}} style={s.img} resizeMode="cover"/>
-                : <View style={s.imgPlaceholder}>
-                    <Ionicons name="camera-outline" size={36} color={COLORS.text3}/>
-                    <Text style={s.imgPlaceholderTxt}>Foto del chollo (recomendado)</Text>
-                    <Text style={s.imgPlaceholderSub}>Los chollos con foto tienen 3x más votos · opcional</Text>
+            {/* Multi-photo carousel picker */}
+            <View style={s.photosSection}>
+              <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+                <Text style={s.photoLabel}>Fotos del chollo ({images.length}/5)</Text>
+                {images.length > 0 && (
+                  <Text style={{fontSize:11,color:COLORS.text3}}>Los chollos con fotos tienen 3× más votos</Text>
+                )}
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
+                {/* Add button */}
+                {images.length < 5 && (
+                  <TouchableOpacity style={s.addPhotoBtn} onPress={pickImage}>
+                    <Ionicons name="camera-outline" size={28} color={COLORS.primary}/>
+                    <Text style={{fontSize:10,color:COLORS.primary,fontWeight:'600',marginTop:4}}>Añadir</Text>
+                    <Text style={{fontSize:9,color:COLORS.text3}}>hasta 5</Text>
+                  </TouchableOpacity>
+                )}
+                {/* Photo thumbnails */}
+                {images.map((img, idx) => (
+                  <View key={idx} style={s.photoThumb}>
+                    <Image source={{uri: img.uri}} style={s.photoThumbImg} resizeMode="cover"/>
+                    {idx === 0 && (
+                      <View style={s.photoPrimary}>
+                        <Text style={{fontSize:8,color:'#fff',fontWeight:'700'}}>PRINCIPAL</Text>
+                      </View>
+                    )}
+                    <TouchableOpacity style={s.photoRemove} onPress={() => removeImage(idx)}>
+                      <Ionicons name="close-circle" size={18} color="#DC2626"/>
+                    </TouchableOpacity>
                   </View>
-              }
-              {image && (
-                <View style={s.imgEditBtn}>
-                  <Ionicons name="camera" size={14} color="#fff"/>
-                  <Text style={{color:'#fff',fontSize:11,fontWeight:'600'}}>Cambiar</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
 
             {/* URL — autodetects store */}
             <Field label="URL del producto">
@@ -206,6 +233,13 @@ const s = StyleSheet.create({
   imgPlaceholderSub:{fontSize:12,color:COLORS.text3},
   imgEditBtn:{position:'absolute',bottom:8,right:8,flexDirection:'row',alignItems:'center',gap:4,backgroundColor:'rgba(0,0,0,0.65)',borderRadius:99,paddingHorizontal:10,paddingVertical:5},
   storeDetected:{fontSize:12,color:COLORS.success,fontWeight:'600',marginTop:-8,marginBottom:8},
+  photosSection:{marginBottom:16},
+  photoLabel:{fontSize:13,fontWeight:'700',color:COLORS.text},
+  addPhotoBtn:{width:88,height:88,borderRadius:12,borderWidth:2,borderColor:COLORS.primary,borderStyle:'dashed',alignItems:'center',justifyContent:'center',backgroundColor:COLORS.primaryLight},
+  photoThumb:{width:88,height:88,borderRadius:12,overflow:'hidden',borderWidth:2,borderColor:COLORS.border},
+  photoThumbImg:{width:'100%',height:'100%'},
+  photoPrimary:{position:'absolute',bottom:0,left:0,right:0,backgroundColor:'rgba(37,99,235,0.85)',padding:3,alignItems:'center'},
+  photoRemove:{position:'absolute',top:2,right:2},
   fieldLabel:{fontSize:13,fontWeight:'600',color:COLORS.text,marginBottom:6},
   input:{backgroundColor:COLORS.bg3,borderRadius:12,borderWidth:1.5,borderColor:COLORS.border,paddingHorizontal:14,paddingVertical:12,fontSize:15,color:COLORS.text},
   discBanner:{backgroundColor:COLORS.successLight,borderRadius:10,padding:10,marginBottom:12,alignItems:'center'},

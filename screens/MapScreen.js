@@ -686,9 +686,9 @@ export default function MapScreen() {
 
       {/* Modals */}
       <Modal visible={!!selectedPlace} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedPlace(null)}>
-        {selectedPlace && <PlaceModal place={selectedPlace} onClose={()=>setSelectedPlace(null)} onNavigate={navigateTo} isLoggedIn={isLoggedIn} onAuthNeeded={()=>setShowAuth(true)} onProposePrice={(p)=>{setSelectedPlace(null); setPriceChangePlace(p);}}/>}
+        {selectedPlace && <PlaceModal place={selectedPlace} onClose={()=>setSelectedPlace(null)} onNavigate={navigateTo} isLoggedIn={isLoggedIn} onAuthNeeded={()=>setShowAuth(true)} onProposePrice={(p, product)=>{setSelectedPlace(null); setPriceChangePlace({place:p, product});}}/>}
       </Modal>
-      <PriceChangeModal visible={!!priceChangePlace} onClose={()=>setPriceChangePlace(null)} place={priceChangePlace}/>
+      <PriceChangeModal visible={!!priceChangePlace} onClose={()=>setPriceChangePlace(null)} place={priceChangePlace?.place} initialProduct={priceChangePlace?.product}/>
       <Modal visible={!!selectedStation} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedStation(null)}>
         {selectedStation && <GasModal station={selectedStation} onClose={()=>setSelectedStation(null)} onNavigate={navigateTo} onFavChange={loadFavs}/>}
       </Modal>
@@ -900,18 +900,25 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onPr
         {prices.length===0
           ? <View style={pcs.emptyBox}><Text style={pcs.emptyTxt}>Sin precios aún{'\n'}¡Sé el primero en reportar!</Text></View>
           : prices.map(p=>(
-            <View key={p.id} style={pcs.priceRow}>
+            <TouchableOpacity key={p.id} style={pcs.priceRow} onPress={() => onProposePrice(place, p.product)} activeOpacity={0.7}>
               <View style={{flex:1}}>
                 <Text style={pcs.product}>{p.product}</Text>
                 <Text style={pcs.reporter}>Por {p.reporter_name||'usuario'} · {timeAgo(p.reported_at)}</Text>
                 <View style={[pcs.statusBadge,{backgroundColor:p.status==='verified'?COLORS.successLight:COLORS.warningLight}]}>
-                  <Text style={[pcs.statusTxt,{color:p.status==='verified'?COLORS.success:COLORS.warning}]}>{p.status==='verified'?'✅ Verificado':'⏳ Pendiente'}</Text>
+                  <Text style={[pcs.statusTxt,{color:p.status==='verified'?COLORS.success:COLORS.warning}]}>{p.status==='verified'?'✅ Verificado':'⏳ Pendiente · toca para proponer cambio'}</Text>
                 </View>
               </View>
-              <Text style={pcs.price}>{p.price.toFixed(2)}€<Text style={pcs.unit}>/{p.unit}</Text></Text>
-            </View>
+              <View style={{alignItems:'flex-end',gap:4}}>
+                <Text style={pcs.price}>{p.price?.toFixed(2)}€<Text style={pcs.unit}>/{p.unit}</Text></Text>
+                <Ionicons name="chevron-forward" size={12} color={COLORS.text3}/>
+              </View>
+            </TouchableOpacity>
           ))
         }
+        <TouchableOpacity style={pcs.addPriceBtn} onPress={() => onProposePrice(place, null)}>
+          <Ionicons name="add-circle-outline" size={18} color={COLORS.primary}/>
+          <Text style={{fontSize:13,color:COLORS.primary,fontWeight:'700'}}>Añadir nuevo precio</Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -1022,6 +1029,7 @@ const pcs = StyleSheet.create({
   product:{fontSize:15,fontWeight:'600',color:COLORS.text},reporter:{fontSize:12,color:COLORS.text3,marginTop:2},
   statusBadge:{alignSelf:'flex-start',borderRadius:99,paddingHorizontal:8,paddingVertical:3,marginTop:6},statusTxt:{fontSize:11,fontWeight:'600'},
   price:{fontSize:22,fontWeight:'800',color:COLORS.primary},unit:{fontSize:11,fontWeight:'400',color:COLORS.text3},
+  addPriceBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,margin:12,padding:12,backgroundColor:COLORS.primaryLight,borderRadius:12,borderWidth:1,borderColor:COLORS.primary+'44'},
   fuelActiveBadge:{flexDirection:'row',alignItems:'center',borderRadius:99,borderWidth:1.5,paddingHorizontal:10,paddingVertical:5},
   fuelActiveTxt:{fontSize:12,fontWeight:'700'},
 });

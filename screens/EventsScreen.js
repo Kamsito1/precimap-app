@@ -228,7 +228,7 @@ export default function EventsScreen() {
           contentContainerStyle={{padding:12,gap:10,paddingBottom:90}}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.purple}/>}
           renderItem={({item}) => (
-            <EventCard event={item} onAuthNeeded={() => setShowAuth(true)} isLoggedIn={isLoggedIn} onRefresh={loadEvents}/>
+            <EventCard event={item} onAuthNeeded={() => setShowAuth(true)} isLoggedIn={isLoggedIn} onRefresh={loadEvents} user={user}/>
           )}
           ListEmptyComponent={<EmptyEvents onAdd={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)} source={source}/>}
         />
@@ -241,7 +241,7 @@ export default function EventsScreen() {
 }
 
 // === EVENT CARD ===
-function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh }) {
+function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
   const d = new Date(ev.date + 'T12:00:00');
   const day = d.getDate();
   const month = MONTHS_ES[d.getMonth()].toUpperCase();
@@ -319,6 +319,19 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh }) {
         <TouchableOpacity style={ec.voteBtn} onPress={vote}>
           <Text style={ec.voteTxt}>👍 {ev.votes_up || 0}</Text>
         </TouchableOpacity>
+        {user?.is_admin && (
+          <TouchableOpacity style={[ec.voteBtn,{backgroundColor:'#FEE2E2'}]} onPress={() =>
+            Alert.alert('🛡️ Admin', '¿Eliminar evento?', [
+              {text:'Cancelar', style:'cancel'},
+              {text:'Eliminar', style:'destructive', onPress: async () => {
+                await apiPost(`/api/events/${ev.id}/deactivate`, {});
+                onRefresh();
+              }},
+            ])
+          }>
+            <Ionicons name="trash-outline" size={14} color="#DC2626"/>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={ec.voteBtn} onPress={() => {
           const price = ev.is_free ? '🆓 Gratis' : ev.price_from ? `desde ${ev.price_from}€` : '';
           Share.share({

@@ -615,6 +615,25 @@ export default function ProfileScreen() {
           <Text style={s.settingNote}>IP: {API_BASE.replace('http://','').replace(':3000','')}</Text>
         </Section>
 
+        {/* ── Panel ADMIN ── */}
+        {u?.is_admin && (
+          <Section title="🛡️ PANEL ADMINISTRADOR">
+            <View style={{backgroundColor:'#FEF2F2',borderRadius:10,padding:10,marginBottom:10}}>
+              <Text style={{fontSize:12,color:'#991B1B',fontWeight:'600'}}>Solo visible para ti · Tienes acceso completo de administrador</Text>
+            </View>
+            {[
+              ['🗑️ Gestionar chollos (borrar directamente)', () => Alert.alert('Admin', 'Desde la pantalla de Chollos puedes borrar cualquiera con el botón de escudo rojo.')],
+              ['🎭 Gestionar eventos (borrar directamente)', () => Alert.alert('Admin', 'Desde la pantalla de Eventos puedes borrar cualquiera con el botón de escudo rojo.')],
+              ['💰 Aprobar cambios de precio', () => Alert.alert('Admin', 'Desde cualquier lugar del mapa → "Ver precios y cambios" → vota o aprueba directamente.')],
+            ].map(([label, onPress]) => (
+              <TouchableOpacity key={label} style={{flexDirection:'row',alignItems:'center',gap:10,paddingVertical:12,borderBottomWidth:0.5,borderBottomColor:COLORS.border}} onPress={onPress}>
+                <Text style={{fontSize:13,color:'#991B1B',flex:1}}>{label}</Text>
+                <Ionicons name="chevron-forward" size={16} color="#991B1B"/>
+              </TouchableOpacity>
+            ))}
+          </Section>
+        )}
+
         {/* ── Peligroso ── */}
         <Section title="⚠️ ZONA PELIGROSA">
           <Text style={s.dangerNote}>Estas acciones son permanentes y no se pueden deshacer.</Text>
