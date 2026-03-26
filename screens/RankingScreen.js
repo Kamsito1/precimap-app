@@ -230,7 +230,7 @@ export default function RankingScreen() {
               </View>
             ) : null}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary}/>}
-            ListFooterComponent={myRank ? (
+            renderItem={({ item: u, index: i }) => {
               if (i < 3) return null;
               const progress = Math.min(100, (u.reports || 0) * 4);
               const isMe = user && u.id === user.id;
