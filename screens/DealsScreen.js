@@ -214,6 +214,8 @@ export default function DealsScreen() {
         <FlatList
           data={deals} keyExtractor={d=>String(d.id)}
           contentContainerStyle={{padding:12,gap:12,paddingBottom:100}}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.danger}/>}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.3}

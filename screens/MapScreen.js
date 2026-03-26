@@ -49,7 +49,8 @@ const CORDOBA = { latitude:37.8882, longitude:-4.7794, latitudeDelta:0.12, longi
 export default function MapScreen() {
   const { isLoggedIn } = useAuth();
   const [places, setPlaces]         = useState([]);
-  const [gasolineras, setGasolineras] = useState([]);  // visible in current viewport/filter
+  const [gasolineras, setGasolineras] = useState([]);
+  const [showHint, setShowHint] = useState(false); // first-time hint
   const [activeCat, setActiveCat]   = useState('all');
   const [userLoc, setUserLoc]       = useState(null);
   const [viewMode, setViewMode]     = useState('map');
@@ -75,6 +76,16 @@ export default function MapScreen() {
   const mapRef = useRef(null);
 
   useEffect(() => { initLocation(); loadAllGasolineras(); loadFuelStats(); loadFavs(); }, []);
+
+  // Show first-time hint after 3 seconds
+  useEffect(() => {
+    AsyncStorage.getItem('map_hint_shown').then(v => {
+      if (!v) {
+        setTimeout(() => setShowHint(true), 3000);
+        AsyncStorage.setItem('map_hint_shown', '1');
+      }
+    }).catch(() => {});
+  }, []);
 
   async function loadFavs() {
     try {
@@ -541,6 +552,20 @@ export default function MapScreen() {
                   : `${gasolineras.length.toLocaleString()} est.${city ? ' · '+city : ''}`
                 }
               </Text>
+            </View>
+          )}
+
+          {/* First-time hint */}
+          {showHint && (
+            <View style={{position:'absolute',top:16,left:16,right:16,backgroundColor:'rgba(15,23,42,0.88)',borderRadius:14,padding:14,flexDirection:'row',gap:10,alignItems:'center'}}>
+              <Text style={{fontSize:20}}>💡</Text>
+              <View style={{flex:1}}>
+                <Text style={{fontSize:13,fontWeight:'700',color:'#fff'}}>Toca cualquier gasolinera</Text>
+                <Text style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginTop:2}}>Ve precios y distancia · Guarda favoritas con ❤️</Text>
+              </View>
+              <TouchableOpacity onPress={()=>setShowHint(false)} style={{padding:4}}>
+                <Text style={{fontSize:16,color:'rgba(255,255,255,0.6)'}}>✕</Text>
+              </TouchableOpacity>
             </View>
           )}
 

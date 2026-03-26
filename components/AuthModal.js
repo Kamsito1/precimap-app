@@ -154,6 +154,21 @@ export default function AuthModal({ visible, onClose }) {
                     <Ionicons name={showPass?'eye-off-outline':'eye-outline'} size={20} color={COLORS.text3}/>
                   </TouchableOpacity>
                 </View>
+                {/* Password strength bar — only on register */}
+                {mode === MODES.register && pass.length > 0 && (() => {
+                  const strength = pass.length >= 12 && /[A-Z]/.test(pass) && /[0-9]/.test(pass) ? 3
+                    : pass.length >= 8 ? 2 : pass.length >= 6 ? 1 : 0;
+                  const colors = ['#DC2626','#D97706','#16A34A','#16A34A'];
+                  const labels = ['Muy débil','Débil','Buena','Fuerte'];
+                  return (
+                    <View style={{flexDirection:'row',gap:3,marginTop:6,alignItems:'center'}}>
+                      {[0,1,2].map(i=>(
+                        <View key={i} style={{flex:1,height:4,borderRadius:2,backgroundColor:i<=strength-1?colors[strength]:'#E2E8F0'}}/>
+                      ))}
+                      <Text style={{fontSize:10,color:colors[strength],fontWeight:'600',marginLeft:4}}>{labels[strength]}</Text>
+                    </View>
+                  );
+                })()}
               </View>
             )}
 
