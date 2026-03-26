@@ -27,7 +27,8 @@
         "NSCameraUsageDescription": "PreciMap necesita la cámara para fotografiar precios y chollos.",
         "NSPhotoLibraryUsageDescription": "PreciMap necesita tu galería para subir fotos de chollos y tu avatar.",
         "NSPhotoLibraryAddUsageDescription": "PreciMap guarda fotos de precios en tu galería.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUserTrackingUsageDescription": "PreciMap usa identificadores anónimos para mostrarte anuncios más relevantes. Tus datos nunca se venden a terceros."
       }
     },
     "android": {

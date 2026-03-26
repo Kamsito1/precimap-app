@@ -1,219 +1,133 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, openURL } from '../utils';
 
 // ─── CONFIGURACIÓN ADMOB ──────────────────────────────────────────────────────
-// PASO 1: Crea cuenta en https://admob.google.com
-// PASO 2: Añade tu app iOS y crea un Ad Unit tipo "Banner"
-// PASO 3: Pega tus IDs aquí abajo
-// PASO 4: Añade react-native-google-mobile-ads al proyecto (ver instrucciones abajo)
-//
-// MIENTRAS NO TENGAS ADMOB CONFIGURADO: se muestran banners propios (referidos)
-// que ya generan algo de ingreso por comisión de afiliado.
-// Cuando AdMob esté listo, los banners nativos de Google reemplazan estos.
-
-const ADMOB_CONFIGURED = false; // ← Cambia a true cuando instales react-native-google-mobile-ads
-
-// Tus IDs de AdMob (YA CONFIGURADOS):
-const ADMOB_IOS_APP_ID = 'ca-app-pub-4854549477350471~3682160177';
+const ADMOB_CONFIGURED = false; // ← Cambia a true + rebuild cuando AdMob esté aprobado
 const ADMOB_IOS_BANNER_ID = 'ca-app-pub-4854549477350471/8971947621';
-// const ADMOB_ANDROID_BANNER_ID = ''; // Añadir cuando crees la versión Android
 
-// ─── BANNERS PROPIOS (referidos) — funcionan desde el día 1 ──────────────────
-// Mientras configuras AdMob, estos banners muestran tus enlaces de referido
-// y generan comisiones por registro/compra
+// ─── BANNERS PROPIOS (referidos) ─────────────────────────────────────────────
 const OWN_ADS = [
-  {
-    id: 'trade_republic',
-    text: '📈 Trade Republic: 4% anual + acción gratis',
-    cta: 'Abrir cuenta',
-    url: 'https://refnocode.trade.re/0kbf1xcq',
-    bg: '#0ADB83',
-  },
-  {
-    id: 'myinvestor',
-    text: '🟣 MyInvestor: 4.50% TAE · Código UNHO5',
-    cta: 'Ver',
-    url: 'https://newapp.myinvestor.es/do/signup?promotionalCode=UNHO5',
-    bg: '#6D28D9',
-  },
-  {
-    id: 'bbva',
-    text: '🏦 BBVA: sin comisiones + hasta 300€ bono',
-    cta: 'Abrir',
-    url: 'https://www.bbva.es/personas/productos/cuentas/cuenta-online.html',
-    bg: '#004B9E',
-  },
-  {
-    id: 'revolut',
-    text: '💳 Revolut: 0 comisiones en divisas · Viaja barato',
-    cta: 'Abrir',
-    url: 'https://revolut.com/referral/?referral-code=juananmpu9&geo-redirect',
-    bg: '#191C1F',
-  },
-  {
-    id: 'igraal',
-    text: '💰 iGraal: cashback en Amazon, Zara y 2000+ tiendas',
-    cta: 'Unirse',
-    url: 'https://es.igraal.com/padrinazgo?padrino=vpbWSouX',
-    bg: '#F59E0B',
-  },
-  {
-    id: 'attapoll',
-    text: '📊 Attapoll: gana 3-8€/mes con encuestas',
-    cta: 'Probar',
-    url: 'https://attapoll.app/join/qarui',
-    bg: '#7C3AED',
-  },
-  {
-    id: 'weward',
-    text: '🚶 WeWard: gana dinero caminando · 150 Wards gratis',
-    cta: 'Descargar',
-    url: 'https://wewardapp.go.link/8ifvH?adj_label=DevotoArana4251',
-    bg: '#0EA5E9',
-  },
+  { id:'trade_republic', text:'📈 Trade Republic: 4% anual + acción gratis', cta:'Ver', url:'https://refnocode.trade.re/0kbf1xcq', bg:'#0ADB83' },
+  { id:'myinvestor', text:'🟣 MyInvestor: 4.50% TAE · Código UNHO5', cta:'Ver', url:'https://newapp.myinvestor.es/do/signup?promotionalCode=UNHO5', bg:'#6D28D9' },
+  { id:'bbva', text:'🏦 BBVA: sin comisiones + hasta 300€ bono', cta:'Ver', url:'https://www.bbva.es/personas/productos/cuentas/cuenta-online.html', bg:'#004B9E' },
+  { id:'revolut', text:'💳 Revolut: 0 comisiones en divisas', cta:'Ver', url:'https://revolut.com/referral/?referral-code=juananmpu9&geo-redirect', bg:'#191C1F' },
+  { id:'igraal', text:'💰 iGraal: cashback en 2000+ tiendas', cta:'Ver', url:'https://es.igraal.com/padrinazgo?padrino=vpbWSouX', bg:'#F59E0B' },
+  { id:'attapoll', text:'📊 Attapoll: gana 3-8€/mes con encuestas', cta:'Ver', url:'https://attapoll.app/join/qarui', bg:'#7C3AED' },
+  { id:'weward', text:'🚶 WeWard: gana dinero caminando', cta:'Ver', url:'https://wewardapp.go.link/8ifvH?adj_label=DevotoArana4251', bg:'#0EA5E9' },
 ];
 
+// Tiempos configurables (en ms)
+const SHOW_DELAY    = 3000;    // aparece 3s después de montar la pantalla
+const AUTO_HIDE     = 20000;   // se oculta SOLO después de 20s (auto-dismiss)
+const COOLDOWN      = 10 * 60 * 1000; // 10 min entre apariciones tras cerrar con X
+const ROTATE_EVERY  = 30000;   // cambia de anuncio cada 30s
+
 /**
- * AdBanner — Banner publicitario no intrusivo
+ * AdBanner — Banner NO intrusivo
  * 
- * Dos modos:
- * 1. ADMOB_CONFIGURED=false → muestra banners propios (referidos) con X para cerrar
- * 2. ADMOB_CONFIGURED=true  → muestra banner nativo de Google AdMob
- * 
- * Comportamiento:
- * - Aparece al fondo de pantallas seleccionadas
- * - El usuario puede cerrarlo con la X (se oculta 5 min y vuelve)
- * - No es popup, no bloquea nada, no interrumpe
- * - Se muestra cada ~2s delay para no molestar al abrir pantalla
- * 
- * Props:
- *   screen: string — para analytics futuras
- *   style: object — estilos extra
+ * Comportamiento (Apple-compliant):
+ * 1. Aparece con delay de 3s al entrar en la pantalla
+ * 2. Se auto-oculta solo tras 20s (el usuario no tiene que hacer nada)
+ * 3. El usuario puede cerrarlo antes con la X
+ * 4. Si cierra con X → cooldown de 10 min antes de volver a aparecer
+ * 5. NO es popup, NO bloquea, NO tapa contenido, NO reaparece agresivamente
+ * 6. Posición: al fondo de la pantalla, ANTES del tab bar (no encima)
  */
 export default function AdBanner({ screen = 'unknown', style }) {
-  const [visible, setVisible] = useState(true);
+  const [phase, setPhase] = useState('waiting'); // waiting | showing | hidden | cooldown
   const [adIdx, setAdIdx] = useState(() => Math.floor(Math.random() * OWN_ADS.length));
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const hideTimerRef = useRef(null);
+  const timersRef = useRef({ show: null, hide: null, cooldown: null, rotate: null });
 
-  // Fade in after 2s delay
-  useEffect(() => {
-    const t = setTimeout(() => {
-      Animated.timing(fadeAnim, {
-        toValue: 1, duration: 500, useNativeDriver: true,
-      }).start();
-    }, 2000);
-    return () => clearTimeout(t);
+  const clearAllTimers = useCallback(() => {
+    Object.values(timersRef.current).forEach(t => clearTimeout(t));
   }, []);
 
-  // Rotate own ads every 25s
+  // Phase 1: Wait SHOW_DELAY, then fade in
   useEffect(() => {
-    if (ADMOB_CONFIGURED) return;
-    const interval = setInterval(() => {
+    timersRef.current.show = setTimeout(() => {
+      setPhase('showing');
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+      // Phase 2: Auto-hide after AUTO_HIDE ms
+      timersRef.current.hide = setTimeout(() => {
+        Animated.timing(fadeAnim, { toValue: 0, duration: 400, useNativeDriver: true })
+          .start(() => setPhase('hidden'));
+      }, AUTO_HIDE);
+    }, SHOW_DELAY);
+    return clearAllTimers;
+  }, []);
+
+  // Rotate ads while showing
+  useEffect(() => {
+    if (phase !== 'showing' || ADMOB_CONFIGURED) return;
+    timersRef.current.rotate = setInterval(() => {
       Animated.sequence([
-        Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
       ]).start();
       setAdIdx(i => (i + 1) % OWN_ADS.length);
-    }, 25000);
-    return () => clearInterval(interval);
-  }, []);
+    }, ROTATE_EVERY);
+    return () => clearInterval(timersRef.current.rotate);
+  }, [phase]);
 
+  // User presses X → fade out, enter cooldown
   function dismiss() {
-    Animated.timing(fadeAnim, {
-      toValue: 0, duration: 300, useNativeDriver: true,
-    }).start(() => setVisible(false));
-    // Re-show after 5 minutes
-    clearTimeout(hideTimerRef.current);
-    hideTimerRef.current = setTimeout(() => {
-      setVisible(true);
-      setAdIdx(i => (i + 1) % OWN_ADS.length);
-      Animated.timing(fadeAnim, {
-        toValue: 1, duration: 400, useNativeDriver: true,
-      }).start();
-    }, 5 * 60 * 1000);
+    clearTimeout(timersRef.current.hide);
+    Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true })
+      .start(() => {
+        setPhase('cooldown');
+        // After COOLDOWN, allow showing again (but don't force it)
+        timersRef.current.cooldown = setTimeout(() => {
+          setPhase('waiting');
+          // Show again gently after cooldown
+          timersRef.current.show = setTimeout(() => {
+            setPhase('showing');
+            setAdIdx(i => (i + 1) % OWN_ADS.length);
+            Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
+            timersRef.current.hide = setTimeout(() => {
+              Animated.timing(fadeAnim, { toValue: 0, duration: 400, useNativeDriver: true })
+                .start(() => setPhase('hidden'));
+            }, AUTO_HIDE);
+          }, SHOW_DELAY);
+        }, COOLDOWN);
+      });
   }
 
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => clearTimeout(hideTimerRef.current);
-  }, []);
-
-  if (!visible) return null;
-
-  // ── MODE 1: AdMob nativo (cuando esté configurado) ──
-  // TODO: Cuando tengas los IDs de AdMob, descomenta esto:
-  // if (ADMOB_CONFIGURED) {
-  //   const { BannerAd, BannerAdSize, TestIds } = require('react-native-google-mobile-ads');
-  //   const adUnitId = __DEV__
-  //     ? TestIds.ADAPTIVE_BANNER
-  //     : Platform.select({
-  //         ios: ADMOB_IOS_BANNER_ID,
-  //         android: ADMOB_ANDROID_BANNER_ID,
-  //       });
-  //   return (
-  //     <View style={[s.admobWrap, style]}>
-  //       <BannerAd unitId={adUnitId} size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-  //         requestOptions={{ requestNonPersonalizedAdsOnly: true }}/>
-  //     </View>
-  //   );
-  // }
-
-  // ── MODE 2: Banners propios (referidos) — funciona desde el día 1 ──
+  // Don't render anything if not showing
+  if (phase !== 'showing') return null;
   const ad = OWN_ADS[adIdx % OWN_ADS.length];
   if (!ad) return null;
 
   return (
-    <Animated.View style={[s.container, { backgroundColor: ad.bg, opacity: fadeAnim }, style]}>
+    <Animated.View style={[s.wrap, { backgroundColor: ad.bg, opacity: fadeAnim }, style]}>
       <TouchableOpacity style={s.content} onPress={() => openURL(ad.url)} activeOpacity={0.85}>
         <Text style={s.text} numberOfLines={1}>{ad.text}</Text>
         <View style={s.ctaBtn}>
           <Text style={s.ctaTxt}>{ad.cta}</Text>
         </View>
       </TouchableOpacity>
-      <TouchableOpacity style={s.closeBtn} onPress={dismiss}
-        hitSlop={{top:12,bottom:12,left:12,right:12}}>
-        <Ionicons name="close" size={13} color="rgba(255,255,255,0.7)"/>
+      <TouchableOpacity style={s.xBtn} onPress={dismiss} hitSlop={{top:14,bottom:14,left:14,right:14}}>
+        <Ionicons name="close" size={14} color="rgba(255,255,255,0.8)"/>
       </TouchableOpacity>
-      <Text style={s.adLabel}>Anuncio</Text>
+      <Text style={s.label}>Anuncio</Text>
     </Animated.View>
   );
 }
 
 const s = StyleSheet.create({
-  container: {
-    flexDirection: 'row', alignItems: 'center',
-    borderRadius: 12, marginHorizontal: 12, marginBottom: 6,
-    paddingLeft: 12, paddingRight: 6, paddingVertical: 9,
-    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 }, elevation: 3,
+  wrap: {
+    flexDirection:'row', alignItems:'center',
+    borderRadius:12, marginHorizontal:12, marginBottom:8, marginTop:4,
+    paddingLeft:12, paddingRight:4, paddingVertical:10,
+    shadowColor:'#000', shadowOpacity:0.1, shadowRadius:4,
+    shadowOffset:{width:0,height:1}, elevation:2,
   },
-  content: {
-    flex: 1, flexDirection: 'row', alignItems: 'center', gap: 8,
-  },
-  text: {
-    flex: 1, fontSize: 12, fontWeight: '600', color: '#fff',
-    lineHeight: 16,
-  },
-  ctaBtn: {
-    backgroundColor: 'rgba(255,255,255,0.25)',
-    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5,
-  },
-  ctaTxt: {
-    fontSize: 11, fontWeight: '700', color: '#fff',
-  },
-  closeBtn: {
-    padding: 6,
-  },
-  adLabel: {
-    position: 'absolute', top: 2, right: 6,
-    fontSize: 7, color: 'rgba(255,255,255,0.4)',
-    fontWeight: '600', letterSpacing: 0.3,
-  },
-  admobWrap: {
-    alignItems: 'center', marginHorizontal: 12,
-    marginBottom: 6, overflow: 'hidden', borderRadius: 8,
-  },
+  content: { flex:1, flexDirection:'row', alignItems:'center', gap:8 },
+  text: { flex:1, fontSize:12, fontWeight:'600', color:'#fff', lineHeight:16 },
+  ctaBtn: { backgroundColor:'rgba(255,255,255,0.25)', borderRadius:8, paddingHorizontal:10, paddingVertical:5 },
+  ctaTxt: { fontSize:11, fontWeight:'700', color:'#fff' },
+  xBtn: { padding:8 },
+  label: { position:'absolute', top:2, right:8, fontSize:7, color:'rgba(255,255,255,0.35)', fontWeight:'600' },
 });
