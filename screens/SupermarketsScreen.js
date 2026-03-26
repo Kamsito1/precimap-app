@@ -161,6 +161,14 @@ export default function SupermarketsScreen({ embedded = false }) {
 
         {/* ── RANKING TAB ── */}
         {tab==='ranking' && <>
+          {/* Savings banner */}
+          <View style={{flexDirection:'row',backgroundColor:'#DCFCE7',borderRadius:12,margin:12,padding:12,gap:10,alignItems:'center'}}>
+            <Text style={{fontSize:24}}>💰</Text>
+            <View style={{flex:1}}>
+              <Text style={{fontSize:13,fontWeight:'700',color:'#166534'}}>Ahorra hasta 45€/mes cambiando de super</Text>
+              <Text style={{fontSize:11,color:'#166534',opacity:0.8}}>Comprando en Aldi en lugar del más caro · Estudio OCU 2024</Text>
+            </View>
+          </View>
           <View style={s.ocuBadge}>
             <Ionicons name="shield-checkmark" size={13} color={COLORS.primary}/>
             <Text style={s.ocuTxt}>Fuente: OCU Estudio Anual 2024 · 140 productos · Actualizado nov 2024</Text>
