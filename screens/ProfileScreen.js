@@ -178,6 +178,16 @@ export default function ProfileScreen() {
       ]);
       setProfile(data);
       setMyDeals(Array.isArray(deals) ? deals : []);
+      // Sync fresh data back to Auth context so header/stats are up-to-date
+      if (data?.id) {
+        updateUser({
+          points: data.points,
+          name: data.name,
+          avatar_url: data.avatar_url,
+          streak: data.streak,
+          is_admin: data.is_admin,
+        });
+      }
       // Find rank position
       if (Array.isArray(lb) && data?.id) {
         const pos = lb.findIndex(u => u.id === data.id);
@@ -243,7 +253,9 @@ export default function ProfileScreen() {
   }
 
   const initials = (n='?') => n.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-  const u = profile || user;
+  // Always prefer profile (fresh from API) over user (stale JWT)
+  // While profile loads, show a loading skeleton instead of wrong data
+  const u = profile ?? user;
 
   // ─── GUEST VIEW ─────────────────────────────────────────────────────────────
   if (!isLoggedIn) return (

@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
   COLORS, CATEGORY_INFO, FUEL_LABELS, gasPriceColor,
-  stationMinPrice, apiGet, apiPost, distanceKm, timeAgo,
+  stationMinPrice, apiGet, apiPost, distanceKm, timeAgo, openURL,
 } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
@@ -385,10 +385,13 @@ export default function MapScreen() {
   }
 
   function navigateTo(lat, lng, name) {
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name||'')}`;
+    // Web: always Google Maps in new tab
+    if (typeof document !== 'undefined') { openURL(googleMapsUrl); return; }
     const url = Platform.OS === 'ios'
-      ? `maps://maps.apple.com/?daddr=${lat},${lng}&q=${encodeURIComponent(name)}`
-      : `geo:${lat},${lng}?q=${encodeURIComponent(name)}`;
-    Linking.openURL(url).catch(() => Linking.openURL(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`));
+      ? `maps://maps.apple.com/?daddr=${lat},${lng}&q=${encodeURIComponent(name||'')}`
+      : `geo:${lat},${lng}?q=${encodeURIComponent(name||'')}`;
+    Linking.openURL(url).catch(() => openURL(googleMapsUrl));
   }
 
   return (
