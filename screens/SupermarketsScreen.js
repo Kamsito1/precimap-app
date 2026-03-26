@@ -249,7 +249,7 @@ export default function SupermarketsScreen({ embedded = false }) {
           {filteredProds.length === 0
             ? <Text style={{textAlign:'center',color:COLORS.text3,padding:30,fontSize:14}}>No se encontraron productos con "{search}"</Text>
             : filteredProds.map(p => (
-              <View key={p.name} style={s.tableRow}>
+              <TouchableOpacity key={p.name} style={s.tableRow} onPress={() => priceHistory[p.name] ? setSelectedProd(p) : null} activeOpacity={priceHistory[p.name] ? 0.7 : 1}>
                 <View style={{flex:2,paddingRight:4}}>
                   <Text style={s.prodName} numberOfLines={2}>{p.name}</Text>
                   <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:2}}>
@@ -282,8 +282,9 @@ export default function SupermarketsScreen({ embedded = false }) {
                   );
                 })}
               </View>
-            ))
-          }
+            </TouchableOpacity>
+          ))
+        }
           <View style={s.disclaimer}>
             <Text style={s.disclaimerTxt}>ℹ️ Precios orientativos octubre 2024. Pueden variar por zona y oferta.</Text>
           </View>
@@ -319,6 +320,54 @@ export default function SupermarketsScreen({ embedded = false }) {
 
       </ScrollView>
       <AuthModal visible={showAuth} onClose={()=>setShowAuth(false)}/>
+
+      {/* Price history modal */}
+      {selectedProd && priceHistory[selectedProd.name] && (
+        <View style={{position:'absolute',top:0,left:0,right:0,bottom:0,backgroundColor:'rgba(0,0,0,0.6)',justifyContent:'flex-end'}}>
+          <View style={{backgroundColor:COLORS.bg2,borderTopLeftRadius:20,borderTopRightRadius:20,padding:20,maxHeight:'60%'}}>
+            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+              <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text,flex:1}} numberOfLines={2}>{selectedProd.name}</Text>
+              <TouchableOpacity onPress={()=>setSelectedProd(null)} style={{padding:4}}>
+                <Ionicons name="close" size={22} color={COLORS.text2}/>
+              </TouchableOpacity>
+            </View>
+            <Text style={{fontSize:12,color:COLORS.text3,marginBottom:12}}>📈 Evolución de precio — Mercadona (últimos 20 días)</Text>
+            {(() => {
+              const pts = priceHistory[selectedProd.name];
+              if (!pts || pts.length < 2) return <Text style={{color:COLORS.text3}}>Sin suficientes datos</Text>;
+              const prices = pts.map(p=>p.price);
+              const minP = Math.min(...prices), maxP = Math.max(...prices);
+              const range = maxP - minP || 0.01;
+              const W = 300, H = 80;
+              return (
+                <View>
+                  <View style={{flexDirection:'row',height:H,alignItems:'flex-end',gap:3,paddingBottom:4}}>
+                    {pts.map((p,i) => {
+                      const h = Math.max(8, ((p.price-minP)/range)*H*0.9+8);
+                      const isLast = i===pts.length-1;
+                      return (
+                        <View key={i} style={{flex:1,height:h,backgroundColor:isLast?COLORS.primary:COLORS.border,borderRadius:2}}/>
+                      );
+                    })}
+                  </View>
+                  <View style={{flexDirection:'row',justifyContent:'space-between',marginTop:8}}>
+                    <Text style={{fontSize:11,color:COLORS.text3}}>{pts[0]?.date}</Text>
+                    <Text style={{fontSize:13,fontWeight:'700',color:COLORS.primary}}>
+                      Hoy: {pts[pts.length-1]?.price?.toFixed(2)}€
+                    </Text>
+                    <Text style={{fontSize:11,color:COLORS.text3}}>{pts[pts.length-1]?.date}</Text>
+                  </View>
+                  <View style={{flexDirection:'row',justifyContent:'space-between',marginTop:8,backgroundColor:COLORS.bg3,borderRadius:8,padding:10}}>
+                    <Text style={{fontSize:12,color:COLORS.success}}>🟢 Min: {minP.toFixed(2)}€</Text>
+                    <Text style={{fontSize:12,color:COLORS.text2}}>Avg: {(prices.reduce((a,b)=>a+b,0)/prices.length).toFixed(2)}€</Text>
+                    <Text style={{fontSize:12,color:COLORS.danger}}>🔴 Max: {maxP.toFixed(2)}€</Text>
+                  </View>
+                </View>
+              );
+            })()}
+          </View>
+        </View>
+      )}
     </Wrapper>
   );
 }
