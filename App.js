@@ -40,13 +40,15 @@ function AppNavigator() {
   const { isLoggedIn, loading: authLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [splashG95, setSplashG95] = useState(null);
+  const [splashStats, setSplashStats] = useState(null);
 
-  // Fetch real G95 min price for splash screen
+  // Fetch real data for splash screen
   useState(() => {
     apiGet('/api/gasolineras/stats').then(d => {
       const min = d?.stats?.g95?.min;
       if (min) setSplashG95(min.toFixed(3));
     }).catch(() => {});
+    apiGet('/api/stats').then(d => setSplashStats(d)).catch(() => {});
   });
 
   if (authLoading) return (
@@ -58,7 +60,7 @@ function AppNavigator() {
       <View style={{ position: 'absolute', bottom: 40, alignItems: 'center', gap: 4 }}>
         <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
           {splashG95
-            ? `🟢 G95 desde ${splashG95}€/L · ⛽ 12.213 gasolineras`
+            ? `⛽ G95 desde ${splashG95}€/L · 🔥 ${splashStats?.deals||35} chollos`
             : '🗺️ Gasolineras · Chollos · Supermercados'}
         </Text>
         <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v1.0.2</Text>

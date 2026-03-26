@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  Image, ActivityIndicator, RefreshControl, Linking, Alert, TextInput, Modal, Share,
+  Image, ActivityIndicator, RefreshControl, Linking, Alert, TextInput, Modal, Share, ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -233,6 +233,23 @@ export default function DealsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.danger}/>}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.3}
+          ListHeaderComponent={trending.length > 0 && sort === 'hot' && cat === 'all' ? (
+            <View style={{marginBottom:8}}>
+              <Text style={{fontSize:11,fontWeight:'700',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>🔥 TENDENCIAS HOY</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
+                {trending.slice(0,3).map(t=>(
+                  <TouchableOpacity key={t.id} style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:10,width:200,borderWidth:1,borderColor:COLORS.border,gap:4}}
+                    onPress={()=>Linking.openURL(t.url).catch(()=>{})}>
+                    <Text style={{fontSize:9,fontWeight:'700',color:COLORS.danger}}>{t.temperature} TRENDING</Text>
+                    <Text style={{fontSize:12,fontWeight:'700',color:COLORS.text}} numberOfLines={2}>{t.title}</Text>
+                    <Text style={{fontSize:13,fontWeight:'800',color:COLORS.primary}}>{t.deal_price?.toFixed(2)}€
+                      <Text style={{fontSize:10,color:COLORS.text3,fontWeight:'400'}}> -{Math.round(t.discount_percent)}%</Text>
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
           ListFooterComponent={loadingMore ? (
             <View style={{paddingVertical:20,alignItems:'center'}}>
               <ActivityIndicator color={COLORS.danger}/>
