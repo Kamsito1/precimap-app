@@ -298,6 +298,9 @@ export default function DealsScreen() {
                       if (hoursOld < 24) return <Text style={{fontSize:10,fontWeight:'700',color:'#fff',backgroundColor:COLORS.success,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>NUEVO</Text>;
                       return null;
                     })()}
+                    {(deal.votes_up||0) >= 100 && (
+                      <Text style={{fontSize:10,fontWeight:'800',color:'#fff',backgroundColor:'#DC2626',borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>🔥 TOP</Text>
+                    )}
                     {deal.users?.name && (
                       <Text style={[s.ageTag,{color:COLORS.text3}]}>por {deal.users.name.split(' ')[0]}</Text>
                     )}

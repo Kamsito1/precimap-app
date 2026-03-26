@@ -221,6 +221,11 @@ export default function MapScreen() {
         <View style={{flex:1,backgroundColor:COLORS.bg}}>
           <View style={{backgroundColor:COLORS.primary,paddingHorizontal:20,paddingTop:20,paddingBottom:24}}>
             <Text style={{fontSize:22,fontWeight:'800',color:'#fff',marginBottom:6}}>⛽ Elige tu carburante</Text>
+            {fuelStats?.g95 && (
+              <Text style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginBottom:2}}>
+                G95 ahora desde {fuelStats.g95.min?.toFixed(3)}€/L · media {fuelStats.g95.avg?.toFixed(3)}€/L
+              </Text>
+            )}
             <Text style={{fontSize:14,color:'rgba(255,255,255,0.8)',lineHeight:20}}>
               El mapa mostrará el precio de cada estación para el carburante que elijas
             </Text>
