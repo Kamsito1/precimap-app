@@ -65,13 +65,13 @@ export default function RankingScreen() {
         {stats && (
           <View style={s.statsRow}>
             {[
-              [stats.users || 0, '👤 Usuarios'],
-              [stats.prices || 0, '💰 Precios'],
-              [stats.deals || 0, '🔥 Chollos'],
-              [stats.places || 0, '📍 Lugares'],
+              [stats.users || 0,       '👤 Usuarios'],
+              [stats.prices || 0,      '💰 Precios'],
+              [stats.deals || 0,       '🔥 Chollos'],
+              [(stats.gasolineras||0).toLocaleString('es-ES').replace(/\./g,'').slice(0,5)+'K+', '⛽ Gasolinas'],
             ].map(([n, l]) => (
               <View key={l} style={s.statBox}>
-                <Text style={s.statN}>{Number(n).toLocaleString('es-ES')}</Text>
+                <Text style={s.statN}>{typeof n==='number' ? Number(n).toLocaleString('es-ES') : n}</Text>
                 <Text style={s.statL}>{l}</Text>
               </View>
             ))}
