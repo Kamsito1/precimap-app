@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../utils';
+import { COLORS, openURL } from '../utils';
 
 // Popular airport codes and names
 const AIRPORTS = [
@@ -26,6 +26,9 @@ const AIRPORTS = [
   { code:'SCQ', name:'Santiago de Compostela',city:'Santiago', country:'España' },
   { code:'GRX', name:'Granada',              city:'Granada',   country:'España' },
   { code:'REC', name:'Murcia',               city:'Murcia',    country:'España' },
+  { code:'XRY', name:'Jerez de la Frontera', city:'Jerez',     country:'España' },
+  { code:'COR', name:'Córdoba',              city:'Córdoba',   country:'España' },
+  { code:'MJV', name:'Región de Murcia Int.',city:'Murcia',    country:'España' },
   // Europe
   { code:'LHR', name:'London Heathrow',      city:'Londres',   country:'UK'     },
   { code:'CDG', name:'Paris Charles de Gaulle',city:'París',   country:'Francia'},
@@ -184,7 +187,7 @@ export default function FlightSearchScreen({ embedded = false }) {
     const retISO = tripType === 'round' ? toISODate(retDate) : null;
     if (tripType === 'round' && !retISO) { Alert.alert('Fecha de vuelta','Introduce la fecha de vuelta en formato DD/MM/AAAA'); return; }
     const url = engine.url(origin.code, dest.code, depISO, retISO, adults);
-    Linking.openURL(url).catch(() => Alert.alert('Error','No se pudo abrir el navegador'));
+    openURL(url);
   }
 
   const today = new Date();

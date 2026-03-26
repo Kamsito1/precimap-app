@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, apiGet, API_BASE } from '../utils';
+import { COLORS, apiGet, API_BASE, openURL } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
 import { useNavigation } from '@react-navigation/native';
@@ -307,8 +307,7 @@ export default function SupermarketsScreen({ embedded = false }) {
           <View style={s.ocuBadge}>
             <Ionicons name="shield-checkmark" size={13} color={COLORS.primary}/>
             <Text style={s.ocuTxt}>Fuente: OCU Estudio Anual 2024 · 140 productos · Actualizado nov 2024</Text>
-            <TouchableOpacity onPress={()=>Linking.openURL('https://www.ocu.org/alimentacion/supermercados').catch(()=>{})}>
-              <Text style={{fontSize:11,color:COLORS.primary,fontWeight:'700'}}>Ver →</Text>
+            <TouchableOpacity onPress={()=>openURL('https://www.ocu.org/alimentacion/supermercados')}>              <Text style={{fontSize:11,color:COLORS.primary,fontWeight:'700'}}>Ver →</Text>
             </TouchableOpacity>
           </View>
           {/* Podium top 3 */}

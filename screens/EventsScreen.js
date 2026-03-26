@@ -485,8 +485,14 @@ function AddEventModal({ visible, onClose, onSuccess }) {
 
           <View style={{flexDirection:'row',gap:10}}>
             <View style={{flex:1}}>
-              <Text style={am.label}>Fecha * (AAAA-MM-DD)</Text>
-              <TextInput style={am.input} value={date} onChangeText={setDate} placeholder="2026-05-01" placeholderTextColor={COLORS.text3}/>
+              <Text style={am.label}>Fecha * (DD/MM/AAAA)</Text>
+              <TextInput style={am.input} value={date} onChangeText={v => {
+                // Auto-format DD/MM/YYYY
+                const n = v.replace(/\D/g,'');
+                if (n.length <= 2) setDate(n);
+                else if (n.length <= 4) setDate(n.slice(0,2)+'/'+n.slice(2));
+                else setDate(n.slice(0,2)+'/'+n.slice(2,4)+'/'+n.slice(4,8));
+              }} placeholder="01/05/2026" placeholderTextColor={COLORS.text3} keyboardType="number-pad" maxLength={10}/>
             </View>
             <View style={{flex:1}}>
               <Text style={am.label}>Hora</Text>

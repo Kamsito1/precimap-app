@@ -89,9 +89,14 @@ export const Auth = {
 
 // ─── API HELPERS ──────────────────────────────────────────────────────────────
 export async function apiGet(path) {
-  const r = await fetch(API_BASE + path, { headers: Auth.headers() });
-  if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
-  return r.json();
+  try {
+    const r = await fetch(API_BASE + path, { headers: Auth.headers() });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
+    return r.json();
+  } catch(e) {
+    // Re-throw so callers using allSettled see the rejection
+    throw e;
+  }
 }
 
 export async function apiPost(path, body) {

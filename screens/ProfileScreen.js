@@ -171,23 +171,28 @@ export default function ProfileScreen() {
   async function loadProfile() {
     setLoading(true);
     try {
-      const [data, deals, lb] = await Promise.all([
+      // Use allSettled so a leaderboard 503 doesn't block profile load
+      const [dataRes, dealsRes, lbRes] = await Promise.allSettled([
         apiGet('/api/users/me'),
         apiGet('/api/users/me/deals'),
         apiGet('/api/leaderboard?period=all'),
       ]);
-      setProfile(data);
-      setMyDeals(Array.isArray(deals) ? deals : []);
-      // Sync fresh data back to Auth context so header/stats are up-to-date
-      if (data?.id) {
+      const data  = dataRes.status  === 'fulfilled' ? dataRes.value  : null;
+      const deals = dealsRes.status === 'fulfilled' ? dealsRes.value : [];
+      const lb    = lbRes.status    === 'fulfilled' ? lbRes.value    : [];
+
+      if (data) {
+        setProfile(data);
+        // Sync fresh data back to Auth context so header/stats are up-to-date
         updateUser({
-          points: data.points,
-          name: data.name,
+          points:     data.points,
+          name:       data.name,
           avatar_url: data.avatar_url,
-          streak: data.streak,
-          is_admin: data.is_admin,
+          streak:     data.streak,
+          is_admin:   data.is_admin,
         });
       }
+      setMyDeals(Array.isArray(deals) ? deals : []);
       // Find rank position
       if (Array.isArray(lb) && data?.id) {
         const pos = lb.findIndex(u => u.id === data.id);
@@ -197,7 +202,8 @@ export default function ProfileScreen() {
         apiPost('/api/notifications/read', {}).catch(() => {});
       }
     }
-    catch {} finally { setLoading(false); setRefreshing(false); }
+    catch(e) { console.warn('loadProfile error:', e); }
+    finally { setLoading(false); setRefreshing(false); }
   }
 
   const onRefresh = useCallback(() => { setRefreshing(true); loadProfile(); }, []);
@@ -268,7 +274,7 @@ export default function ProfileScreen() {
           <Text style={s.guestSub}>La app de ahorro de España</Text>
         </View>
         <View style={s.statsRow}>
-          {[['12.214+','Gasolineras'],['🆓','100% Gratis'],['🇪🇸','Toda España']].map(([n,l])=>(
+          {[['12.200+','Gasolineras'],['🆓','100% Gratis'],['🇪🇸','Toda España']].map(([n,l])=>(
             <View key={l} style={s.statBox}><Text style={s.statNum}>{n}</Text><Text style={s.statLbl}>{l}</Text></View>
           ))}
         </View>
@@ -706,7 +712,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           ))}
           <Text style={{fontSize:11,color:COLORS.text3,marginTop:10,textAlign:'center'}}>
-            PreciMap v1.2.2 · Hecho con ❤️ en España
+            PreciMap v1.2.3 · Hecho con ❤️ en España
           </Text>
         </Section>
 

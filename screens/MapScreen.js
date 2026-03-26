@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal,
-  FlatList, ActivityIndicator, Linking, Platform, Alert, TextInput, Animated, Share,
+  FlatList, ActivityIndicator, Linking, Platform, Alert, TextInput, Animated, Share, KeyboardAvoidingView,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker } from 'react-native-maps';
@@ -71,6 +71,7 @@ export default function MapScreen() {
   const [selectedStation, setSelectedStation] = useState(null);
   const [showAuth, setShowAuth]     = useState(false);
   const [showAddGas, setShowAddGas] = useState(false);
+  const [showAddPlace, setShowAddPlace] = useState(false);
   const [priceChangePlace, setPriceChangePlace] = useState(null);
   const [mapRegion, setMapRegion]   = useState(null); // current visible region
   const [allGas, setAllGas]         = useState([]);
@@ -303,7 +304,7 @@ export default function MapScreen() {
                   <View style={{width:'100%',height:6,backgroundColor:COLORS.border,borderRadius:99,overflow:'hidden'}}>
                     <View style={{width:`${loadProgress}%`,height:'100%',backgroundColor:COLORS.primary,borderRadius:99}}/>
                   </View>
-                  <Text style={{fontSize:12,color:COLORS.text3}}>{loadProgress}% · 12.214 gasolineras</Text>
+                  <Text style={{fontSize:12,color:COLORS.text3}}>{loadProgress}% · cargando gasolineras...</Text>
                 </>
               )}
               <TouchableOpacity
@@ -778,7 +779,7 @@ export default function MapScreen() {
             if (!isLoggedIn) { setShowAuth(true); return; }
             Alert.alert('Añadir', '¿Qué quieres añadir?', [
               { text:'⛽ Gasolinera no registrada', onPress:()=>setShowAddGas(true) },
-              { text:'📍 Otro lugar (bar, súper...)', onPress:()=>Alert.alert('Próximamente','La funcionalidad completa de añadir lugares estará disponible pronto.') },
+              { text:'📍 Supermercado / Farmacia / Otro', onPress:()=>setShowAddPlace(true) },
               { text:'Cancelar', style:'cancel' },
             ]);
           }}>
@@ -866,6 +867,8 @@ export default function MapScreen() {
       </Modal>
       <AddGasStationModal visible={showAddGas} onClose={()=>setShowAddGas(false)} userLoc={userLoc}
         onSuccess={()=>{ setShowAddGas(false); loadPlaces(); loadAllGasolineras(); Alert.alert('✅ Añadida','Gracias. La comunidad la verificará con sus votos.'); }}/>
+      <AddPlaceModal visible={showAddPlace} onClose={()=>setShowAddPlace(false)} userLoc={userLoc}
+        onSuccess={()=>{ setShowAddPlace(false); loadPlaces(); Alert.alert('✅ Lugar añadido','¡Gracias! Ya aparece en el mapa para que la comunidad reporte precios.'); }}/>
       <AuthModal visible={showAuth} onClose={()=>setShowAuth(false)}/>
     </SafeAreaView>
   );
@@ -1210,3 +1213,78 @@ const pcs = StyleSheet.create({
   fuelActiveBadge:{flexDirection:'row',alignItems:'center',borderRadius:99,borderWidth:1.5,paddingHorizontal:10,paddingVertical:5},
   fuelActiveTxt:{fontSize:12,fontWeight:'700'},
 });
+
+// ─── ADD PLACE MODAL ──────────────────────────────────────────────────────────
+function AddPlaceModal({ visible, onClose, userLoc, onSuccess }) {
+  const [name, setName]   = useState('');
+  const [cat, setCat]     = useState('supermercado');
+  const [address, setAddr] = useState('');
+  const [city, setCity]   = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const CATS = [
+    {key:'supermercado',label:'🛒 Supermercado'},
+    {key:'farmacia',label:'💊 Farmacia'},
+    {key:'gasolinera',label:'⛽ Gasolinera'},
+    {key:'restaurante',label:'🍽️ Restaurante'},
+    {key:'otro',label:'📍 Otro'},
+  ];
+
+  function reset() { setName(''); setCat('supermercado'); setAddr(''); setCity(''); setError(''); }
+
+  async function submit() {
+    if (!name.trim()) return setError('El nombre es obligatorio');
+    setLoading(true);
+    try {
+      const lat = userLoc?.latitude || 40.416775;
+      const lng = userLoc?.longitude || -3.703790;
+      await apiPost('/api/places', { name: name.trim(), category: cat, lat, lng, address: address.trim(), city: city.trim() });
+      reset();
+      onSuccess?.();
+    } catch(e) { setError(e.message || 'Error al añadir'); }
+    finally { setLoading(false); }
+  }
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'}}>
+        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'}>
+          <View style={{backgroundColor:COLORS.bg2,borderTopLeftRadius:20,borderTopRightRadius:20,padding:20,gap:12}}>
+            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+              <Text style={{fontSize:18,fontWeight:'700',color:COLORS.text}}>📍 Añadir lugar</Text>
+              <TouchableOpacity onPress={()=>{reset();onClose();}}>
+                <Ionicons name="close" size={22} color={COLORS.text2}/>
+              </TouchableOpacity>
+            </View>
+            {error ? <Text style={{color:COLORS.danger,fontSize:13}}>{error}</Text> : null}
+            <TextInput style={{backgroundColor:COLORS.bg3,borderRadius:12,padding:12,fontSize:15,color:COLORS.text,borderWidth:1.5,borderColor:COLORS.border}}
+              value={name} onChangeText={setName} placeholder="Nombre del lugar *" placeholderTextColor={COLORS.text3}/>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:4}}>
+              <View style={{flexDirection:'row',gap:8}}>
+                {CATS.map(c => (
+                  <TouchableOpacity key={c.key}
+                    style={{paddingHorizontal:12,paddingVertical:8,borderRadius:99,borderWidth:1.5,borderColor:cat===c.key?COLORS.primary:COLORS.border,backgroundColor:cat===c.key?COLORS.primaryLight:COLORS.bg3}}
+                    onPress={()=>setCat(c.key)}>
+                    <Text style={{fontSize:13,fontWeight:'700',color:cat===c.key?COLORS.primary:COLORS.text2}}>{c.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+            <TextInput style={{backgroundColor:COLORS.bg3,borderRadius:12,padding:12,fontSize:14,color:COLORS.text,borderWidth:1.5,borderColor:COLORS.border}}
+              value={address} onChangeText={setAddr} placeholder="Dirección (opcional)" placeholderTextColor={COLORS.text3}/>
+            <TextInput style={{backgroundColor:COLORS.bg3,borderRadius:12,padding:12,fontSize:14,color:COLORS.text,borderWidth:1.5,borderColor:COLORS.border}}
+              value={city} onChangeText={setCity} placeholder="Ciudad (opcional)" placeholderTextColor={COLORS.text3}/>
+            <Text style={{fontSize:11,color:COLORS.text3}}>📍 Se guardará con tu ubicación actual. Añade la dirección exacta para que sea más fácil encontrarlo.</Text>
+            <TouchableOpacity
+              style={{backgroundColor:COLORS.primary,borderRadius:12,padding:14,alignItems:'center',opacity:loading?0.7:1}}
+              onPress={submit} disabled={loading}>
+              {loading ? <ActivityIndicator color="#fff"/> : <Text style={{color:'#fff',fontWeight:'700',fontSize:16}}>Añadir al mapa</Text>}
+            </TouchableOpacity>
+            <View style={{height:20}}/>
+          </View>
+        </KeyboardAvoidingView>
+      </View>
+    </Modal>
+  );
+}
