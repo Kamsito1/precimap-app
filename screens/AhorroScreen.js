@@ -26,7 +26,7 @@ const FALLBACK_TIPS = [
 
 export default function AhorroScreen() {
   const [sub, setSub] = useState('super');
-  const [visited, setVisited] = useState({ super: true, vuelos: false, bancos: false, apps: false });
+  const [visited, setVisited] = useState({ super: true, vuelos: false, bancos: false, apps: false, gimnasio: false });
   const [tips, setTips] = useState(FALLBACK_TIPS);
   const [tipIdx, setTipIdx] = useState(0);
   const fadeAnim = useRef(new Animated.Value(1)).current;
