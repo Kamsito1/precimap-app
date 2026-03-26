@@ -1080,15 +1080,34 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onPr
             : cat==='supermercado' ? 'precio más barato'
             : 'precio medio';
           const detail = cat==='restaurante'
-            ? `Calculado sobre ${prices.filter(p=>p.price>=3).length || prices.length} productos reportados`
+            ? `Media de ${prices.filter(p=>p.price>=3).length || prices.length} platos · media España ~12€`
             : cat==='farmacia'
-            ? `Media de ${prices.filter(p=>p.price>=1).length || prices.length} medicamentos`
+            ? `Media de ${prices.filter(p=>p.price>=1).length || prices.length} medicamentos · media España ~4-8€`
+            : cat==='supermercado'
+            ? `${prices.length} productos reportados · OCU 2024`
             : `${prices.length} productos reportados por la comunidad`;
+          // Color: green=barato, orange=medio, red=caro
+          const REF = {restaurante:12, farmacia:5, supermercado:1.5};
+          const ref = REF[cat];
+          const priceColor = !ref ? COLORS.primary
+            : place.repPrice < ref*0.85 ? '#16A34A'
+            : place.repPrice > ref*1.15 ? '#DC2626'
+            : '#D97706';
+          const priceTag = !ref ? null
+            : place.repPrice < ref*0.85 ? '🟢 Barato'
+            : place.repPrice > ref*1.15 ? '🔴 Caro'
+            : '🟡 Precio medio';
           return (
-            <View style={{backgroundColor:COLORS.primaryLight,borderRadius:12,padding:12,marginBottom:14,flexDirection:'row',alignItems:'center',gap:10,borderWidth:1,borderColor:COLORS.primary+'33'}}>
+            <View style={{backgroundColor:priceColor+'15',borderRadius:12,padding:12,marginBottom:14,flexDirection:'row',alignItems:'center',gap:10,borderWidth:1,borderColor:priceColor+'44'}}>
               <Text style={{fontSize:28}}>💰</Text>
               <View style={{flex:1}}>
-                <Text style={{fontSize:20,fontWeight:'800',color:COLORS.primary}}>{place.repPrice.toFixed(2)}€ <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text2}}>{label}</Text></Text>
+                <View style={{flexDirection:'row',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+                  <Text style={{fontSize:20,fontWeight:'800',color:priceColor}}>{place.repPrice.toFixed(2)}€</Text>
+                  <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text2}}>{label}</Text>
+                  {priceTag && <View style={{backgroundColor:priceColor+'22',borderRadius:99,paddingHorizontal:8,paddingVertical:2,borderWidth:1,borderColor:priceColor+'44'}}>
+                    <Text style={{fontSize:10,fontWeight:'700',color:priceColor}}>{priceTag}</Text>
+                  </View>}
+                </View>
                 <Text style={{fontSize:11,color:COLORS.text3,marginTop:2}}>{detail}</Text>
               </View>
             </View>
