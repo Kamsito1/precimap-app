@@ -239,14 +239,21 @@ export default function DealsScreen() {
             <View style={{marginBottom:8}}>
               <Text style={{fontSize:11,fontWeight:'700',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>🔥 TENDENCIAS HOY</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
-                {trending.slice(0,3).map(t=>(
-                  <TouchableOpacity key={t.id} style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:10,width:200,borderWidth:1,borderColor:COLORS.border,gap:4}}
+                {trending.slice(0,5).map(t=>(
+                  <TouchableOpacity key={t.id} style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:10,width:180,borderWidth:1,borderColor:COLORS.border,gap:4}}
                     onPress={()=>Linking.openURL(t.url).catch(()=>{})}>
-                    <Text style={{fontSize:9,fontWeight:'700',color:COLORS.danger}}>{t.temperature} TRENDING</Text>
+                    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+                      <Text style={{fontSize:9,fontWeight:'800',color:COLORS.danger}}>{t.temperature} TRENDING</Text>
+                      <Text style={{fontSize:9,color:COLORS.text3}}>👍{t.votes_up||0}</Text>
+                    </View>
                     <Text style={{fontSize:12,fontWeight:'700',color:COLORS.text}} numberOfLines={2}>{t.title}</Text>
-                    <Text style={{fontSize:13,fontWeight:'800',color:COLORS.primary}}>{t.deal_price?.toFixed(2)}€
-                      <Text style={{fontSize:10,color:COLORS.text3,fontWeight:'400'}}> -{Math.round(t.discount_percent)}%</Text>
-                    </Text>
+                    <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+                      <Text style={{fontSize:14,fontWeight:'800',color:COLORS.primary}}>{t.deal_price?.toFixed(2)}€</Text>
+                      {t.discount_percent > 0 && <View style={{backgroundColor:'#FEE2E2',borderRadius:4,paddingHorizontal:4}}>
+                        <Text style={{fontSize:10,fontWeight:'700',color:COLORS.danger}}>-{Math.round(t.discount_percent)}%</Text>
+                      </View>}
+                    </View>
+                    {t.store && <Text style={{fontSize:9,color:COLORS.text3}}>{t.store}</Text>}
                   </TouchableOpacity>
                 ))}
               </ScrollView>

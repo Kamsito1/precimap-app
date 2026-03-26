@@ -864,7 +864,7 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onPr
       </View>
       <ScrollView contentContainerStyle={{padding:16,paddingBottom:40}}>
         <View style={pcs.actions}>
-          <TouchableOpacity style={pcs.actionBtn} onPress={() => onProposePrice(place)}>
+          <TouchableOpacity style={pcs.actionBtn} onPress={() => place && onProposePrice(place)}>
             <Ionicons name="pricetag-outline" size={18} color={COLORS.primary}/>
             <Text style={pcs.actionTxt}>💰 Ver precios y cambios</Text>
           </TouchableOpacity>

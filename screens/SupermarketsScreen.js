@@ -263,14 +263,21 @@ export default function SupermarketsScreen({ embedded = false }) {
               <Text style={s.rankPos}>#{r.pos}</Text>
               <Text style={{fontSize:18,marginRight:8}}>{r.emoji}</Text>
               <View style={{flex:1}}>
-                <Text style={s.rankName}>{r.name}</Text>
+                <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+                  <Text style={s.rankName}>{r.name}</Text>
+                  {r.region && r.region !== 'Nacional' && (
+                    <View style={{backgroundColor:COLORS.bg3,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>
+                      <Text style={{fontSize:9,color:COLORS.text3,fontWeight:'600'}}>{r.region}</Text>
+                    </View>
+                  )}
+                </View>
                 <Text style={s.rankTip} numberOfLines={2}>{r.tip}</Text>
               </View>
               <View style={{alignItems:'flex-end'}}>
-                <Text style={[s.rankIdx,{color: r.idx<100?COLORS.success:r.idx===100?COLORS.text2:r.idx<110?COLORS.warning:COLORS.danger}]}>
-                  {r.idx}
+                <Text style={[s.rankIdx,{color: r.idx<92?COLORS.success:r.idx<100?'#22C55E':r.idx===100?COLORS.text2:r.idx<110?COLORS.warning:COLORS.danger}]}>
+                  {r.idx < 100 ? `-${100-r.idx}%` : r.idx === 100 ? 'Ref' : `+${r.idx-100}%`}
                 </Text>
-                <Text style={{fontSize:9,color:COLORS.text3}}>índice</Text>
+                <Text style={{fontSize:8,color:COLORS.text3}}>vs referencia</Text>
               </View>
             </View>
           ))}
