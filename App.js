@@ -45,11 +45,12 @@ function AppNavigator() {
 
   // Fetch real data for splash screen — MUST be before any conditional return
   useEffect(() => {
-    apiGet('/api/gasolineras/stats').then(d => {
-      const min = d?.stats?.g95?.min;
-      if (min) setSplashG95(min.toFixed(3));
+    // Use /api/stats which includes gas_stats (always available, no delay)
+    apiGet('/api/stats').then(d => {
+      setSplashStats(d);
+      const min = d?.gas_stats?.g95?.min;
+      if (min) setSplashG95(Number(min).toFixed(3));
     }).catch(() => {});
-    apiGet('/api/stats').then(d => setSplashStats(d)).catch(() => {});
   }, []);
 
   // Notification polling — MUST be before any conditional return

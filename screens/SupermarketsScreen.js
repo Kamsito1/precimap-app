@@ -627,9 +627,15 @@ function CalculadoraTab({ productos, storesKey, storesLabel }) {
       {/* Summary */}
       {cartItems.length > 0 && (
         <View style={{backgroundColor:'#ECFDF5',borderRadius:14,padding:14,margin:12,borderWidth:1,borderColor:'#BBF7D0'}}>
-          <Text style={{fontSize:13,fontWeight:'700',color:'#065F46',marginBottom:8}}>
-            🧮 Tu lista ({cartItems.length} productos)
-          </Text>
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:8}}>
+            <Text style={{fontSize:13,fontWeight:'700',color:'#065F46'}}>
+              🧮 Tu lista ({cartItems.length} productos)
+            </Text>
+            <TouchableOpacity onPress={() => setCart({})}
+              style={{backgroundColor:'#FEE2E2',borderRadius:8,paddingHorizontal:10,paddingVertical:4}}>
+              <Text style={{fontSize:11,fontWeight:'700',color:'#DC2626'}}>🗑️ Limpiar</Text>
+            </TouchableOpacity>
+          </View>
           {storesKey.filter(k => totals[k] > 0).sort((a,b) => totals[a]-totals[b]).map((k,i) => (
             <View key={k} style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingVertical:4,borderBottomWidth: i < storesKey.length-1 ? 0.5 : 0, borderBottomColor:'#BBF7D0'}}>
               <View style={{flexDirection:'row',alignItems:'center',gap:6}}>

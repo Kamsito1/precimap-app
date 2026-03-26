@@ -604,11 +604,23 @@ export default function MapScreen() {
             {/* Community places */}
             {mapPlaces.map(p => {
               const info = CATEGORY_INFO[p.category] || CATEGORY_INFO.default;
+              // Color-code non-gas places by representative price
+              const repP = p.minPrice || p.repPrice;
+              let borderColor = info.color;
+              if (repP > 0) {
+                const AVG_PRICES = { restaurante:12, farmacia:4, supermercado:1.5 };
+                const avg = AVG_PRICES[p.category] || null;
+                if (avg) {
+                  if (repP < avg * 0.85) borderColor = '#16A34A';       // barato
+                  else if (repP > avg * 1.15) borderColor = '#DC2626';   // caro
+                  else borderColor = '#D97706';                           // medio
+                }
+              }
               return (
                 <Marker key={`p${p.id}`} coordinate={{latitude:p.lat,longitude:p.lng}} onPress={()=>setSelectedPlace(p)}>
-                  <View style={[ms.marker,{backgroundColor:info.bg,borderColor:info.color}]}>
+                  <View style={[ms.marker,{backgroundColor:info.bg,borderColor,borderWidth:2}]}>
                     <Text style={ms.markerEmoji}>{info.emoji}</Text>
-                    {p.minPrice > 0 && !isNaN(p.minPrice) && <Text style={ms.markerPrice}>{p.minPrice.toFixed(2)}€</Text>}
+                    {repP > 0 && !isNaN(repP) && <Text style={ms.markerPrice}>{repP.toFixed(2)}€</Text>}
                   </View>
                 </Marker>
               );
@@ -880,6 +892,20 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
   const fuelLabel = activeFuel && activeFuel !== 'all' ? FUEL_LABELS[activeFuel] : 'G95';
   const col = item.isGas && item.minPrice ? gasPriceColor(item.minPrice) : null;
   const dist = !item._dist || item._dist===999 ? null : item._dist<1 ? `${Math.round(item._dist*1000)}m` : `${item._dist.toFixed(1)}km`;
+
+  // Price label by category
+  function priceLabel() {
+    if (!item.minPrice) return null;
+    const p = item.minPrice;
+    if (item.isGas) return `${fuelLabel} ${p.toFixed(3)}€`;
+    const cat = item.category;
+    if (cat === 'restaurante') return `~${p.toFixed(2)}€ plato`;
+    if (cat === 'farmacia')    return `~${p.toFixed(2)}€ media`;
+    if (cat === 'supermercado') return `desde ${p.toFixed(2)}€`;
+    return `~${p.toFixed(2)}€`;
+  }
+  const pLabel = priceLabel();
+
   return (
     <TouchableOpacity style={lcs.card} onPress={onPress} activeOpacity={0.75}>
       <View style={[lcs.icon,{backgroundColor:info.bg}]}>
@@ -895,11 +921,9 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
           {item.city && <Text style={lcs.sub} numberOfLines={1}>📍 {item.city}</Text>}
         </View>
         {item.bestFor ? <Text style={lcs.bestFor}>{item.bestFor}</Text> : null}
-        {item.minPrice && (
+        {pLabel && (
           <View style={[lcs.pricePill,{backgroundColor:col?col.bg+'22':COLORS.warningLight}]}>
-            <Text style={[lcs.pricePillTxt,{color:col?col.bg:COLORS.warning}]}>
-              {item.isGas ? fuelLabel+' ' : 'desde '}{(item.minPrice||0).toFixed(item.isGas?3:2)}€
-            </Text>
+            <Text style={[lcs.pricePillTxt,{color:col?col.bg:COLORS.warning}]}>{pLabel}</Text>
           </View>
         )}
       </View>
@@ -1047,6 +1071,29 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onPr
             <Text style={pcs.actionTxtNav}>Cómo llegar</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Representative price banner */}
+        {place.repPrice != null && prices.length > 0 && (() => {
+          const cat = place.category;
+          const label = cat==='restaurante' ? 'precio medio plato'
+            : cat==='farmacia' ? 'precio medio medicamento'
+            : cat==='supermercado' ? 'precio más barato'
+            : 'precio medio';
+          const detail = cat==='restaurante'
+            ? `Calculado sobre ${prices.filter(p=>p.price>=3).length || prices.length} productos reportados`
+            : cat==='farmacia'
+            ? `Media de ${prices.filter(p=>p.price>=1).length || prices.length} medicamentos`
+            : `${prices.length} productos reportados por la comunidad`;
+          return (
+            <View style={{backgroundColor:COLORS.primaryLight,borderRadius:12,padding:12,marginBottom:14,flexDirection:'row',alignItems:'center',gap:10,borderWidth:1,borderColor:COLORS.primary+'33'}}>
+              <Text style={{fontSize:28}}>💰</Text>
+              <View style={{flex:1}}>
+                <Text style={{fontSize:20,fontWeight:'800',color:COLORS.primary}}>{place.repPrice.toFixed(2)}€ <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text2}}>{label}</Text></Text>
+                <Text style={{fontSize:11,color:COLORS.text3,marginTop:2}}>{detail}</Text>
+              </View>
+            </View>
+          );
+        })()}
         {/* Price history panel */}
         {Object.keys(history).length > 0 && (
           <View style={{marginBottom:16}}>
