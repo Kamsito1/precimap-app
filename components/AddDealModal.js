@@ -87,6 +87,7 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
 
   const disc = price && original && !isNaN(+price) && !isNaN(+original) && +original > +price
     ? Math.round((1 - +price / +original) * 100) : null;
+  const savingEuros = disc && +original > +price ? (+original - +price).toFixed(2) : null;
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -147,7 +148,12 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
                 </Field>
               </View>
             </View>
-            {disc && <View style={s.discBanner}><Text style={s.discBannerTxt}>🎉 ¡Descuento del {disc}%!</Text></View>}
+            {disc && (
+              <View style={s.discBanner}>
+                <Text style={s.discBannerTxt}>🎉 ¡Descuento del {disc}%!</Text>
+                {savingEuros && <Text style={{fontSize:13,color:'#fff',opacity:0.9}}>El comprador ahorra {savingEuros}€</Text>}
+              </View>
+            )}
 
             {/* Store */}
             <Field label="Tienda">

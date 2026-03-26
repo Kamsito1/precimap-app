@@ -467,7 +467,16 @@ export default function MapScreen() {
               const col = displayPrice ? gasPriceColor(displayPrice) : { bg: '#9CA3AF', text: '#fff', label: 'Sin datos' };
               if (activeFuel && activeFuel !== 'all' && !s.prices?.[activeFuel]) return null;
               return (
-                <Marker key={s.id} coordinate={{ latitude: s.lat, longitude: s.lng }} onPress={() => setSelectedStation(s)}>
+                <Marker key={s.id} coordinate={{ latitude: s.lat, longitude: s.lng }} onPress={() => {
+                  setSelectedStation(s);
+                  // Center map on station
+                  if (mapRef.current && s.lat && s.lng) {
+                    mapRef.current.animateToRegion({
+                      latitude: s.lat, longitude: s.lng,
+                      latitudeDelta: 0.008, longitudeDelta: 0.008,
+                    }, 400);
+                  }
+                }}>
                   <View style={[ms.gasMarker, { backgroundColor: col.bg }]}>
                     <Text style={ms.gasEmoji}>⛽</Text>
                     {displayPrice > 0 && <Text style={ms.gasPrice}>{displayPrice.toFixed(3)}</Text>}

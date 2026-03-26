@@ -247,7 +247,7 @@ export default function DealsScreen() {
                 {deal.image_url ? (
                   <TouchableOpacity onPress={() => affUrl && Linking.openURL(affUrl)} activeOpacity={0.9}>
                     <Image source={{uri: deal.image_url.startsWith('/') ? `${API_BASE}${deal.image_url}` : deal.image_url}}
-                      style={s.img} resizeMode="cover"/>
+                      style={s.img} resizeMode="cover" progressiveRenderingEnabled={true}/>
                   </TouchableOpacity>
                 ) : (
                   <View style={[s.imgPlaceholder, {backgroundColor: catColor+'18'}]}>
