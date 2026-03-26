@@ -580,16 +580,23 @@ export default function ProfileScreen() {
 
         {/* ── Badges ── */}
         <Section title={`🎖️ LOGROS (${earnedKeys.length}/${BADGES_DEF.length})`}>
+          {earnedKeys.length < BADGES_DEF.length && (
+            <View style={{backgroundColor:COLORS.primaryLight,borderRadius:10,padding:10,marginBottom:10}}>
+              <Text style={{fontSize:12,color:COLORS.primary,fontWeight:'600'}}>
+                🎯 {BADGES_DEF.length - earnedKeys.length} logros por desbloquear — sigue activo para ganarlos todos
+              </Text>
+            </View>
+          )}
           <View style={s.badgeGrid}>
             {BADGES_DEF.map(b => {
               const earned = earnedKeys.includes(b.key);
               return (
-                <View key={b.key} style={[s.badgeCard, !earned && {opacity:0.3}]}>
+                <View key={b.key} style={[s.badgeCard, !earned && {opacity:0.35, borderStyle:'dashed'}]}>
                   {earned && <View style={s.badgeDot}/>}
-                  <Text style={s.badgeEmoji}>{b.emoji}</Text>
+                  <Text style={s.badgeEmoji}>{earned ? b.emoji : '🔒'}</Text>
                   <Text style={s.badgeName}>{b.name}</Text>
                   <Text style={s.badgeDesc}>{b.desc}</Text>
-                  {b.pts > 0 && <Text style={s.badgePts}>+{b.pts} pts</Text>}
+                  {b.pts > 0 && <Text style={[s.badgePts, !earned && {color:COLORS.text3}]}>+{b.pts} pts</Text>}
                 </View>
               );
             })}
