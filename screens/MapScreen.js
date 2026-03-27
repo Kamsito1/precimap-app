@@ -62,15 +62,13 @@ function getWeeklyCost(placeName) {
 }
 
 const CATS = [
-  { key:'all',          label:'Todo',        emoji:'🏙️' },
   { key:'gasolinera',   label:'Gasolina',    emoji:'⛽' },
+  { key:'restaurante',  label:'Cafés',       emoji:'☕', product:'Café con leche',  key2:'cafe' },
+  { key:'restaurante',  label:'Cervezas',    emoji:'🍺', product:'Caña de cerveza', key2:'cerveza' },
+  { key:'restaurante',  label:'Restaurantes',emoji:'🍽️', product:'Menú del día',    key2:'restaurante_menu' },
   { key:'supermercado', label:'Súper',       emoji:'🛒' },
-  { key:'restaurante',  label:'Café',        emoji:'☕', product:'Café con leche' },
-  { key:'restaurante',  label:'Cerveza',     emoji:'🍺', product:'Caña de cerveza', key2:'cerveza' },
-  { key:'restaurante',  label:'Restaurantes',emoji:'🍽️', product:'Menú del día' },
   { key:'farmacia',     label:'Farmacia',    emoji:'💊' },
   { key:'gimnasio',     label:'Gimnasios',   emoji:'💪' },
-  { key:'evento',       label:'Eventos',     emoji:'🎭' },
 ];
 
 const SORT_OPTS = [
@@ -89,8 +87,8 @@ export default function MapScreen() {
   const [places, setPlaces]         = useState([]);
   const [gasolineras, setGasolineras] = useState([]);
   const [showHint, setShowHint] = useState(false); // first-time hint
-  const [activeCat, setActiveCat]   = useState('all');
-  const [activeCatKey, setActiveCatKey] = useState('all'); // key2 para sub-filtros
+  const [activeCat, setActiveCat]   = useState('gasolinera'); // Gasolina es el caso de uso principal
+  const [activeCatKey, setActiveCatKey] = useState('gasolinera');
   const [userLoc, setUserLoc]       = useState(null);
   const [viewMode, setViewMode]     = useState('map');
   const [sort, setSort]             = useState('proximity');
@@ -99,7 +97,7 @@ export default function MapScreen() {
   const [gasSearch, setGasSearch]   = useState('');
   const [city, setCity]             = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [activeFuel, setActiveFuel]   = useState(null); // null = must choose first
+  const [activeFuel, setActiveFuel]   = useState('g95'); // por defecto G95 para gasolineras
   const [loading, setLoading]         = useState(false);
   const [gasLoading, setGasLoading]   = useState(false);
   const [loadProgress, setLoadProgress] = useState(0); // 0-100 fake progress for UX
@@ -263,16 +261,19 @@ export default function MapScreen() {
       let url = `/api/places?sort=${sort}&lat=${lat}&lng=${lng}`;
       if (city) {
         url += `&city=${encodeURIComponent(city)}`;
-      } else if (radius >= 100) {
-        // Toda España — no radius filter
-      } else {
+      } else if (radius < 100) {
         url += `&radius=${radius}`;
       }
-      if (activeCat !== 'all') url += `&cat=${activeCat}`;
-      // Filtro por producto según sub-categoría
-      const activeCatObj = CATS.find(c => (c.key2||c.key) === activeCatKey && c.key === activeCat);
-      const prodFilter = activeCatObj?.product || product;
-      if (prodFilter) url += `&product=${encodeURIComponent(prodFilter)}`;
+      if (activeCat !== 'all') url += `&cat=${activeCat}`; // siempre filtra por categoría
+
+      // Para subcategorías de restaurante (café, cerveza, menú): SÍ enviar product al servidor
+      // El servidor lo usará para calcular repPrice, pero NO excluirá lugares sin ese precio.
+      // Así ☕ Cafés muestra bares con precio de café ordenados por el más barato,
+      // y también bares sin precio de café (aparecen sin precio, ordenados al final).
+      if (product) {
+        url += `&product=${encodeURIComponent(product)}`;
+      }
+
       setPlaces(await apiGet(url) || []);
       setServerError(false);
     } catch(_) { setServerError(true); } finally { setLoading(false); }
@@ -301,10 +302,12 @@ export default function MapScreen() {
     setGasolineras(filtered);
   }, [allGas, city, mapRegion, activeFuel, radius]);
 
-  const visiblePlaces = places.filter(p => activeCat === 'all' || p.category === activeCat);
+  // visiblePlaces ya viene filtrado del servidor (loadPlaces pasa &cat=activeCat)
+  // Solo necesitamos asegurar que no se mezclen categorías en modo 'all' (ya eliminado)
+  const visiblePlaces = activeCat === 'gasolinera' ? [] : places;
   // For gas stations in list: use G95 or Diesel price, never GLP
   const favIds = new Set(favStations.map(f => f.id));
-  const visibleGas = (activeCat === 'all' || activeCat === 'gasolinera') ? gasolineras
+  const visibleGas = activeCat === 'gasolinera' ? gasolineras
     .filter(s => activeFuel === 'all' || (s.prices?.[activeFuel] > 0))
     .filter(s => !showFavsOnly || favIds.has(s.id))
     .map(s => {
@@ -339,8 +342,10 @@ export default function MapScreen() {
     return stats;
   }, [allGas, serverFuelStats]);
 
-  // ── Fuel selector screen (shown when no fuel chosen yet) ─────────────────
-  if (activeFuel === null) {
+  // ── Fuel selector screen (shown when gas category is active and no fuel chosen) ─────────────────
+  // FIX: Solo bloquear con selector si el usuario está en categoría gasolinera
+  // El mapa debe abrir directamente sin forzar selección de carburante
+  if (activeFuel === null && activeCat === 'gasolinera') {
     return (
       <SafeAreaView style={s.safe} edges={['top']}>
         <View style={{flex:1,backgroundColor:COLORS.bg}}>
@@ -515,6 +520,8 @@ export default function MapScreen() {
                 setActiveCat(c.key);
                 setActiveCatKey(ck);
                 setProduct(c.product||'');
+                // Al pulsar Gasolina, mostrar selector de carburante
+                if (c.key === 'gasolinera') setActiveFuel(null);
               }}>
                 <Text style={s.catEmoji}>{c.emoji}</Text>
                 <Text style={[s.catTxt,isOn&&{color:'#fff'}]}>{c.label}</Text>
@@ -572,17 +579,8 @@ export default function MapScreen() {
           </View>
         )}
 
-        {/* Eventos badge cuando está activo */}
-        {activeCat === 'evento' && (
-          <View style={{paddingHorizontal:12,paddingBottom:8,flexDirection:'row',alignItems:'center',gap:8}}>
-            <View style={{flex:1,backgroundColor:'#EDE9FE',borderRadius:10,padding:10,flexDirection:'row',gap:8,alignItems:'center'}}>
-              <Text style={{fontSize:16}}>🎭</Text>
-              <Text style={{fontSize:12,color:'#7C3AED',fontWeight:'600',flex:1}}>
-                {mapEvents.length} eventos próximos en el mapa · Toca un pin para ver detalles
-              </Text>
-            </View>
-          </View>
-        )}
+        {/* FIX: Eventos eliminados del mapa — tienen su propia sección en la barra de navegación */}
+
 
         {/* City quick filter — shown when active or always in collapsed form */}
         <View style={{paddingHorizontal:12,paddingBottom:city ? 8 : 4}}>
@@ -612,7 +610,7 @@ export default function MapScreen() {
             </View>
 
             {/* Fuel type filter — only when gasolinera is active */}
-            {(activeCat==='all'||activeCat==='gasolinera') && (
+            {activeCat==='gasolinera' && (
               <>
                 <Text style={s.filterLabel}>⛽ Carburante</Text>
                 <View style={s.fuelsGrid}>
@@ -700,19 +698,8 @@ export default function MapScreen() {
                 </Marker>
               );
             })}
-            {/* Eventos en el mapa */}
-            {(activeCat === 'all' || activeCat === 'evento') && mapEvents.filter(e => e.lat && e.lng).map(e => (
-              <Marker key={`ev${e.id}`} coordinate={{latitude:e.lat, longitude:e.lng}}
-                onPress={() => Alert.alert(
-                  `🎭 ${e.title}`,
-                  `📍 ${e.city}\n📅 ${e.date ? new Date(e.date).toLocaleDateString('es-ES') : ''}\n💶 ${e.price ? `Desde ${e.price}€` : 'Gratis'}`,
-                  [{text:'Ver evento', onPress:()=>{}}, {text:'Cerrar'}]
-                )}>
-                <View style={[ms.marker, {backgroundColor:'#EDE9FE', borderColor:'#7C3AED', borderWidth:2}]}>
-                  <Text style={{fontSize:14}}>🎭</Text>
-                </View>
-              </Marker>
-            ))}
+            {/* FIX: Eventos eliminados del mapa — usan coords aproximadas de ciudad, no precisas */}
+            {/* Los eventos tienen su propia sección en la barra de navegación */}
             {/* Gas stations — color based on G95 or Diesel ONLY (not GLP/GNC) */}
             {mapGas.map(s => {
               // Use selected fuel price if available, otherwise best available
@@ -804,7 +791,7 @@ export default function MapScreen() {
           )}
 
           {/* Legend + fuel stats panel */}
-          {(activeCat==='all'||activeCat==='gasolinera') && gasolineras.length > 0 && (
+          {activeCat==='gasolinera' && gasolineras.length > 0 && (
             <View style={ms.legend}>
               {/* Visible count badge */}
               <View style={{backgroundColor:'rgba(15,23,42,0.7)',borderRadius:8,paddingHorizontal:8,paddingVertical:3,marginRight:4}}>
@@ -883,7 +870,7 @@ export default function MapScreen() {
             <Ionicons name="search-outline" size={16} color={COLORS.text3}/>
             <TextInput
               style={{flex:1,fontSize:14,color:COLORS.text,height:32}}
-              placeholder={activeCat==='gasolinera'||activeCat==='all' ? 'Buscar gasolinera o marca...' : 'Buscar lugar...'}
+              placeholder={activeCat==='gasolinera' ? 'Buscar gasolinera o marca...' : 'Buscar lugar...'}
               placeholderTextColor={COLORS.text3}
               value={gasSearch}
               onChangeText={setGasSearch}
@@ -905,12 +892,7 @@ export default function MapScreen() {
               : visibleGas;
             const listData = [
               ...visiblePlaces,
-              // Include eventos in list view when cat is all or evento
-              ...(activeCat === 'all' || activeCat === 'evento' ? mapEvents.filter(e => e.lat && e.lng).map(e => ({
-                ...e, isEvent: true,
-                _dist: distanceKm(userLoc?.lat||40.4168, userLoc?.lng||(-3.7038), e.lat, e.lng),
-                minPrice: e.price_from || null,
-              })) : []),
+              // FIX: Eventos eliminados de la lista del mapa — tienen su propia sección
               ...gasFiltered.slice(0,150).map(s=>({
                 ...s, isGas:true,
                 _dist: distanceKm(userLoc?.lat||40.4168, userLoc?.lng||(-3.7038), s.lat, s.lng),
@@ -955,7 +937,11 @@ export default function MapScreen() {
                       {gasSearch ? `Sin resultados para "${gasSearch}"` : 'Sin resultados en esta zona'}
                     </Text>
                     <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center',paddingHorizontal:30}}>
-                      {gasSearch ? 'Prueba con otro nombre o marca' : 'Desplázate en el mapa para cargar gasolineras'}
+                      {gasSearch
+                        ? 'Prueba con otro nombre o marca'
+                        : activeCat==='gasolinera'
+                          ? 'Desplázate en el mapa para ver más'
+                          : 'Elige una ciudad en el filtro de arriba para ver resultados'}
                     </Text>
                   </View>
                 }
