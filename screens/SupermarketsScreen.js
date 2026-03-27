@@ -10,12 +10,12 @@ import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
 import { useNavigation } from '@react-navigation/native';
 
-// Safe hook wrapper — useNavigation crashes when rendered outside a Navigator (e.g. embedded)
-function useSafeNavigation() {
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useNavigation();
-  } catch(_) { return null; }
+// Componente auxiliar que usa useNavigation — SOLO se monta cuando NO es embedded
+// Así el hook nunca se llama fuera de un NavigationContext
+function NavigationProvider({ onReady }) {
+  const nav = useNavigation();
+  React.useEffect(() => { onReady(nav); }, []);
+  return null;
 }
 
 const TABS = [
@@ -203,7 +203,7 @@ const CONSEJOS = [
 
 export default function SupermarketsScreen({ embedded = false }) {
   const { isLoggedIn } = useAuth();
-  const navigation = useSafeNavigation();
+  const [navigation, setNavigation] = useState(null);
   const Wrapper = embedded ? View : SafeAreaView;
   const wrapperProps = embedded ? {style:{flex:1,backgroundColor:COLORS.bg}} : {style:s.safe, edges:['top']};
   const [tab, setTab]             = useState('ranking');
@@ -274,6 +274,8 @@ export default function SupermarketsScreen({ embedded = false }) {
 
   return (
     <Wrapper {...wrapperProps}>
+      {/* NavigationProvider solo cuando NO es embedded — evita crash de useNavigation fuera de Navigator */}
+      {!embedded && <NavigationProvider onReady={setNavigation} />}
       {/* Header */}
       <View style={s.header}>
         <View style={s.headerTop}>
