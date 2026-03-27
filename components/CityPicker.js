@@ -23,7 +23,7 @@ export default function CityPicker({ value, onChange, placeholder = 'Toda Españ
     try {
       const r = await apiGet(`/api/cities?q=${encodeURIComponent(query)}`);
       setResults(r);
-    } catch {}
+    } catch(_) {}
     finally { setLoading(false); }
   }
 

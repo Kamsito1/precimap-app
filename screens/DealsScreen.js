@@ -99,7 +99,11 @@ export default function DealsScreen() {
       else setDeals(prev => [...prev, ...data]);
       setHasMore(data.length === PAGE);
       setOffset(off + data.length);
-    } catch {} finally { setLoading(false); setRefreshing(false); setLoadingMore(false); }
+    } catch(e) {
+      // network error — keep existing data
+    } finally {
+      setLoading(false); setRefreshing(false); setLoadingMore(false);
+    }
   }
 
   const onRefresh = useCallback(() => { setRefreshing(true); resetAndLoad(); }, [cat, sort, search]);
@@ -450,7 +454,7 @@ export default function DealsScreen() {
                       } else {
                         await Share.share({ message: text });
                       }
-                    } catch {}
+                    } catch(_) {}
                   }}>
                     <Ionicons name="share-outline" size={18} color={COLORS.text2}/>
                   </TouchableOpacity>
@@ -473,14 +477,14 @@ export default function DealsScreen() {
                         Alert.alert('🛡️ Eliminar', '¿Eliminar este chollo?', [
                           {text:'Cancelar',style:'cancel'},
                           {text:'Eliminar',style:'destructive', onPress: async () => {
-                            try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch {}
+                            try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch(_) {}
                           }},
                         ]);
                       } else if (deal.reported_by === user?.id) {
                         Alert.alert('Tu chollo', '¿Retirar tu oferta?', [
                           {text:'Cancelar',style:'cancel'},
                           {text:'Retirar',style:'destructive', onPress: async () => {
-                            try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch {}
+                            try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch(_) {}
                           }},
                         ]);
                       } else {
@@ -498,7 +502,7 @@ export default function DealsScreen() {
                                     Alert.alert('Gracias',`Voto registrado (${res.expire_reports}/5)`);
                                   }
                                 }
-                              } catch {}
+                              } catch(_) {}
                             }},
                             {text:'Cancelar', style:'cancel'},
                           ]
@@ -577,7 +581,7 @@ export default function DealsScreen() {
                   await apiPost(`/api/deals/${editDeal.id}/edit`,{title:editTitle.trim(),deal_price:parseFloat(editPrice)});
                   setDeals(prev=>prev.map(d=>d.id===editDeal.id?{...d,title:editTitle.trim(),deal_price:parseFloat(editPrice)}:d));
                   setEditDeal(null);
-                } catch { Alert.alert('Error','No se pudo guardar'); }
+                } catch(_) { Alert.alert('Error','No se pudo guardar'); }
               }}>
               <Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>Guardar cambios</Text>
             </TouchableOpacity>

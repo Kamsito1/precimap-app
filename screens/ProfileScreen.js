@@ -46,7 +46,7 @@ function EditProfileModal({ visible, user, onClose, onSaved }) {
       if (res.error) { setError(res.error); return; }
       onSaved(res.user);
       onClose();
-    } catch { setError('Error de conexión'); }
+    } catch(_) { setError('Error de conexión'); }
     finally { setLoading(false); }
   }
 
@@ -102,7 +102,7 @@ function ChangePasswordModal({ visible, onClose }) {
       if (res.error) { setError(res.error); return; }
       Alert.alert('✅ Contraseña cambiada', 'Tu contraseña se ha actualizado correctamente.');
       onClose();
-    } catch { setError('Error de conexión'); }
+    } catch(_) { setError('Error de conexión'); }
     finally { setLoading(false); }
   }
 
@@ -223,7 +223,7 @@ export default function ProfileScreen() {
         updateUser({ avatar_url: res.avatar_url });
         setProfile(p => p ? { ...p, avatar_url: res.avatar_url } : p);
       }
-    } catch { Alert.alert('Error', 'No se pudo subir la imagen'); }
+    } catch(_) { Alert.alert('Error', 'No se pudo subir la imagen'); }
     finally { setUploading(false); }
   }
 
@@ -254,7 +254,7 @@ export default function ProfileScreen() {
       setShowDeleteModal(false);
       Alert.alert('Cuenta eliminada', 'Todos tus datos han sido eliminados. Hasta pronto.');
       logout();
-    } catch { setDeleteError('Error de conexión'); }
+    } catch(_) { setDeleteError('Error de conexión'); }
     finally { setDeleteLoading(false); }
   }
 

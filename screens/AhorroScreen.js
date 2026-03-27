@@ -157,7 +157,7 @@ function GymScreen() {
           const match = CITIES_GYM.find(c => c !== 'Toda España' && detectedCity.toLowerCase().includes(c.toLowerCase()));
           if (match) { setLocCity(match); setCity(match); }
         }
-      } catch {}
+      } catch(_) {}
     })();
     return () => { active = false; };
   }, []);
@@ -176,7 +176,7 @@ function GymScreen() {
         list = list.map(g => ({ ...g, _dist: g.lat && g.lng ? distanceKm(userLoc.lat, userLoc.lng, g.lat, g.lng) : null }));
       }
       setGyms(list);
-    } catch {} finally { setLoading(false); }
+    } catch(_) {} finally { setLoading(false); }
   }
 
   const badge = (price) => {

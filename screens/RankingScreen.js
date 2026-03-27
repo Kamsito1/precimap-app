@@ -50,7 +50,7 @@ export default function RankingScreen() {
           setMyRank(null);
         }
       }
-    } catch {} finally { setLoading(false); setRefreshing(false); }
+    } catch(_) {} finally { setLoading(false); setRefreshing(false); }
   }
 
   const onRefresh = useCallback(() => { setRefreshing(true); load(); }, [period]);

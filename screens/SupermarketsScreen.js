@@ -196,7 +196,7 @@ const CONSEJOS = [
 export default function SupermarketsScreen({ embedded = false }) {
   const { isLoggedIn } = useAuth();
   let navigation;
-  try { navigation = useNavigation(); } catch { navigation = null; }
+  try { navigation = useNavigation(); } catch(_) { navigation = null; }
   const Wrapper = embedded ? View : SafeAreaView;
   const wrapperProps = embedded ? {style:{flex:1,backgroundColor:COLORS.bg}} : {style:s.safe, edges:['top']};
   const [tab, setTab]             = useState('ranking');
@@ -217,7 +217,7 @@ export default function SupermarketsScreen({ embedded = false }) {
     try {
       const data = await apiGet('/api/places/1/price-history') || {};
       if (data.history) setPriceHistory(data.history);
-    } catch {}
+    } catch(_) {}
   }
 
   async function loadCommunity() {
@@ -229,7 +229,7 @@ export default function SupermarketsScreen({ embedded = false }) {
       // Extract unique cities for filter
       const cities = [...new Set((Array.isArray(data) ? data : []).map(p => p.city).filter(Boolean))];
       if (cities.length > 0) setAllCities(prev => [...new Set([...prev, ...cities])]);
-    } catch {}
+    } catch(_) {}
     finally { setRefreshing(false); }
   }
 

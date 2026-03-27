@@ -29,8 +29,8 @@ export default function AddGasStationModal({ visible, onClose, onSuccess }) {
           if (geo[0].street) setAddress(geo[0].street + (geo[0].streetNumber ? ' ' + geo[0].streetNumber : ''));
           if (geo[0].city) setCity(geo[0].city);
         }
-      } catch {}
-    } catch { Alert.alert('Error', 'No se pudo obtener la ubicación.'); }
+      } catch(_) {}
+    } catch(_) { Alert.alert('Error', 'No se pudo obtener la ubicación.'); }
     finally { setLocating(false); }
   }
 
@@ -48,7 +48,7 @@ export default function AddGasStationModal({ visible, onClose, onSuccess }) {
       if (res.error) return setError(res.error);
       setName(''); setAddress(''); setCity(''); setLat(''); setLng(''); setError('');
       onSuccess?.();
-    } catch { setError('Error de conexión'); }
+    } catch(_) { setError('Error de conexión'); }
     finally { setLoading(false); }
   }
 

@@ -28,7 +28,7 @@ export default function CommentsModal({ visible, dealId, dealTitle, onClose }) {
   async function load() {
     setLoading(true);
     try { setComments(await apiGet(`/api/deals/${dealId}/comments`) || []); }
-    catch {} finally { setLoading(false); }
+    catch(_) {} finally { setLoading(false); }
   }
 
   async function send() {
@@ -40,7 +40,7 @@ export default function CommentsModal({ visible, dealId, dealTitle, onClose }) {
       await apiPost(`/api/deals/${dealId}/comments`, { text: t, parent_id: replyTo?.id || null });
       setText(''); setReplyTo(null);
       await load();
-    } catch { Alert.alert('Error', 'No se pudo enviar el comentario'); }
+    } catch(_) { Alert.alert('Error', 'No se pudo enviar el comentario'); }
     finally { setSending(false); }
   }
 
@@ -51,7 +51,7 @@ export default function CommentsModal({ visible, dealId, dealTitle, onClose }) {
         try {
           await apiDelete(`/api/comments/${commentId}`);
           await load();
-        } catch {}
+        } catch(_) {}
       }},
     ]);
   }
@@ -61,7 +61,7 @@ export default function CommentsModal({ visible, dealId, dealTitle, onClose }) {
     try {
       await apiPost(`/api/comments/${commentId}/vote`, {});
       setComments(prev => updateVote(prev, commentId));
-    } catch {}
+    } catch(_) {}
   }
 
   function updateVote(list, id) {

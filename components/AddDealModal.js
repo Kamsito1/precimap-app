@@ -55,7 +55,7 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
       const res = await apiPost('/api/deals/check-duplicate', { url: checkUrl, title: checkTitle });
       setDuplicates(res?.duplicates || []);
       if (res?.duplicates?.length > 0) setConfirmed(false);
-    } catch {}
+    } catch(_) {}
     finally { setDupLoading(false); }
   }
 
@@ -151,7 +151,7 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
               if (data.price && !price) setPrice(String(data.price));
               if (data.originalPrice && !original) setOriginal(String(data.originalPrice));
             }
-          } catch {}
+          } catch(_) {}
         }, 1500);
       }
     }

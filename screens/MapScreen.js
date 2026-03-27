@@ -145,7 +145,7 @@ export default function MapScreen() {
       }
       const raw = await AsyncStorage.getItem('fav_stations');
       setFavStations(raw ? JSON.parse(raw) : []);
-    } catch {}
+    } catch(_) {}
   }
   useEffect(() => { loadPlaces(); }, [activeCat, sort, radius, product, city, userLoc]);
 
@@ -157,7 +157,7 @@ export default function MapScreen() {
       const data = await apiGet('/api/gasolineras/stats');
       clearTimeout(timeout);
       if (data?.stats) setServerFuelStats(data.stats);
-    } catch { setServerError(true); }
+    } catch(_) { setServerError(true); }
   }
 
   async function loadAllGasolineras(userCoords) {
@@ -187,7 +187,7 @@ export default function MapScreen() {
       setAllGas(data);
       setNearbyGasLoaded(false);
       setServerError(false);
-    } catch {
+    } catch(_) {
       clearInterval(prog);
       setServerError(true);
     }
@@ -219,7 +219,7 @@ export default function MapScreen() {
         })
         .filter(Boolean);
       setMapEvents(withCoords);
-    } catch {}
+    } catch(_) {}
   }
 
   async function initLocation() {
@@ -240,13 +240,13 @@ export default function MapScreen() {
             const match = KNOWN.find(c => detectedCity.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(detectedCity.toLowerCase().slice(0,5)));
             if (match) setCity(match);
           }
-        } catch {}
+        } catch(_) {}
         // Carga progresiva — primero las cercanas al usuario
         loadAllGasolineras({ lat, lng });
       } else {
         loadAllGasolineras(null);
       }
-    } catch {
+    } catch(_) {
       loadAllGasolineras(null);
     }
   }
@@ -268,7 +268,7 @@ export default function MapScreen() {
       if (product) url += `&product=${encodeURIComponent(product)}`;
       setPlaces(await apiGet(url) || []);
       setServerError(false);
-    } catch { setServerError(true); } finally { setLoading(false); }
+    } catch(_) { setServerError(true); } finally { setLoading(false); }
   }
 
   // Filter allGas client-side based on viewport/city/fuel — no extra API calls
@@ -1128,7 +1128,7 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
       await AsyncStorage.setItem(FAV_KEY, JSON.stringify(favs));
       setIsFav(!isFav);
       onFavChange?.(); // reload favStations in parent MapScreen
-    } catch {}
+    } catch(_) {}
   }
   const fuels = Object.entries(station.prices||{}).filter(([,v])=>v&&v>0);
 
@@ -1201,7 +1201,7 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
               } else {
                 Share.share({ message: msg }).catch(()=>{});
               }
-            } catch {}
+            } catch(_) {}
           }}>
           <Ionicons name="share-outline" size={18} color={COLORS.text2}/>
           <Text style={[gcs.navBtnTxt,{color:COLORS.text2}]}>Compartir precio</Text>

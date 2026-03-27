@@ -68,7 +68,7 @@ export default function EventsScreen() {
       if (city) url += `&city=${encodeURIComponent(city)}`;
       if (search.trim()) url += `&search=${encodeURIComponent(search.trim())}`;
       setEvents(await apiGet(url) || []);
-    } catch {} finally { setLoading(false); setRefreshing(false); }
+    } catch(_) {} finally { setLoading(false); setRefreshing(false); }
   }
 
   const onRefresh = useCallback(() => { setRefreshing(true); loadEvents(); }, [cat, sort, source, city, search]);
@@ -276,7 +276,7 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
     try {
       await apiPost(`/api/events/${ev.id}/vote`, {});
       onRefresh();
-    } catch {}
+    } catch(_) {}
   }
 
   function openMaps() {
@@ -356,7 +356,7 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
             } else {
               Share.share({ message: msg }).catch(()=>{});
             }
-          } catch {}
+          } catch(_) {}
         }}>
           <Ionicons name="share-outline" size={14} color={COLORS.text3}/>
         </TouchableOpacity>
@@ -365,7 +365,7 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
             Alert.alert('🛡️ Admin','¿Eliminar evento?',[
               {text:'Cancelar',style:'cancel'},
               {text:'Eliminar',style:'destructive',onPress:async()=>{
-                try { await apiPost(`/api/events/${ev.id}/deactivate`,{}); onRefresh(); } catch {}
+                try { await apiPost(`/api/events/${ev.id}/deactivate`,{}); onRefresh(); } catch(_) {}
               }},
             ])}>
             <Ionicons name="trash-outline" size={13} color="#DC2626"/>
@@ -442,7 +442,7 @@ function AddEventModal({ visible, onClose, onSuccess }) {
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
       setGpsCoords({ lat: loc.coords.latitude, lng: loc.coords.longitude });
       setUseGPS(true);
-    } catch { Alert.alert('Error', 'No se pudo obtener la ubicación'); }
+    } catch(_) { Alert.alert('Error', 'No se pudo obtener la ubicación'); }
   }
 
   async function submit() {
@@ -470,7 +470,7 @@ function AddEventModal({ visible, onClose, onSuccess }) {
       setTitle(''); setDate(''); setTime(''); setVenue(''); setAddress('');
       setCity(''); setPrice(''); setIsFree(false); setUrl(''); setDesc('');
       setGpsCoords(null); setUseGPS(false);
-    } catch { setError('Error de conexión'); }
+    } catch(_) { setError('Error de conexión'); }
     finally { setLoading(false); }
   }
 

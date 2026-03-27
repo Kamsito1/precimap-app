@@ -31,7 +31,7 @@ export default function PriceChangeModal({ visible, onClose, place, product = nu
     try {
       const data = await apiGet(`/api/places/${place.id}/price-changes`);
       setChanges(Array.isArray(data) ? data : []);
-    } catch {}
+    } catch(_) {}
     setLoading(false);
   }
 
@@ -48,7 +48,7 @@ export default function PriceChangeModal({ visible, onClose, place, product = nu
       } else {
         Alert.alert('Aviso', res.error || 'Ya has votado esta solicitud');
       }
-    } catch {}
+    } catch(_) {}
     setVoting(x => ({ ...x, [changeId]: false }));
   }
 

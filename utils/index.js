@@ -67,7 +67,7 @@ export const Auth = {
         try { this._user = user ? JSON.parse(user) : null; }
         catch { this._user = null; }
       }
-    } catch {}
+    } catch(_) {}
   },
 
   async save(token, user) {
@@ -202,7 +202,7 @@ export function openURL(url) {
       const { Linking } = require('react-native');
       Linking.openURL(url).catch(() => {});
     }
-  } catch {}
+  } catch(_) {}
 }
 
 export function applyAffiliateTag(url, tag = 'juanantonioex-21') {
@@ -213,7 +213,7 @@ export function applyAffiliateTag(url, tag = 'juanantonioex-21') {
       u.searchParams.set('tag', tag);
       return u.toString();
     }
-  } catch {}
+  } catch(_) {}
   return url;
 }
 
