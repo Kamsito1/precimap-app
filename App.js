@@ -61,7 +61,7 @@ function AppNavigator() {
       try {
         const me = await apiGet('/api/users/me');
         setUnreadCount((me?.notifications || []).filter(n => !n.is_read).length);
-      } catch {}
+      } catch(_) {}
     };
     check();
     const t = setInterval(check, 60000);
