@@ -40,6 +40,19 @@ const SORTS = [
   { key:'price', label:'💰 Precio', desc:'Más baratos primero' },
 ];
 
+// SafeImage: maneja onError sin setNativeProps (compatible con Hermes/iOS)
+function SafeImage({ uri, fallback, style }) {
+  const [src, setSrc] = React.useState(uri);
+  return (
+    <Image
+      source={{ uri: src }}
+      style={style}
+      resizeMode="cover"
+      onError={() => { if (src !== fallback) setSrc(fallback); }}
+    />
+  );
+}
+
 export default function DealsScreen() {
   const { isLoggedIn, user } = useAuth();
   const [deals, setDeals]         = useState([]);
@@ -126,7 +139,7 @@ export default function DealsScreen() {
       votes_down: d.votes_down + (newVote===-1?1: prev===-1?-1:0),
     } : d));
     try { await apiPost(`/api/deals/${dealId}/vote`, { vote: v }); }
-    catch { /* revert on error */ setMyVotes(mv => ({ ...mv, [dealId]: prev })); }
+    catch(_) { /* revert on error */ setMyVotes(mv => ({ ...mv, [dealId]: prev })); }
   }
 
   function temperature(up = 0, down = 0) {
@@ -321,11 +334,10 @@ export default function DealsScreen() {
                       {deal.store && <Text style={{fontSize:13,color:catColor,fontWeight:'700',marginTop:8}}>{deal.store}</Text>}
                     </View>
                   );
+                  const fallbackUri = `https://ui-avatars.com/api/?name=${encodeURIComponent(deal.store||deal.category||'?')}&size=400&background=random`;
                   if (imgs.length === 1) return (
                     <TouchableOpacity onPress={() => affUrl && openURL(affUrl)} activeOpacity={0.9}>
-                      <Image source={{uri: imgs[0].startsWith('/') ? `${API_BASE}${imgs[0]}` : imgs[0]}}
-                        style={s.img} resizeMode="cover"
-                        onError={e => { e.currentTarget?.setNativeProps?.({src:[{uri:`https://ui-avatars.com/api/?name=${encodeURIComponent(deal.store||deal.category||'?')}&size=400&background=random`}]}); }}/>
+                      <SafeImage uri={imgs[0].startsWith('/') ? `${API_BASE}${imgs[0]}` : imgs[0]} fallback={fallbackUri} style={s.img}/>
                     </TouchableOpacity>
                   );
                   // Multi-image carousel
@@ -335,8 +347,7 @@ export default function DealsScreen() {
                         style={{width: CARD_W}} contentContainerStyle={{width: CARD_W * imgs.length}}>
                         {imgs.map((uri,idx) => (
                           <TouchableOpacity key={idx} onPress={() => affUrl && openURL(affUrl)} activeOpacity={0.9}>
-                            <Image source={{uri: uri.startsWith('/') ? `${API_BASE}${uri}` : uri}}
-                              style={[s.img, {width: CARD_W}]} resizeMode="cover"/>
+                            <SafeImage uri={uri.startsWith('/') ? `${API_BASE}${uri}` : uri} fallback={fallbackUri} style={[s.img, {width: CARD_W}]}/>
                           </TouchableOpacity>
                         ))}
                       </ScrollView>

@@ -1,12 +1,21 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, FlatList, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as Location from 'expo-location';
 import { COLORS, apiGet, openURL, distanceKm } from '../utils';
 import BanksScreen from './BanksScreen';
 import SupermarketsScreen from './SupermarketsScreen';
 import FlightSearchScreen from './FlightSearchScreen';
 import AppsScreen from './AppsScreen';
+
+// expo-location: import estático pero uso diferido (solo cuando el usuario abre tab Gimnasios)
+let _Location = null;
+async function getLocation() {
+  if (_Location) return _Location;
+  try {
+    _Location = require('expo-location');
+    return _Location;
+  } catch(_) { return null; }
+}
 
 const SUBTABS = [
   { key: 'super',    label: '🛒 Supermercados' },
@@ -137,22 +146,22 @@ function GymScreen() {
   const [userLoc, setUserLoc]   = useState(null);
   const [locCity, setLocCity]   = useState(''); // detected city from GPS
 
-  // Get user location on mount — fully guarded for iOS/Android
+  // Get user location on mount — usando require() diferido compatible con Hermes
   useEffect(() => {
     let active = true;
     (async () => {
       try {
-        if (!Location?.requestForegroundPermissionsAsync) return;
+        const Location = await getLocation();
+        if (!Location || !active) return;
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted' || !active) return;
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
         if (!active) return;
         const { latitude: lat, longitude: lng } = loc.coords;
         setUserLoc({ lat, lng });
-        if (!Location.reverseGeocodeAsync) return;
         const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-        if (!active) return;
-        const detectedCity = geo?.[0]?.city || geo?.[0]?.subregion || '';
+        if (!active || !geo || !geo[0]) return;
+        const detectedCity = geo[0].city || geo[0].subregion || '';
         if (detectedCity) {
           const match = CITIES_GYM.find(c => c !== 'Toda España' && detectedCity.toLowerCase().includes(c.toLowerCase()));
           if (match) { setLocCity(match); setCity(match); }

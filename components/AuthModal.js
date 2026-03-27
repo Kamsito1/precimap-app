@@ -12,6 +12,7 @@ import * as Google from 'expo-auth-session/providers/google';
 WebBrowser.maybeCompleteAuthSession();
 
 const GOOGLE_IOS_CLIENT_ID = '720920708096-e0eiit32bknduqv1brf3ec3e4fu1kbj3.apps.googleusercontent.com';
+const GOOGLE_WEB_CLIENT_ID = '720920708096-s7smse438qmqlgcbi5kt8th7m128p645.apps.googleusercontent.com';
 
 const MODES = { login: 'login', register: 'register', forgot: 'forgot', reset: 'reset' };
 
@@ -32,6 +33,7 @@ export default function AuthModal({ visible, onClose }) {
   // ── Google OAuth ──────────────────────────────────────────────────────────
   const [request, response, promptAsync] = Google.useAuthRequest({
     iosClientId: GOOGLE_IOS_CLIENT_ID,
+    webClientId: GOOGLE_WEB_CLIENT_ID,
   });
 
   useEffect(() => {

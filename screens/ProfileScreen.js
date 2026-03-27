@@ -165,7 +165,7 @@ export default function ProfileScreen() {
 
   async function checkServer() {
     try { const r = await fetch(`${API_BASE}/api/health`); setServerOk(r.ok); }
-    catch { setServerOk(false); }
+    catch(_) { setServerOk(false); }
   }
 
   async function loadProfile() {
