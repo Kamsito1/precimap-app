@@ -404,7 +404,7 @@ export default function DealsScreen() {
                   <View style={s.reporterRow}>
                     <View style={s.reporterAvatar}>
                       {deal.users?.avatar_url
-                        ? <Image source={{uri:deal.users.avatar_url}} style={{width:18,height:18,borderRadius:9}}/>
+                        ? <SafeImage uri={deal.users.avatar_url} fallback={null} style={{width:18,height:18,borderRadius:9}}/>
                         : <Text style={{fontSize:10,color:COLORS.primary,fontWeight:'700'}}>{(deal.users?.name||'?')[0]}</Text>
                       }
                     </View>

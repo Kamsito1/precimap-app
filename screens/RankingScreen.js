@@ -198,7 +198,8 @@ export default function RankingScreen() {
                   ]}>
                     <Text style={s.podiumMedal}>{MEDAL_EMOJI[i]}</Text>
                     {u.avatar_url
-                      ? <Image source={{ uri: u.avatar_url }} style={[s.podiumAvatar, { borderColor: MEDAL_COLOR[i] }]}/>
+                      ? <Image source={{ uri: u.avatar_url }} style={[s.podiumAvatar, { borderColor: MEDAL_COLOR[i] }]}
+                          onError={() => {}}/>
                       : (
                         <View style={[s.podiumAvatar, { backgroundColor: MEDAL_COLOR[i] + '33', alignItems: 'center', justifyContent: 'center', borderColor: MEDAL_COLOR[i] }]}>
                           <Text style={[s.podiumInitials, { color: MEDAL_COLOR[i] }]}>{initials(u.name)}</Text>
@@ -238,7 +239,7 @@ export default function RankingScreen() {
                 <View style={[s.row, isMe && { borderColor: COLORS.primary, borderWidth: 1.5, backgroundColor: COLORS.primaryLight }]}>
                   <Text style={[s.rowNum, isMe && { color: COLORS.primary }]}>#{i + 1}</Text>
                   {u.avatar_url
-                    ? <Image source={{ uri: u.avatar_url }} style={s.rowAvatar}/>
+                    ? <Image source={{ uri: u.avatar_url }} style={s.rowAvatar} onError={() => {}}/>
                     : (
                       <View style={s.rowAvatarFallback}>
                         <Text style={s.rowAvatarTxt}>{initials(u.name)}</Text>
