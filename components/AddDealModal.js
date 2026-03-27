@@ -215,11 +215,22 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
             </View>
 
             {/* URL — autodetects store + duplicate check */}
-            <Field label="URL del producto">
+            <Field label="Enlace del producto">
               <TextInput style={s.input} value={url} onChangeText={handleUrlChange}
-                placeholder="https://amazon.es/..." keyboardType="url" autoCapitalize="none"
+                placeholder="https://amazon.es/... o tu enlace de referido"
+                keyboardType="url" autoCapitalize="none" autoCorrect={false}
                 placeholderTextColor={COLORS.text3}/>
             </Field>
+            {/* Hint referido — siempre visible debajo del campo URL */}
+            <View style={{flexDirection:'row',alignItems:'flex-start',gap:6,backgroundColor:'#F0FDF4',borderRadius:10,padding:10,marginBottom:8,borderWidth:1,borderColor:'#86EFAC'}}>
+              <Text style={{fontSize:15}}>💸</Text>
+              <View style={{flex:1}}>
+                <Text style={{fontSize:12,fontWeight:'700',color:'#15803D'}}>¡Gana dinero con tu referido!</Text>
+                <Text style={{fontSize:11,color:'#166534',marginTop:2,lineHeight:16}}>
+                  Si tienes un enlace de referido de Amazon, Zara, MediaMarkt, etc., pégalo directamente aquí. Cada vez que alguien compre desde tu chollo, tú ganas comisión.
+                </Text>
+              </View>
+            </View>
             {store ? <Text style={s.storeDetected}>🏪 Detectado: {store}</Text> : null}
             {dupLoading && <Text style={{fontSize:11,color:COLORS.text3,marginBottom:8}}>🔍 Comprobando duplicados...</Text>}
 

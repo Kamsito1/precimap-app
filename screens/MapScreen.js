@@ -64,12 +64,12 @@ function getWeeklyCost(placeName) {
 const CATS = [
   { key:'all',          label:'Todo',        emoji:'🏙️' },
   { key:'gasolinera',   label:'Gasolina',    emoji:'⛽' },
-  { key:'supermercado', label:'Súper',        emoji:'🛒' },
-  { key:'gimnasio',     label:'Gimnasios',   emoji:'💪' },
+  { key:'supermercado', label:'Súper',       emoji:'🛒' },
+  { key:'restaurante',  label:'Café',        emoji:'☕', product:'Café con leche' },
+  { key:'restaurante',  label:'Cerveza',     emoji:'🍺', product:'Caña de cerveza', key2:'cerveza' },
+  { key:'restaurante',  label:'Restaurantes',emoji:'🍽️', product:'Menú del día' },
   { key:'farmacia',     label:'Farmacia',    emoji:'💊' },
-  { key:'restaurante',  label:'Restaurantes',emoji:'🍽️' },
-  { key:'bar',          label:'Bares',       emoji:'🍺' },
-  { key:'cafe',         label:'Cafés',       emoji:'☕' },
+  { key:'gimnasio',     label:'Gimnasios',   emoji:'💪' },
   { key:'evento',       label:'Eventos',     emoji:'🎭' },
 ];
 
@@ -90,6 +90,7 @@ export default function MapScreen() {
   const [gasolineras, setGasolineras] = useState([]);
   const [showHint, setShowHint] = useState(false); // first-time hint
   const [activeCat, setActiveCat]   = useState('all');
+  const [activeCatKey, setActiveCatKey] = useState('all'); // key2 para sub-filtros
   const [userLoc, setUserLoc]       = useState(null);
   const [viewMode, setViewMode]     = useState('map');
   const [sort, setSort]             = useState('proximity');
@@ -268,7 +269,10 @@ export default function MapScreen() {
         url += `&radius=${radius}`;
       }
       if (activeCat !== 'all') url += `&cat=${activeCat}`;
-      if (product) url += `&product=${encodeURIComponent(product)}`;
+      // Filtro por producto según sub-categoría
+      const activeCatObj = CATS.find(c => (c.key2||c.key) === activeCatKey && c.key === activeCat);
+      const prodFilter = activeCatObj?.product || product;
+      if (prodFilter) url += `&product=${encodeURIComponent(prodFilter)}`;
       setPlaces(await apiGet(url) || []);
       setServerError(false);
     } catch(_) { setServerError(true); } finally { setLoading(false); }
@@ -503,24 +507,32 @@ export default function MapScreen() {
         {/* Category pills */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={{paddingHorizontal:12,gap:6,paddingBottom:8}}>
-          {CATS.map(c=>(
-            <TouchableOpacity key={c.key} style={[s.catBtn,activeCat===c.key&&s.catBtnOn]} onPress={()=>setActiveCat(c.key)}>
-              <Text style={s.catEmoji}>{c.emoji}</Text>
-              <Text style={[s.catTxt,activeCat===c.key&&{color:'#fff'}]}>{c.label}</Text>
-            </TouchableOpacity>
-          ))}
+          {CATS.map((c,i)=>{
+            const ck = c.key2 || c.key;
+            const isOn = activeCatKey === ck;
+            return (
+              <TouchableOpacity key={ck+i} style={[s.catBtn,isOn&&s.catBtnOn]} onPress={()=>{
+                setActiveCat(c.key);
+                setActiveCatKey(ck);
+                setProduct(c.product||'');
+              }}>
+                <Text style={s.catEmoji}>{c.emoji}</Text>
+                <Text style={[s.catTxt,isOn&&{color:'#fff'}]}>{c.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
         </ScrollView>
 
-        {/* Barra de búsqueda de producto — visible cuando se selecciona Súper o Farmacia */}
-        {(activeCat === 'supermercado' || activeCat === 'farmacia' || activeCat === 'gimnasio') && (
+        {/* Barra de búsqueda de producto — solo para farmacia y gimnasio (supermercado usa Ahorro) */}
+        {(activeCat === 'farmacia' || activeCat === 'gimnasio') && (
           <View style={{paddingHorizontal:12,paddingBottom:8}}>
             <View style={{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg3,borderRadius:12,borderWidth:1.5,borderColor:product?COLORS.primary:COLORS.border,paddingHorizontal:10,gap:6}}>
-              <Text style={{fontSize:16}}>{activeCat==='farmacia'?'💊':'🔍'}</Text>
+              <Text style={{fontSize:16}}>{activeCat==='farmacia'?'💊':'💪'}</Text>
               <TextInput
                 style={{flex:1,paddingVertical:9,fontSize:14,color:COLORS.text}}
                 value={product}
                 onChangeText={setProduct}
-                placeholder={activeCat==='farmacia' ? 'Buscar medicamento... (ibuprofeno, paracetamol...)' : activeCat==='gimnasio' ? 'Buscar cadena... (mcfit, basic-fit...)' : 'Buscar producto... (leche, huevos, aceite...)'}
+                placeholder={activeCat==='farmacia' ? 'Buscar medicamento... (ibuprofeno, paracetamol...)' : 'Buscar cadena... (McFit, Basic-Fit...)'}
                 placeholderTextColor={COLORS.text3}
                 returnKeyType="search"
                 onSubmitEditing={loadPlaces}
@@ -531,19 +543,6 @@ export default function MapScreen() {
                 </TouchableOpacity>
               ) : null}
             </View>
-            {activeCat === 'supermercado' && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingTop:6}}>
-                {['leche','huevos','aceite','pan','agua','pollo','arroz','pasta','fruta','verdura','atún','yogur'].map(p=>(
-                  <TouchableOpacity key={p}
-                    style={{paddingHorizontal:10,paddingVertical:4,borderRadius:12,borderWidth:1,
-                      borderColor:product===p?COLORS.primary:COLORS.border,
-                      backgroundColor:product===p?COLORS.primaryLight:COLORS.bg}}
-                    onPress={()=>{setProduct(product===p?'':p); setTimeout(loadPlaces,100);}}>
-                    <Text style={{fontSize:12,fontWeight:'600',color:product===p?COLORS.primary:COLORS.text2}}>{p}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
             {activeCat === 'farmacia' && (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingTop:6}}>
                 {['ibuprofeno','paracetamol','amoxicilina','omeprazol','loratadina','vitamina C','colágeno','magnesio','anticonceptivos','termómetro','tensiómetro','mascarilla'].map(p=>(
@@ -637,25 +636,16 @@ export default function MapScreen() {
               </>
             )}
 
-            {/* Product search (supermarket / pharmacy) */}
-            {(activeCat==='supermercado'||activeCat==='farmacia'||activeCat==='all') && (
+            {/* Product search — solo farmacia en panel de filtros (súper busca por nombre) */}
+            {activeCat==='farmacia' && (
               <>
-                <Text style={s.filterLabel}>{activeCat==='farmacia'?'Buscar medicamento':'Buscar producto'}</Text>
+                <Text style={s.filterLabel}>Buscar medicamento</Text>
                 <View style={s.productRow}>
                   <TextInput style={s.productInput} value={product} onChangeText={setProduct}
-                    placeholder={activeCat==='farmacia'?'Ej: ibuprofeno 600mg':'Ej: huevos, leche, agua...'}
+                    placeholder="Ej: ibuprofeno 600mg, paracetamol..."
                     placeholderTextColor={COLORS.text3} returnKeyType="search" onSubmitEditing={loadPlaces}/>
                   {product ? <TouchableOpacity onPress={()=>{setProduct('');loadPlaces();}}><Ionicons name="close-circle" size={18} color={COLORS.text3}/></TouchableOpacity> : null}
                 </View>
-                {activeCat==='supermercado' && (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingTop:4}}>
-                    {['huevos','leche','agua','pan','pollo','arroz','aceite'].map(p=>(
-                      <TouchableOpacity key={p} style={[s.quickProd,product===p&&s.quickProdOn]} onPress={()=>{setProduct(product===p?'':p);loadPlaces();}}>
-                        <Text style={[s.quickProdTxt,product===p&&{color:'#fff'}]}>{p}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                )}
               </>
             )}
           </View>
@@ -1046,23 +1036,24 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
 
   // Price label by category
   function priceLabel() {
-    // For supermarkets: show weekly cost if known
-    if (item.category === 'supermercado' || (item.isGas === false && item.category === 'supermercado')) {
+    if (item.category === 'supermercado') {
       const wc = getWeeklyCost(item.name);
-      if (wc) {
-        const diff = ((wc - AVG_WEEKLY_COST) / AVG_WEEKLY_COST * 100).toFixed(0);
-        const tag = wc < AVG_WEEKLY_COST * 0.92 ? '🟢' : wc > AVG_WEEKLY_COST * 1.08 ? '🔴' : '🟡';
-        return `${tag} ~${wc.toFixed(0)}€/semana (${Number(diff) > 0 ? '+' : ''}${diff}% vs media)`;
+      const price = wc || item.repPrice;
+      if (price) {
+        const ref = AVG_WEEKLY_COST;
+        const diff = ((price - ref) / ref * 100).toFixed(0);
+        const tag = price < ref * 0.92 ? '🟢' : price > ref * 1.08 ? '🔴' : '🟡';
+        return `${tag} ~${price.toFixed(0)}€/semana · ${Number(diff)>0?'+':''}${diff}% vs media`;
       }
+      return null;
     }
-    if (!item.minPrice) return null;
-    const p = item.minPrice;
+    if (!item.minPrice && !item.repPrice) return null;
+    const p = item.repPrice || item.minPrice;
     if (item.isGas) return `${fuelLabel} ${p.toFixed(3)}€`;
     const cat = item.category;
-    if (cat === 'restaurante')  return `~${p.toFixed(2)}€ plato`;
-    if (cat === 'farmacia')     return `~${p.toFixed(2)}€ media`;
-    if (cat === 'supermercado') return `~${p.toFixed(0)}€/semana`;
-    if (cat === 'gimnasio')     return `desde ${p.toFixed(2)}€/mes`;
+    if (cat === 'restaurante')  return `~${p.toFixed(2)}€`;
+    if (cat === 'farmacia')     return `~${p.toFixed(2)}€`;
+    if (cat === 'gimnasio')     return `desde ${p.toFixed(0)}€/mes`;
     return `~${p.toFixed(2)}€`;
   }
   const pLabel = priceLabel();

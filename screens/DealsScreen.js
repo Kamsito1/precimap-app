@@ -536,24 +536,50 @@ export default function DealsScreen() {
           }}
           ListEmptyComponent={loading ? null :
             <View style={s.empty}>
-              <Text style={{fontSize:52,textAlign:'center',marginBottom:12}}>
-                {search ? '🔍' : minDiscount > 0 ? '🎯' : '🛍️'}
-              </Text>
-              <Text style={s.emptyTitle}>
-                {search ? `Sin resultados para "${search}"` 
-                  : minDiscount > 0 ? `Sin chollos con ≥${minDiscount}% descuento`
-                  : cat !== 'all' ? `Sin chollos en esta categoría` 
-                  : 'Sin chollos aún'}
-              </Text>
-              <Text style={s.emptyDesc}>
-                {search ? 'Prueba con otro término o borra la búsqueda.'
-                  : minDiscount > 0 ? 'Prueba con un umbral de descuento menor.'
-                  : 'Sé el primero en publicar una oferta increíble para la comunidad.'}
-              </Text>
-              {!search && minDiscount === 0 && (
-                <TouchableOpacity style={s.emptyBtn} onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}>
-                  <Text style={s.emptyBtnTxt}>Publicar chollo</Text>
-                </TouchableOpacity>
+              {!search && minDiscount === 0 && cat === 'all' ? (
+                // Estado vacío principal — invita a publicar
+                <>
+                  <Text style={{fontSize:60,textAlign:'center',marginBottom:8}}>🔥</Text>
+                  <Text style={s.emptyTitle}>¡Sé el primero en publicar un chollo!</Text>
+                  <Text style={s.emptyDesc}>
+                    Esta comunidad vive de los mejores deals de España. Comparte una oferta increíble y ayuda a que todos ahorren.
+                  </Text>
+                  {/* Explicación de referido */}
+                  <View style={{backgroundColor:'#F0FDF4',borderRadius:14,padding:14,marginVertical:14,borderWidth:1,borderColor:'#86EFAC',width:'100%'}}>
+                    <Text style={{fontSize:15,fontWeight:'700',color:'#15803D',marginBottom:6}}>💸 ¿Tienes un enlace de referido?</Text>
+                    <Text style={{fontSize:13,color:'#166534',lineHeight:19}}>
+                      Si tienes referidos de Amazon, Zara, MediaMarkt u otras tiendas, publícalos aquí. Cada vez que alguien compre desde tu chollo, {'\n'}
+                      <Text style={{fontWeight:'700'}}>tú ganas comisión directamente.</Text>
+                    </Text>
+                  </View>
+                  <TouchableOpacity style={s.emptyBtn} onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}>
+                    <Text style={s.emptyBtnTxt}>🔥 Publicar mi primer chollo</Text>
+                  </TouchableOpacity>
+                  <Text style={{fontSize:11,color:COLORS.text3,marginTop:10,textAlign:'center'}}>
+                    Amazon · El Corte Inglés · Zara · MediaMarkt · AliExpress · y más
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={{fontSize:52,textAlign:'center',marginBottom:12}}>
+                    {search ? '🔍' : minDiscount > 0 ? '🎯' : '🛍️'}
+                  </Text>
+                  <Text style={s.emptyTitle}>
+                    {search ? `Sin resultados para "${search}"` 
+                      : minDiscount > 0 ? `Sin chollos con ≥${minDiscount}% descuento`
+                      : 'Sin chollos en esta categoría'}
+                  </Text>
+                  <Text style={s.emptyDesc}>
+                    {search ? 'Prueba con otro término o borra la búsqueda.'
+                      : minDiscount > 0 ? 'Prueba con un umbral de descuento menor.'
+                      : 'Sé el primero en publicar una oferta en esta categoría.'}
+                  </Text>
+                  {!search && (
+                    <TouchableOpacity style={s.emptyBtn} onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}>
+                      <Text style={s.emptyBtnTxt}>Publicar chollo</Text>
+                    </TouchableOpacity>
+                  )}
+                </>
               )}
             </View>
           }

@@ -55,6 +55,12 @@ export default function EventsScreen() {
 
   useEffect(() => { loadEvents(); }, [cat, sort, source, city]);
 
+  // Auto-refresh cada 5 minutos
+  useEffect(() => {
+    const interval = setInterval(() => { loadEvents(); }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [cat, sort, source, city, search]);
+
   // Debounced search — skip initial render
   const searchMounted = React.useRef(false);
   useEffect(() => {
