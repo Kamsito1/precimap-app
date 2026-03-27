@@ -5,15 +5,13 @@
  */
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Animated,
+  View, Text, TouchableOpacity, Animated,
   FlatList, ActivityIndicator, ScrollView, Alert,
-  TextInput, Modal, Linking,
+  TextInput, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, apiGet, openURL, API_BASE } from '../utils';
-import { useAuth } from '../contexts/AuthContext';
-import AuthModal from '../components/AuthModal';
+import { COLORS, apiGet, openURL } from '../utils';
 
 const SUBTABS = [
   { key:'super',    label:'🛒 Súper' },
