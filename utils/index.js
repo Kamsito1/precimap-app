@@ -259,7 +259,11 @@ export const CATEGORY_INFO = {
   bar:          { emoji: '🍺', bg: '#FEF3C7', text: '#92400E',  color: '#D97706', label: 'Bar' },
   cafe:         { emoji: '☕', bg: '#FFF7ED', text: '#9A3412',  color: '#EA580C', label: 'Café' },
   farmacia:     { emoji: '💊', bg: '#EFF6FF', text: '#1E40AF',  color: '#2563EB', label: 'Farmacia' },
-  restaurante:  { emoji: '🍕', bg: '#FFF1F2', text: '#9F1239',  color: '#E11D48', label: 'Restaurante' },
+  restaurante:  { emoji: '🍽️', bg: '#FFF1F2', text: '#9F1239',  color: '#E11D48', label: 'Bar / Restaurante' },
+  // Subtipos de restaurante — se usan cuando hay activeCatKey específico
+  restaurante_cafe:     { emoji: '☕', bg: '#FFF7ED', text: '#9A3412', color: '#EA580C', label: 'Café' },
+  restaurante_cerveza:  { emoji: '🍺', bg: '#FFFBEB', text: '#92400E', color: '#D97706', label: 'Bar' },
+  restaurante_menu:     { emoji: '🍽️', bg: '#FFF1F2', text: '#9F1239', color: '#E11D48', label: 'Restaurante' },
   panaderia:    { emoji: '🥖', bg: '#FFFBEB', text: '#92400E',  color: '#B45309', label: 'Panadería' },
   default:      { emoji: '📍', bg: '#F8FAFC', text: '#475569',  color: '#64748B', label: 'Lugar' },
 };

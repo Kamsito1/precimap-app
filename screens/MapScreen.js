@@ -254,6 +254,8 @@ export default function MapScreen() {
   }
 
   async function loadPlaces() {
+    // No cargar lugares para gasolinera (se gestionan aparte con loadAllGasolineras)
+    if (activeCat === 'gasolinera') return;
     setLoading(true);
     try {
       const lat = userLoc?.lat || 40.4168;
@@ -261,19 +263,16 @@ export default function MapScreen() {
       let url = `/api/places?sort=${sort}&lat=${lat}&lng=${lng}`;
       if (city) {
         url += `&city=${encodeURIComponent(city)}`;
-      } else if (radius < 100) {
-        url += `&radius=${radius}`;
+      } else if (userLoc) {
+        // Tenemos GPS: usar radio
+        url += `&radius=${radius < 100 ? radius : 25}`;
+      } else {
+        // Sin ciudad ni GPS: usar sort=price para mostrar los mejores de España
+        // El servidor limitará a 200 resultados
+        url += `&sort=price`;
       }
-      if (activeCat !== 'all') url += `&cat=${activeCat}`; // siempre filtra por categoría
-
-      // Para subcategorías de restaurante (café, cerveza, menú): SÍ enviar product al servidor
-      // El servidor lo usará para calcular repPrice, pero NO excluirá lugares sin ese precio.
-      // Así ☕ Cafés muestra bares con precio de café ordenados por el más barato,
-      // y también bares sin precio de café (aparecen sin precio, ordenados al final).
-      if (product) {
-        url += `&product=${encodeURIComponent(product)}`;
-      }
-
+      url += `&cat=${activeCat}`;
+      if (product) url += `&product=${encodeURIComponent(product)}`;
       setPlaces(await apiGet(url) || []);
       setServerError(false);
     } catch(_) { setServerError(true); } finally { setLoading(false); }
@@ -470,14 +469,15 @@ export default function MapScreen() {
       <View style={s.header}>
         <View style={s.headerRow}>
           <Text style={s.logo}>🗺️ PreciMap</Text>
-          {activeFuel && activeFuel !== 'all' && (
+          {/* Badge carburante — solo cuando estamos en gasolinera */}
+          {activeCat === 'gasolinera' && activeFuel && activeFuel !== 'all' && (
             <TouchableOpacity
               style={[s.fuelActiveBadge, {backgroundColor:(FUELS.find(f=>f.key===activeFuel)||{}).color+'22', borderColor:(FUELS.find(f=>f.key===activeFuel)||{}).color}]}
               onPress={()=>setActiveFuel(null)}>
               <Text style={[s.fuelActiveTxt, {color:(FUELS.find(f=>f.key===activeFuel)||{color:COLORS.text}).color}]}>
                 ⛽ {FUELS.find(f=>f.key===activeFuel)?.label}
               </Text>
-              {activeFuel && fuelStats[activeFuel] && (
+              {fuelStats[activeFuel] && (
                 <Text style={{fontSize:9,color:COLORS.text3}}>
                   {' '}🟢{fuelStats[activeFuel].min?.toFixed(3)}€
                 </Text>
@@ -515,16 +515,23 @@ export default function MapScreen() {
           {CATS.map((c,i)=>{
             const ck = c.key2 || c.key;
             const isOn = activeCatKey === ck;
+            // Color específico por categoría cuando está activa
+            const catColor = {
+              gasolinera:'#F59E0B', cafe:'#EA580C', cerveza:'#D97706',
+              restaurante_menu:'#E11D48', supermercado:'#16A34A',
+              farmacia:'#2563EB', gimnasio:'#7C3AED',
+            }[ck] || COLORS.primary;
             return (
-              <TouchableOpacity key={ck+i} style={[s.catBtn,isOn&&s.catBtnOn]} onPress={()=>{
-                setActiveCat(c.key);
-                setActiveCatKey(ck);
-                setProduct(c.product||'');
-                // Al pulsar Gasolina, mostrar selector de carburante
-                if (c.key === 'gasolinera') setActiveFuel(null);
-              }}>
+              <TouchableOpacity key={ck+i}
+                style={[s.catBtn, isOn && {backgroundColor:catColor, borderColor:catColor}]}
+                onPress={()=>{
+                  setActiveCat(c.key);
+                  setActiveCatKey(ck);
+                  setProduct(c.product||'');
+                  if (c.key === 'gasolinera') setActiveFuel(null);
+                }}>
                 <Text style={s.catEmoji}>{c.emoji}</Text>
-                <Text style={[s.catTxt,isOn&&{color:'#fff'}]}>{c.label}</Text>
+                <Text style={[s.catTxt,isOn&&{color:'#fff',fontWeight:'700'}]}>{c.label}</Text>
               </TouchableOpacity>
             );
           })}
@@ -582,14 +589,25 @@ export default function MapScreen() {
         {/* FIX: Eventos eliminados del mapa — tienen su propia sección en la barra de navegación */}
 
 
-        {/* City quick filter — shown when active or always in collapsed form */}
-        <View style={{paddingHorizontal:12,paddingBottom:city ? 8 : 4}}>
+        {/* City quick filter */}
+        <View style={{paddingHorizontal:12,paddingBottom:4}}>
           <CityPicker
             value={city}
             onChange={setCity}
-            placeholder={city ? city : "📍 Toda España"}
+            placeholder={!city && !userLoc && activeCat !== 'gasolinera'
+              ? "🔍 Elige tu ciudad para ver resultados"
+              : city ? city : "📍 Tu ubicación actual"}
           />
         </View>
+        {/* Aviso si no hay ciudad ni GPS para categorías que lo necesitan */}
+        {!city && !userLoc && activeCat !== 'gasolinera' && activeCat !== 'supermercado' && (
+          <View style={{marginHorizontal:12,marginBottom:6,backgroundColor:'#FFF7ED',borderRadius:10,padding:8,flexDirection:'row',gap:6,alignItems:'center',borderWidth:1,borderColor:'#FED7AA'}}>
+            <Text style={{fontSize:14}}>📍</Text>
+            <Text style={{flex:1,fontSize:12,color:'#92400E',fontWeight:'600'}}>
+              Elige una ciudad arriba para ver los precios más baratos cerca de ti
+            </Text>
+          </View>
+        )}
 
         {/* Expanded filter panel */}
         {showFilters && (
@@ -662,33 +680,37 @@ export default function MapScreen() {
             mapPadding={{ bottom: 64, top: 0, left: 0, right: 0 }}
             onRegionChangeComplete={(region) => setMapRegion(region)}
           >
-            {/* Community places */}
+            {/* Community places — icono según subcategoría activa */}
             {mapPlaces.map(p => {
-              const info = CATEGORY_INFO[p.category] || CATEGORY_INFO.default;
-              // For supermarkets: show weekly cost instead of product price
+              // Icono correcto según subcategoría (café, cerveza, restaurante, etc.)
+              const catInfoKey = p.category === 'restaurante' && activeCatKey
+                ? `restaurante_${activeCatKey === 'cafe' ? 'cafe' : activeCatKey === 'cerveza' ? 'cerveza' : 'menu'}`
+                : p.category;
+              const info = CATEGORY_INFO[catInfoKey] || CATEGORY_INFO[p.category] || CATEGORY_INFO.default;
+              // Precio representativo
               const weeklyCost = p.category === 'supermercado' ? getWeeklyCost(p.name) : null;
-              const repP = weeklyCost || p.minPrice || p.repPrice;
+              const repP = weeklyCost || p.repPrice || p.minPrice;
+              // Color del borde: verde=barato, rojo=caro, amarillo=normal
               let borderColor = info.color;
               if (repP > 0) {
-                if (weeklyCost) {
-                  // Color by weekly cost vs average
-                  if (weeklyCost < AVG_WEEKLY_COST * 0.92) borderColor = '#16A34A';
-                  else if (weeklyCost > AVG_WEEKLY_COST * 1.08) borderColor = '#DC2626';
-                  else borderColor = '#D97706';
-                } else {
-                  const AVG_PRICES = { restaurante:12, farmacia:4, supermercado:100, gimnasio:30 };
-                  const avg = AVG_PRICES[p.category] || null;
-                  if (avg) {
-                    if (repP < avg * 0.85) borderColor = '#16A34A';
-                    else if (repP > avg * 1.15) borderColor = '#DC2626';
-                    else borderColor = '#D97706';
-                  }
+                const AVG_CAT = {
+                  cafe: 1.4, cerveza: 2.2, restaurante_menu: 12,
+                  restaurante: 12, farmacia: 4, gimnasio: 30, supermercado: AVG_WEEKLY_COST
+                };
+                const avg = AVG_CAT[activeCatKey] || AVG_CAT[p.category] || null;
+                if (avg) {
+                  if (repP < avg * 0.85) borderColor = '#16A34A';       // barato → verde
+                  else if (repP > avg * 1.20) borderColor = '#DC2626';   // caro → rojo
+                  else borderColor = '#D97706';                           // normal → naranja
                 }
               }
-              // Display text for marker
-              const priceLabel = weeklyCost
-                ? `${weeklyCost.toFixed(0)}€/sem`
-                : (repP > 0 && !isNaN(repP) ? `${repP.toFixed(2)}€` : null);
+              // Label precio claro
+              let priceLabel = null;
+              if (weeklyCost) priceLabel = `${weeklyCost.toFixed(0)}€`;
+              else if (repP > 0 && !isNaN(repP)) {
+                if (p.category === 'gimnasio') priceLabel = `${repP.toFixed(0)}€/m`;
+                else priceLabel = `${repP.toFixed(2)}€`;
+              }
               return (
                 <Marker key={`p${p.id}`} coordinate={{latitude:p.lat,longitude:p.lng}} onPress={()=>setSelectedPlace(p)}>
                   <View style={[ms.marker,{backgroundColor:info.bg,borderColor,borderWidth:2}]}>
@@ -927,6 +949,7 @@ export default function MapScreen() {
                     }}
                     onNav={()=>navigateTo(item.lat,item.lng,item.name||item.title)}
                     activeFuel={activeFuel}
+                    catKey={activeCatKey}
                     isFav={item.isGas && favIds.has(item.id)}
                   />
                 )}
@@ -965,7 +988,7 @@ export default function MapScreen() {
 
       {/* Modals */}
       <Modal visible={!!selectedPlace} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedPlace(null)}>
-        {selectedPlace && <PlaceModal place={selectedPlace} onClose={()=>setSelectedPlace(null)} onNavigate={navigateTo} isLoggedIn={isLoggedIn} onAuthNeeded={()=>setShowAuth(true)} onProposePrice={(p, product)=>{setSelectedPlace(null); setPriceChangePlace({place:p, product});}}/>}
+        {selectedPlace && <PlaceModal place={selectedPlace} catKey={activeCatKey} onClose={()=>setSelectedPlace(null)} onNavigate={navigateTo} isLoggedIn={isLoggedIn} onAuthNeeded={()=>setShowAuth(true)} onProposePrice={(p, product)=>{setSelectedPlace(null); setPriceChangePlace({place:p, product});}}/>}
       </Modal>
       <PriceChangeModal visible={!!priceChangePlace} onClose={()=>setPriceChangePlace(null)} place={priceChangePlace?.place} initialProduct={priceChangePlace?.product}/>
       <Modal visible={!!selectedStation} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedStation(null)}>
@@ -981,7 +1004,7 @@ export default function MapScreen() {
 }
 
 // === LIST CARD ===
-function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
+function ListCard({ item, onPress, onNav, activeFuel, catKey, isFav }) {
   // Events get special treatment
   if (item.isEvent) {
     const dist = item._dist != null && item._dist < 999 ? (item._dist < 1 ? `${Math.round(item._dist*1000)}m` : `${item._dist.toFixed(1)}km`) : null;
@@ -1015,34 +1038,57 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
     );
   }
 
-  const info = item.isGas ? {emoji:'⛽',bg:'#FEF3C7',label:'Gasolinera'} : (CATEGORY_INFO[item.category]||CATEGORY_INFO.default);
+  // Para restaurantes: usar icono y label según subcategoría activa (café, cerveza, menú)
+  const catInfoKey = item.category === 'restaurante' && catKey
+    ? `restaurante_${catKey === 'cafe' ? 'cafe' : catKey === 'cerveza' ? 'cerveza' : 'menu'}`
+    : item.category;
+  const info = item.isGas
+    ? {emoji:'⛽', bg:'#FEF3C7', label:'Gasolinera', color:'#F59E0B'}
+    : (CATEGORY_INFO[catInfoKey] || CATEGORY_INFO[item.category] || CATEGORY_INFO.default);
   const fuelLabel = activeFuel && activeFuel !== 'all' ? FUEL_LABELS[activeFuel] : 'G95';
   const col = item.isGas && item.minPrice ? gasPriceColor(item.minPrice) : null;
   const dist = !item._dist || item._dist===999 ? null : item._dist<1 ? `${Math.round(item._dist*1000)}m` : `${item._dist.toFixed(1)}km`;
 
-  // Price label by category
+  // Price label — específico por subcategoría para restaurantes
   function priceLabel() {
     if (item.category === 'supermercado') {
       const wc = getWeeklyCost(item.name);
       const price = wc || item.repPrice;
-      if (price) {
-        const ref = AVG_WEEKLY_COST;
-        const diff = ((price - ref) / ref * 100).toFixed(0);
-        const tag = price < ref * 0.92 ? '🟢' : price > ref * 1.08 ? '🔴' : '🟡';
-        return `${tag} ~${price.toFixed(0)}€/semana · ${Number(diff)>0?'+':''}${diff}% vs media`;
-      }
-      return null;
+      if (!price) return null;
+      const diff = ((price - AVG_WEEKLY_COST) / AVG_WEEKLY_COST * 100).toFixed(0);
+      const tag = price < AVG_WEEKLY_COST * 0.92 ? '🟢' : price > AVG_WEEKLY_COST * 1.08 ? '🔴' : '🟡';
+      return `${tag} ~${price.toFixed(0)}€/sem · ${Number(diff)>0?'+':''}${diff}%`;
     }
-    if (!item.minPrice && !item.repPrice) return null;
     const p = item.repPrice || item.minPrice;
-    if (item.isGas) return `${fuelLabel} ${p.toFixed(3)}€`;
-    const cat = item.category;
-    if (cat === 'restaurante')  return `~${p.toFixed(2)}€`;
-    if (cat === 'farmacia')     return `~${p.toFixed(2)}€`;
-    if (cat === 'gimnasio')     return `desde ${p.toFixed(0)}€/mes`;
+    if (!p || isNaN(p)) return null;
+    if (item.isGas)              return `${fuelLabel} ${p.toFixed(3)}€/L`;
+    if (item.category === 'restaurante') {
+      // Mostrar qué producto es el precio según subcategoría
+      const labels = { cafe:'☕ Café', cerveza:'🍺 Caña', restaurante_menu:'🍽️ Menú' };
+      const productLabel = labels[catKey] || '🍽️';
+      return `${productLabel} ${p.toFixed(2)}€`;
+    }
+    if (item.category === 'farmacia')  return `💊 ~${p.toFixed(2)}€`;
+    if (item.category === 'gimnasio')  return `💪 desde ${p.toFixed(0)}€/mes`;
     return `~${p.toFixed(2)}€`;
   }
   const pLabel = priceLabel();
+
+  // Color del precio para restaurantes (verde=barato, rojo=caro)
+  function priceColor() {
+    if (item.isGas) return col;
+    if (item.category === 'restaurante') {
+      const p = item.repPrice;
+      if (!p) return null;
+      const AVG = { cafe:1.4, cerveza:2.2, restaurante_menu:12 };
+      const avg = AVG[catKey] || 12;
+      if (p < avg * 0.85) return { bg: '#DCFCE7', text: '#15803D' }; // barato
+      if (p > avg * 1.20) return { bg: '#FEE2E2', text: '#DC2626' }; // caro
+      return { bg: '#FEF9C3', text: '#92400E' }; // normal
+    }
+    return null;
+  }
+  const pColor = priceColor();
 
   return (
     <TouchableOpacity style={lcs.card} onPress={onPress} activeOpacity={0.75}>
@@ -1060,8 +1106,8 @@ function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
         </View>
         {item.bestFor ? <Text style={lcs.bestFor}>{item.bestFor}</Text> : null}
         {pLabel && (
-          <View style={[lcs.pricePill,{backgroundColor:col?col.bg+'22':COLORS.warningLight}]}>
-            <Text style={[lcs.pricePillTxt,{color:col?col.bg:COLORS.warning}]}>{pLabel}</Text>
+          <View style={[lcs.pricePill,{backgroundColor: pColor ? pColor.bg : (col ? col.bg+'22' : COLORS.warningLight)}]}>
+            <Text style={[lcs.pricePillTxt,{color: pColor ? pColor.text : (col ? col.bg : COLORS.warning)}]}>{pLabel}</Text>
           </View>
         )}
       </View>
@@ -1192,8 +1238,11 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
 }
 
 // === PLACE MODAL (bars, supermarkets, etc.) ===
-function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onProposePrice }) {
-  const info = CATEGORY_INFO[place.category]||CATEGORY_INFO.default;
+function PlaceModal({ place, catKey, onClose, onNavigate, isLoggedIn, onAuthNeeded, onProposePrice }) {
+  const catInfoKey = place.category === 'restaurante' && catKey
+    ? `restaurante_${catKey === 'cafe' ? 'cafe' : catKey === 'cerveza' ? 'cerveza' : 'menu'}`
+    : place.category;
+  const info = CATEGORY_INFO[catInfoKey] || CATEGORY_INFO[place.category] || CATEGORY_INFO.default;
   const prices = place.prices||[];
   const [history, setHistory] = React.useState({});
 
