@@ -225,7 +225,7 @@ export default function AuthModal({ visible, onClose }) {
                 <View style={s.passRow}>
                   <TextInput style={[s.input,{flex:1,marginBottom:0}]} value={pass} onChangeText={setPass}
                     placeholder={mode===MODES.register?'Mínimo 6 caracteres':'Tu contraseña'}
-                    placeholderTextColor={COLORS.text3} secureTextEntry={!showPass}/>
+                    autoCorrect={false} autoCapitalize="none" placeholderTextColor={COLORS.text3} secureTextEntry={!showPass}/>
                   <TouchableOpacity style={s.eyeBtn} onPress={()=>setShowPass(!showPass)}>
                     <Ionicons name={showPass?'eye-off-outline':'eye-outline'} size={20} color={COLORS.text3}/>
                   </TouchableOpacity>
@@ -253,7 +253,7 @@ export default function AuthModal({ visible, onClose }) {
               <View style={s.field}>
                 <Text style={s.label}>Confirmar contraseña</Text>
                 <TextInput style={s.input} value={pass2} onChangeText={setPass2}
-                  placeholder="Repite la contraseña" placeholderTextColor={COLORS.text3} secureTextEntry/>
+                  placeholder="Repite la contraseña" autoCorrect={false} autoCapitalize="none" placeholderTextColor={COLORS.text3} secureTextEntry/>
               </View>
             )}
 
@@ -268,7 +268,7 @@ export default function AuthModal({ visible, onClose }) {
                 <View style={s.field}>
                   <Text style={s.label}>Nueva contraseña</Text>
                   <TextInput style={s.input} value={newPass} onChangeText={setNewPass}
-                    placeholder="Mínimo 6 caracteres" placeholderTextColor={COLORS.text3} secureTextEntry/>
+                    placeholder="Mínimo 6 caracteres" autoCorrect={false} autoCapitalize="none" placeholderTextColor={COLORS.text3} secureTextEntry/>
                 </View>
               </>
             )}

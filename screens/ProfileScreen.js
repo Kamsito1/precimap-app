@@ -126,7 +126,7 @@ function ChangePasswordModal({ visible, onClose }) {
                 <Text style={em.label}>{f.label}</Text>
                 <View style={em.passRow}>
                   <TextInput style={[em.input, {flex:1, marginBottom:0}]} value={f.val} onChangeText={f.set}
-                    secureTextEntry={!f.show} placeholderTextColor={COLORS.text3} placeholder="••••••"/>
+                    autoCorrect={false} autoCapitalize="none" secureTextEntry={!f.show} placeholderTextColor={COLORS.text3} placeholder="••••••"/>
                   {f.toggle && (
                     <TouchableOpacity style={em.eyeBtn} onPress={f.toggle}>
                       <Ionicons name={f.show ? 'eye-off-outline' : 'eye-outline'} size={20} color={COLORS.text3}/>
@@ -755,6 +755,8 @@ export default function ProfileScreen() {
                 value={deletePassword}
                 onChangeText={setDeletePassword}
                 secureTextEntry
+                autoCorrect={false}
+                autoCapitalize="none"
                 placeholder="Tu contraseña actual"
                 placeholderTextColor={COLORS.text3}
                 autoFocus

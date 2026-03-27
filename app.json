@@ -26,7 +26,8 @@
         "NSPhotoLibraryUsageDescription": "PreciMap necesita tu galería para subir fotos de chollos y tu avatar.",
         "NSPhotoLibraryAddUsageDescription": "PreciMap guarda fotos de precios en tu galería.",
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "deploymentTarget": "15.1"
     },
     "android": {
       "adaptiveIcon": {
@@ -69,7 +70,18 @@
         "projectId": "eebf715f-1226-4c39-a0c3-53dbb363bd13"
       }
     },
-    "owner": "kamsito1"
+    "owner": "kamsito1",
+    "privacy": "public",
+    "keywords": [
+      "gasolina",
+      "supermercado",
+      "precios",
+      "ahorro",
+      "España",
+      "chollos",
+      "farmacia",
+      "ofertas"
+    ]
   },
   "react-native-google-mobile-ads": {
     "ios_app_id": "ca-app-pub-4854549477350471~3682160177"
