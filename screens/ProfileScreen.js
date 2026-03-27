@@ -245,11 +245,11 @@ export default function ProfileScreen() {
   }
 
   async function executeDelete() {
-    if (!deletePassword) return setDeleteError('Introduce tu contraseña');
+    const isGoogleUser = profile?.google_id || user?.google_id;
+    if (!isGoogleUser && !deletePassword) return setDeleteError('Introduce tu contraseña');
     setDeleteLoading(true);
     try {
-      // apiDelete doesn't send body — use apiPost instead
-      const res = await apiPost('/api/users/me/delete', { password: deletePassword });
+      const res = await apiPost('/api/users/me/delete', { password: deletePassword || '' });
       if (res.error) { setDeleteError(res.error); return; }
       setShowDeleteModal(false);
       Alert.alert('Cuenta eliminada', 'Todos tus datos han sido eliminados. Hasta pronto.');
@@ -646,11 +646,13 @@ export default function ProfileScreen() {
             <Text style={s.settingTxt}>Editar nombre y bio</Text>
             <Ionicons name="chevron-forward" size={16} color={COLORS.text3}/>
           </TouchableOpacity>
-          <TouchableOpacity style={s.settingRow} onPress={()=>setShowPassChg(true)}>
-            <Ionicons name="lock-closed-outline" size={18} color={COLORS.primary}/>
-            <Text style={s.settingTxt}>Cambiar contraseña</Text>
-            <Ionicons name="chevron-forward" size={16} color={COLORS.text3}/>
-          </TouchableOpacity>
+          {!(profile?.google_id || user?.google_id) && (
+            <TouchableOpacity style={s.settingRow} onPress={()=>setShowPassChg(true)}>
+              <Ionicons name="lock-closed-outline" size={18} color={COLORS.primary}/>
+              <Text style={s.settingTxt}>Cambiar contraseña</Text>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.text3}/>
+            </TouchableOpacity>
+          )}
           <View style={s.settingRow}>
             <Ionicons name="shield-checkmark-outline" size={18} color={COLORS.success}/>
             <Text style={s.settingTxt}>Servidor: {serverOk ? '✅ Conectado' : '❌ Sin conexión'}</Text>
@@ -745,17 +747,19 @@ export default function ProfileScreen() {
           <View style={{backgroundColor:COLORS.bg2,borderRadius:20,padding:24}}>
             <Text style={{fontSize:20,fontWeight:'800',color:'#DC2626',marginBottom:8}}>⚠️ Eliminar cuenta</Text>
             <Text style={{fontSize:14,color:COLORS.text2,marginBottom:20,lineHeight:21}}>
-              Esta acción es permanente e irreversible.{'\n'}Introduce tu contraseña para confirmar.
+              Esta acción es permanente e irreversible.{'\n'}{(profile?.google_id || user?.google_id) ? 'Pulsa "Eliminar" para confirmar.' : 'Introduce tu contraseña para confirmar.'}
             </Text>
-            <TextInput
-              style={[em.input,{marginBottom:12}]}
-              value={deletePassword}
-              onChangeText={setDeletePassword}
-              secureTextEntry
-              placeholder="Tu contraseña actual"
-              placeholderTextColor={COLORS.text3}
-              autoFocus
-            />
+            {!(profile?.google_id || user?.google_id) && (
+              <TextInput
+                style={[em.input,{marginBottom:12}]}
+                value={deletePassword}
+                onChangeText={setDeletePassword}
+                secureTextEntry
+                placeholder="Tu contraseña actual"
+                placeholderTextColor={COLORS.text3}
+                autoFocus
+              />
+            )}
             {!!deleteError && <Text style={{color:COLORS.danger,fontSize:13,marginBottom:10}}>{deleteError}</Text>}
             <View style={{flexDirection:'row',gap:10}}>
               <TouchableOpacity
