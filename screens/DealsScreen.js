@@ -263,7 +263,7 @@ export default function DealsScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
                 {trending.slice(0,5).map(t=>(
                   <TouchableOpacity key={t.id} style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:10,width:180,borderWidth:1,borderColor:COLORS.border,gap:4}}
-                    onPress={()=>openURL(t.url)}>                    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
+                    onPress={()=>t.url && openURL(applyAffiliateTag(t.url))}>
                       <Text style={{fontSize:9,fontWeight:'800',color:COLORS.danger}}>{t.temperature} TRENDING</Text>
                       <Text style={{fontSize:9,color:COLORS.text3}}>👍{t.votes_up||0}</Text>
                     </View>
@@ -485,19 +485,22 @@ export default function DealsScreen() {
                       } else {
                         Alert.alert('⏰ ¿Ya expiró?',
                           `${deal.expire_reports||0}/5 votos. Con 5 votos se retira automáticamente.`,
-                          [{text:'Sí, ya expiró', onPress: async () => {
-                            try {
-                              const res = await apiPost(`/api/deals/${deal.id}/report-expired`, {});
-                              if (res.ok) {
-                                if (res.deactivated) {
-                                  setDeals(prev => prev.filter(d => d.id !== deal.id));
-                                } else {
-                                  setDeals(prev => prev.map(d => d.id===deal.id ? {...d,expire_reports:res.expire_reports} : d));
-                                  Alert.alert('Gracias',`Voto registrado (${res.expire_reports}/5)`);
+                          [
+                            {text:'Sí, ya expiró', onPress: async () => {
+                              try {
+                                const res = await apiPost(`/api/deals/${deal.id}/report-expired`, {});
+                                if (res.ok) {
+                                  if (res.deactivated) {
+                                    setDeals(prev => prev.filter(d => d.id !== deal.id));
+                                  } else {
+                                    setDeals(prev => prev.map(d => d.id===deal.id ? {...d,expire_reports:res.expire_reports} : d));
+                                    Alert.alert('Gracias',`Voto registrado (${res.expire_reports}/5)`);
+                                  }
                                 }
-                              }
-                            } catch {}
-                          {text:'Cancelar',style:'cancel'}]
+                              } catch {}
+                            }},
+                            {text:'Cancelar', style:'cancel'},
+                          ]
                         );
                       }
                     }}>

@@ -48,16 +48,20 @@ export default function CommentsModal({ visible, dealId, dealTitle, onClose }) {
     Alert.alert('Eliminar comentario', '¿Eliminar este comentario?', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Eliminar', style: 'destructive', onPress: async () => {
-        await apiDelete(`/api/comments/${commentId}`);
-        await load();
+        try {
+          await apiDelete(`/api/comments/${commentId}`);
+          await load();
+        } catch {}
       }},
     ]);
   }
 
   async function handleVote(commentId) {
     if (!isLoggedIn) return;
-    await apiPost(`/api/comments/${commentId}/vote`, {});
-    setComments(prev => updateVote(prev, commentId));
+    try {
+      await apiPost(`/api/comments/${commentId}/vote`, {});
+      setComments(prev => updateVote(prev, commentId));
+    } catch {}
   }
 
   function updateVote(list, id) {

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS } from '../utils';
+import { COLORS, openURL } from '../utils';
 
 export default function PrivacyScreen({ onClose }) {
   return (
@@ -41,8 +41,7 @@ export default function PrivacyScreen({ onClose }) {
 
         <Text style={s.h2}>8. Contacto</Text>
         <Text style={s.p}>Para cualquier consulta sobre privacidad, escríbenos a:</Text>
-        <TouchableOpacity onPress={() => Linking.openURL('mailto:sitoexpositorodriguez@gmail.com').catch(()=>{})}>
-          <Text style={s.link}>sitoexpositorodriguez@gmail.com</Text>
+        <TouchableOpacity onPress={() => openURL('mailto:sitoexpositorodriguez@gmail.com')}>          <Text style={s.link}>sitoexpositorodriguez@gmail.com</Text>
         </TouchableOpacity>
 
         <Text style={s.h2}>9. Cambios en esta política</Text>
