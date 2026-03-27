@@ -51,7 +51,7 @@ export default function PrivacyScreen({ onClose }) {
         <View style={{height:1,backgroundColor:COLORS.border,marginVertical:28}}/>
 
         <Text style={{fontSize:18,fontWeight:'800',color:COLORS.text,marginBottom:6}}>Términos de Uso</Text>
-        <Text style={s.updated}>En vigor desde: marzo 2025</Text>
+        <Text style={s.updated}>En vigor desde: marzo 2026</Text>
 
         <Text style={s.h2}>1. Aceptación</Text>
         <Text style={s.p}>Al usar PreciMap aceptas estos términos. El uso de la app implica la aceptación de estas condiciones y de la Política de Privacidad.</Text>
