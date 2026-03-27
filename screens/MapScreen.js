@@ -708,7 +708,7 @@ export default function MapScreen() {
               );
             })}
             {/* Eventos en el mapa */}
-            {(activeCat === 'all' || activeCat === 'evento') && mapEvents.map(e => (
+            {(activeCat === 'all' || activeCat === 'evento') && mapEvents.filter(e => e.lat && e.lng).map(e => (
               <Marker key={`ev${e.id}`} coordinate={{latitude:e.lat, longitude:e.lng}}
                 onPress={() => Alert.alert(
                   `🎭 ${e.title}`,
@@ -913,9 +913,9 @@ export default function MapScreen() {
             const listData = [
               ...visiblePlaces,
               // Include eventos in list view when cat is all or evento
-              ...(activeCat === 'all' || activeCat === 'evento' ? mapEvents.map(e => ({
+              ...(activeCat === 'all' || activeCat === 'evento' ? mapEvents.filter(e => e.lat && e.lng).map(e => ({
                 ...e, isEvent: true,
-                _dist: distanceKm(userLoc?.lat||CORDOBA.latitude, userLoc?.lng||CORDOBA.longitude, e.lat||0, e.lng||0),
+                _dist: distanceKm(userLoc?.lat||CORDOBA.latitude, userLoc?.lng||CORDOBA.longitude, e.lat, e.lng),
                 minPrice: e.price_from || null,
               })) : []),
               ...gasFiltered.slice(0,150).map(s=>({
