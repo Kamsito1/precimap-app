@@ -8,15 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { COLORS, apiGet, API_BASE, openURL } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
-import { useNavigation } from '@react-navigation/native';
-
-// Componente auxiliar que usa useNavigation — SOLO se monta cuando NO es embedded
-// Así el hook nunca se llama fuera de un NavigationContext
-function NavigationProvider({ onReady }) {
-  const nav = useNavigation();
-  React.useEffect(() => { onReady(nav); }, []);
-  return null;
-}
+// useNavigation ELIMINADO — causaba crash al estar embedded fuera de NavigationContext
 
 const TABS = [
   { key:'ranking',      label:'🏆 Ranking',    desc:'¿Cuál es más barato?' },
@@ -203,7 +195,7 @@ const CONSEJOS = [
 
 export default function SupermarketsScreen({ embedded = false }) {
   const { isLoggedIn } = useAuth();
-  const [navigation, setNavigation] = useState(null);
+  // navigation eliminado — se usa Alert para guiar al usuario al Mapa
   const Wrapper = embedded ? View : SafeAreaView;
   const wrapperProps = embedded ? {style:{flex:1,backgroundColor:COLORS.bg}} : {style:s.safe, edges:['top']};
   const [tab, setTab]             = useState('ranking');
@@ -274,8 +266,7 @@ export default function SupermarketsScreen({ embedded = false }) {
 
   return (
     <Wrapper {...wrapperProps}>
-      {/* NavigationProvider solo cuando NO es embedded — evita crash de useNavigation fuera de Navigator */}
-      {!embedded && <NavigationProvider onReady={setNavigation} />}
+      {/* navegación via Alert cuando embedded */}
       {/* Header */}
       <View style={s.header}>
         <View style={s.headerTop}>
@@ -283,7 +274,7 @@ export default function SupermarketsScreen({ embedded = false }) {
             <Text style={s.title}>🛒 Supermercados</Text>
             <Text style={s.sub}>Datos OCU 2024 + comunidad</Text>
           </View>
-          <TouchableOpacity style={s.addBtn} onPress={() => navigation ? navigation.navigate('Mapa') : Alert.alert('💡', 'Ve a la pestaña Mapa, busca un supermercado y pulsa para añadir precio')}>
+          <TouchableOpacity style={s.addBtn} onPress={() => Alert.alert('💡', 'Ve a la pestaña Mapa, busca un supermercado y pulsa para añadir precio')}>
             <Ionicons name="add-circle-outline" size={14} color={COLORS.success}/>
             <Text style={s.addBtnTxt}>Añadir precio</Text>
           </TouchableOpacity>
@@ -395,7 +386,7 @@ export default function SupermarketsScreen({ embedded = false }) {
               const prices = p.prices || [];
               const cheapest = prices.length > 0 ? [...prices].sort((a,b) => a.price-b.price)[0] : null;
               return (
-              <TouchableOpacity key={p.id} style={[s.communityRow,{paddingVertical:14}]} onPress={() => navigation?.navigate('Mapa')}>
+              <TouchableOpacity key={p.id} style={[s.communityRow,{paddingVertical:14}]} onPress={() => Alert.alert('💡', 'Ve a la pestaña Mapa para ver este supermercado')}>
                 <View style={{width:40,height:40,borderRadius:10,backgroundColor:brandColor+'15',borderWidth:1.5,borderColor:brandColor+'44',alignItems:'center',justifyContent:'center',marginRight:10}}>
                   <Text style={{fontSize:10,fontWeight:'800',color:brandColor}} numberOfLines={1}>
                     {brand ? brand.slice(0,6).toUpperCase() : '🛒'}
@@ -421,7 +412,7 @@ export default function SupermarketsScreen({ embedded = false }) {
                 <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center'}}>
                   {communityCity ? `Sin datos para ${communityCity}` : 'Sin datos de comunidad aún'}
                 </Text>
-                <TouchableOpacity style={{marginTop:8,backgroundColor:COLORS.primaryLight,borderRadius:99,paddingHorizontal:16,paddingVertical:8}} onPress={() => navigation?.navigate('Mapa')}>
+                <TouchableOpacity style={{marginTop:8,backgroundColor:COLORS.primaryLight,borderRadius:99,paddingHorizontal:16,paddingVertical:8}} onPress={() => Alert.alert('💡', 'Ve a la pestaña Mapa para añadir este supermercado')}>
                   <Text style={{fontSize:12,color:COLORS.primary,fontWeight:'700'}}>Ver en el mapa →</Text>
                 </TouchableOpacity>
               </View>
