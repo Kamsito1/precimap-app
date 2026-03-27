@@ -6,7 +6,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
+// expo-location cargado de forma diferida — import estático crashea en iOS/Hermes
+const getLocation = () => require('expo-location');
 import { COLORS, apiGet, apiPost, timeAgo, MONTHS_ES, openURL } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
@@ -437,6 +438,7 @@ function AddEventModal({ visible, onClose, onSuccess }) {
 
   async function getGPS() {
     try {
+      const Location = getLocation();
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return;
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });

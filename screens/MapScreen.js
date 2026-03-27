@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker } from 'react-native-maps';
-import * as Location from 'expo-location';
+// expo-location cargado de forma diferida — import estático crashea en iOS/Hermes
+const getLocation = () => require('expo-location');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
@@ -225,6 +226,7 @@ export default function MapScreen() {
 
   async function initLocation() {
     try {
+      const Location = getLocation();
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });

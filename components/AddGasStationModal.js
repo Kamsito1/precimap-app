@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Modal, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import * as Location from 'expo-location';
+const getLocation = () => require('expo-location');
 import { COLORS, apiPost } from '../utils';
 
 export default function AddGasStationModal({ visible, onClose, onSuccess }) {
@@ -17,6 +17,7 @@ export default function AddGasStationModal({ visible, onClose, onSuccess }) {
   async function getGPS() {
     setLocating(true);
     try {
+      const Location = getLocation();
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return Alert.alert('Permiso denegado', 'Necesitamos acceso a tu ubicación.');
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
