@@ -273,8 +273,10 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
 
   async function vote() {
     if (!isLoggedIn) { onAuthNeeded(); return; }
-    await apiPost(`/api/events/${ev.id}/vote`, {});
-    onRefresh();
+    try {
+      await apiPost(`/api/events/${ev.id}/vote`, {});
+      onRefresh();
+    } catch {}
   }
 
   function openMaps() {
