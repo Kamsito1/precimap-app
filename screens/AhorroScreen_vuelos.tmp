@@ -1,0 +1,122 @@
+
+// ─── VUELOS TAB ───────────────────────────────────────────────────────────────
+const AIRPORTS_ES = [
+  {code:'MAD',name:'Madrid Barajas'},{code:'BCN',name:'Barcelona El Prat'},
+  {code:'SVQ',name:'Sevilla'},{code:'AGP',name:'Málaga'},{code:'VLC',name:'Valencia'},
+  {code:'BIO',name:'Bilbao'},{code:'PMI',name:'Palma de Mallorca'},{code:'LPA',name:'Las Palmas'},
+  {code:'TFN',name:'Tenerife Norte'},{code:'ALC',name:'Alicante'},{code:'SDR',name:'Santander'},
+  {code:'OVD',name:'Asturias'},{code:'ZAZ',name:'Zaragoza'},{code:'SCQ',name:'Santiago'},
+];
+const DEST_POP = [
+  {code:'CDG',name:'París'},{code:'LHR',name:'Londres'},{code:'FCO',name:'Roma'},
+  {code:'AMS',name:'Amsterdam'},{code:'LIS',name:'Lisboa'},{code:'BER',name:'Berlín'},
+  {code:'DXB',name:'Dubai'},{code:'JFK',name:'Nueva York'},{code:'CUN',name:'Cancún'},
+  {code:'LIM',name:'Lima'},{code:'BOG',name:'Bogotá'},{code:'EZE',name:'Buenos Aires'},
+  {code:'MXP',name:'Milán'},{code:'ATH',name:'Atenas'},{code:'PRG',name:'Praga'},
+  {code:'BUD',name:'Budapest'},{code:'WAW',name:'Varsovia'},{code:'VIE',name:'Viena'},
+];
+const TIPS_VUELOS = [
+  {e:'📅',t:'Martes y miércoles son los días más baratos para volar'},
+  {e:'⏰',t:'Compra entre 6-8 semanas antes para mejores precios nacionales'},
+  {e:'🔔',t:'Activa alertas de precio en Google Flights — notifica bajadas'},
+  {e:'🧳',t:'Solo equipaje de mano: hasta 50€ de ahorro por trayecto'},
+  {e:'🛫',t:'Vuelos de madrugada y mediodía suelen ser más baratos'},
+  {e:'🔄',t:'Combina aerolíneas: ida en Vueling, vuelta en Ryanair'},
+  {e:'🌍',t:'Skyscanner y Kayak comparan precios en tiempo real'},
+  {e:'📱',t:'Las apps de aerolíneas a veces tienen ofertas exclusivas'},
+];
+
+function VuelosTab() {
+  const [origin, setOrigin] = useState(AIRPORTS_ES[0]);
+  const [dest, setDest] = useState(null);
+  const [adults, setAdults] = useState(1);
+  const [picker, setPicker] = useState(null); // 'origin' | 'dest'
+
+  function buildUrl() {
+    if (!dest) return null;
+    const dep = new Date(); dep.setDate(dep.getDate()+14);
+    const ret = new Date(dep); ret.setDate(ret.getDate()+7);
+    const fmt = d=>`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+    return `https://www.google.com/travel/flights?q=vuelos+${origin.code}+${dest.code}&hl=es#flt=${origin.code}.${dest.code}.${fmt(dep)}*${dest.code}.${origin.code}.${fmt(ret)};c:EUR;e:1;sd:1;t:f;tt:o`;
+  }
+
+  return (
+    <ScrollView contentContainerStyle={{padding:14,paddingBottom:100,gap:14}}>
+      {/* Buscador */}
+      <View style={{backgroundColor:COLORS.bg2,borderRadius:16,padding:16,borderWidth:1,borderColor:COLORS.border,gap:12}}>
+        <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>✈️ Buscar vuelo barato</Text>
+        <TouchableOpacity style={{backgroundColor:COLORS.bg3,borderRadius:12,borderWidth:1,borderColor:COLORS.border,padding:14,flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}
+          onPress={()=>setPicker('origin')}>
+          <View><Text style={{fontSize:11,color:COLORS.text3}}>Origen</Text>
+          <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>{origin.code} — {origin.name}</Text></View>
+          <Ionicons name="chevron-down" size={18} color={COLORS.text3}/>
+        </TouchableOpacity>
+        <TouchableOpacity style={{backgroundColor:COLORS.bg3,borderRadius:12,borderWidth:1,borderColor:dest?COLORS.primary:COLORS.border,padding:14,flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}
+          onPress={()=>setPicker('dest')}>
+          <View><Text style={{fontSize:11,color:COLORS.text3}}>Destino</Text>
+          <Text style={{fontSize:16,fontWeight:'700',color:dest?COLORS.text:COLORS.text3}}>{dest?`${dest.code} — ${dest.name}`:'Elige destino'}</Text></View>
+          <Ionicons name="chevron-down" size={18} color={COLORS.text3}/>
+        </TouchableOpacity>
+        <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+          <Text style={{fontSize:13,fontWeight:'600',color:COLORS.text}}>Adultos:</Text>
+          {[1,2,3,4].map(n=>(
+            <TouchableOpacity key={n} style={{paddingHorizontal:14,paddingVertical:8,borderRadius:10,borderWidth:1.5,
+              borderColor:adults===n?COLORS.primary:COLORS.border,
+              backgroundColor:adults===n?COLORS.primaryLight:COLORS.bg3}}
+              onPress={()=>setAdults(n)}>
+              <Text style={{fontWeight:'700',color:adults===n?COLORS.primary:COLORS.text2}}>{n}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity style={{backgroundColor:COLORS.primary,borderRadius:14,padding:15,alignItems:'center',flexDirection:'row',justifyContent:'center',gap:8,opacity:dest?1:0.5}}
+          disabled={!dest}
+          onPress={()=>{const url=buildUrl();if(url)openURL(url);}}>
+          <Ionicons name="search" size={18} color="#fff"/>
+          <Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>Buscar en Google Flights</Text>
+        </TouchableOpacity>
+        <View style={{flexDirection:'row',gap:8}}>
+          <TouchableOpacity style={{flex:1,backgroundColor:'#FEF9C3',borderRadius:10,padding:10,alignItems:'center',borderWidth:1,borderColor:'#FDE047'}}
+            onPress={()=>openURL('https://www.skyscanner.es')}>
+            <Text style={{fontSize:12,fontWeight:'700',color:'#713F12'}}>🔍 Skyscanner</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{flex:1,backgroundColor:'#EFF6FF',borderRadius:10,padding:10,alignItems:'center',borderWidth:1,borderColor:'#BFDBFE'}}
+            onPress={()=>openURL('https://www.kayak.es')}>
+            <Text style={{fontSize:12,fontWeight:'700',color:'#1E40AF'}}>🔍 Kayak</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={{flex:1,backgroundColor:'#F0FDF4',borderRadius:10,padding:10,alignItems:'center',borderWidth:1,borderColor:'#86EFAC'}}
+            onPress={()=>openURL('https://www.ryanair.com')}>
+            <Text style={{fontSize:12,fontWeight:'700',color:'#15803D'}}>✈️ Ryanair</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      <Text style={{fontSize:14,fontWeight:'700',color:COLORS.text}}>💡 Trucos para volar barato</Text>
+      {TIPS_VUELOS.map((t,i)=>(
+        <View key={i} style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:12,borderWidth:1,borderColor:COLORS.border,flexDirection:'row',gap:10,alignItems:'flex-start'}}>
+          <Text style={{fontSize:22}}>{t.e}</Text>
+          <Text style={{flex:1,fontSize:13,color:COLORS.text,lineHeight:19}}>{t.t}</Text>
+        </View>
+      ))}
+
+      <Modal visible={!!picker} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setPicker(null)}>
+        <View style={{flex:1,backgroundColor:COLORS.bg}}>
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:16,borderBottomWidth:0.5,borderBottomColor:COLORS.border}}>
+            <Text style={{fontSize:18,fontWeight:'700',color:COLORS.text}}>{picker==='origin'?'🛫 Origen':'🛬 Destino'}</Text>
+            <TouchableOpacity onPress={()=>setPicker(null)} style={{width:32,height:32,borderRadius:16,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+              <Ionicons name="close" size={20} color={COLORS.text2}/>
+            </TouchableOpacity>
+          </View>
+          <FlatList data={picker==='origin'?AIRPORTS_ES:DEST_POP} keyExtractor={a=>a.code}
+            contentContainerStyle={{padding:14,gap:8}}
+            renderItem={({item:a})=>(
+              <TouchableOpacity style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:14,borderWidth:1,borderColor:COLORS.border,flexDirection:'row',alignItems:'center',gap:10}}
+                onPress={()=>{picker==='origin'?setOrigin(a):setDest(a);setPicker(null);}}>
+                <Text style={{fontSize:16,fontWeight:'800',color:COLORS.primary,width:46}}>{a.code}</Text>
+                <Text style={{fontSize:14,color:COLORS.text}}>{a.name}</Text>
+              </TouchableOpacity>
+            )}/>
+        </View>
+      </Modal>
+    </ScrollView>
+  );
+}
