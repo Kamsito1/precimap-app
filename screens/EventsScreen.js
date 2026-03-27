@@ -365,7 +365,7 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
             Alert.alert('🛡️ Admin','¿Eliminar evento?',[
               {text:'Cancelar',style:'cancel'},
               {text:'Eliminar',style:'destructive',onPress:async()=>{
-                await apiPost(`/api/events/${ev.id}/deactivate`,{});onRefresh();
+                try { await apiPost(`/api/events/${ev.id}/deactivate`,{}); onRefresh(); } catch {}
               }},
             ])}>
             <Ionicons name="trash-outline" size={13} color="#DC2626"/>

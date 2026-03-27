@@ -472,32 +472,31 @@ export default function DealsScreen() {
                         Alert.alert('🛡️ Eliminar', '¿Eliminar este chollo?', [
                           {text:'Cancelar',style:'cancel'},
                           {text:'Eliminar',style:'destructive', onPress: async () => {
-                            await apiDelete(`/api/deals/${deal.id}`);
-                            setDeals(prev => prev.filter(d => d.id !== deal.id));
+                            try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch {}
                           }},
                         ]);
                       } else if (deal.reported_by === user?.id) {
                         Alert.alert('Tu chollo', '¿Retirar tu oferta?', [
                           {text:'Cancelar',style:'cancel'},
                           {text:'Retirar',style:'destructive', onPress: async () => {
-                            await apiDelete(`/api/deals/${deal.id}`);
-                            setDeals(prev => prev.filter(d => d.id !== deal.id));
+                            try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch {}
                           }},
                         ]);
                       } else {
                         Alert.alert('⏰ ¿Ya expiró?',
                           `${deal.expire_reports||0}/5 votos. Con 5 votos se retira automáticamente.`,
                           [{text:'Sí, ya expiró', onPress: async () => {
-                            const res = await apiPost(`/api/deals/${deal.id}/report-expired`, {});
-                            if (res.ok) {
-                              if (res.deactivated) {
-                                setDeals(prev => prev.filter(d => d.id !== deal.id));
-                              } else {
-                                setDeals(prev => prev.map(d => d.id===deal.id ? {...d,expire_reports:res.expire_reports} : d));
-                                Alert.alert('Gracias',`Voto registrado (${res.expire_reports}/5)`);
+                            try {
+                              const res = await apiPost(`/api/deals/${deal.id}/report-expired`, {});
+                              if (res.ok) {
+                                if (res.deactivated) {
+                                  setDeals(prev => prev.filter(d => d.id !== deal.id));
+                                } else {
+                                  setDeals(prev => prev.map(d => d.id===deal.id ? {...d,expire_reports:res.expire_reports} : d));
+                                  Alert.alert('Gracias',`Voto registrado (${res.expire_reports}/5)`);
+                                }
                               }
-                            }
-                          }},
+                            } catch {}
                           {text:'Cancelar',style:'cancel'}]
                         );
                       }

@@ -1280,7 +1280,7 @@ function PlaceModal({ place, onClose, onNavigate, isLoggedIn, onAuthNeeded, onPr
               <Text style={{fontSize:28}}>💰</Text>
               <View style={{flex:1}}>
                 <View style={{flexDirection:'row',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                  <Text style={{fontSize:20,fontWeight:'800',color:priceColor}}>{place.repPrice.toFixed(2)}€</Text>
+                  <Text style={{fontSize:20,fontWeight:'800',color:priceColor}}>{(place.repPrice||0).toFixed(2)}€</Text>
                   <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text2}}>{label}</Text>
                   {priceTag && <View style={{backgroundColor:priceColor+'22',borderRadius:99,paddingHorizontal:8,paddingVertical:2,borderWidth:1,borderColor:priceColor+'44'}}>
                     <Text style={{fontSize:10,fontWeight:'700',color:priceColor}}>{priceTag}</Text>
