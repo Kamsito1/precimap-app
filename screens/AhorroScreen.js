@@ -142,7 +142,8 @@ function SuperTab() {
   const [community, setCommunity] = useState([]);
   const [loadingCommunity, setLoadingCommunity] = useState(false);
   const [calcItems, setCalcItems] = useState([]);
-  const { isLoggedIn } = useAuth();
+  const auth = useAuth();
+  const isLoggedIn = auth?.isLoggedIn || false;
   const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {

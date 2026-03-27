@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "34",
+      "buildNumber": "36",
       "requireFullScreen": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "PreciMap usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",
