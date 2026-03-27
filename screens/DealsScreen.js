@@ -264,6 +264,7 @@ export default function DealsScreen() {
                 {trending.slice(0,5).map(t=>(
                   <TouchableOpacity key={t.id} style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:10,width:180,borderWidth:1,borderColor:COLORS.border,gap:4}}
                     onPress={()=>t.url && openURL(applyAffiliateTag(t.url))}>
+                    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
                       <Text style={{fontSize:9,fontWeight:'800',color:COLORS.danger}}>{t.temperature} TRENDING</Text>
                       <Text style={{fontSize:9,color:COLORS.text3}}>👍{t.votes_up||0}</Text>
                     </View>
