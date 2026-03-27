@@ -18,14 +18,19 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "15",
+      "buildNumber": "17",
       "requireFullScreen": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "PreciMap usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",
         "NSCameraUsageDescription": "PreciMap necesita la cámara para fotografiar precios y chollos.",
         "NSPhotoLibraryUsageDescription": "PreciMap necesita tu galería para subir fotos de chollos y tu avatar.",
         "NSPhotoLibraryAddUsageDescription": "PreciMap guarda fotos de precios en tu galería.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "com.amazon.mobile.shopping.web",
+          "amazon-spain",
+          "amazon"
+        ]
       },
       "deploymentTarget": "15.1"
     },

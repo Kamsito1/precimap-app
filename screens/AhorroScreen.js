@@ -1,20 +1,16 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, FlatList, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as ExpoLocation from 'expo-location';
 import { COLORS, apiGet, openURL, distanceKm } from '../utils';
 import BanksScreen from './BanksScreen';
 import SupermarketsScreen from './SupermarketsScreen';
 import FlightSearchScreen from './FlightSearchScreen';
 import AppsScreen from './AppsScreen';
 
-// expo-location: import estático pero uso diferido (solo cuando el usuario abre tab Gimnasios)
-let _Location = null;
-async function getLocation() {
-  if (_Location) return _Location;
-  try {
-    _Location = require('expo-location');
-    return _Location;
-  } catch(_) { return null; }
+// expo-location: importado estáticamente, usado de forma diferida solo al abrir tab Gimnasios
+function getLocation() {
+  return ExpoLocation;
 }
 
 const SUBTABS = [
