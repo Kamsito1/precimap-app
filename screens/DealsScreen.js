@@ -121,7 +121,7 @@ export default function DealsScreen() {
       votes_up:   d.votes_up   + (newVote===1?1 : prev===1?-1:0),
       votes_down: d.votes_down + (newVote===-1?1: prev===-1?-1:0),
     } : d));
-    try { await apiPost(`/api/deals/${dealId}/vote`, { vote: newVote === 0 ? -v : v }); }
+    try { await apiPost(`/api/deals/${dealId}/vote`, { vote: v }); }
     catch { /* revert on error */ setMyVotes(mv => ({ ...mv, [dealId]: prev })); }
   }
 
