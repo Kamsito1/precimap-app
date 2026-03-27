@@ -80,7 +80,8 @@ const SORT_OPTS = [
 
 const RADII = [5, 10, 25, 50, 100, 999]; // 999 = Toda España
 
-const CORDOBA = { latitude:37.8882, longitude:-4.7794, latitudeDelta:0.12, longitudeDelta:0.12 };
+// Centro de España (Madrid) como región inicial — se actualiza al obtener GPS
+const SPAIN_CENTER = { latitude:40.4168, longitude:-3.7038, latitudeDelta:6.0, longitudeDelta:6.0 };
 
 export default function MapScreen() {
   const { isLoggedIn } = useAuth();
@@ -254,8 +255,8 @@ export default function MapScreen() {
   async function loadPlaces() {
     setLoading(true);
     try {
-      const lat = userLoc?.lat || CORDOBA.latitude;
-      const lng = userLoc?.lng || CORDOBA.longitude;
+      const lat = userLoc?.lat || 40.4168;
+      const lng = userLoc?.lng || -3.7038;
       let url = `/api/places?sort=${sort}&lat=${lat}&lng=${lng}`;
       if (city) {
         url += `&city=${encodeURIComponent(city)}`;
@@ -665,7 +666,7 @@ export default function MapScreen() {
           <MapView
             ref={mapRef}
             style={{ flex: 1 }}
-            initialRegion={CORDOBA}
+            initialRegion={SPAIN_CENTER}
             showsUserLocation
             showsMyLocationButton
             mapPadding={{ bottom: 64, top: 0, left: 0, right: 0 }}
@@ -915,12 +916,12 @@ export default function MapScreen() {
               // Include eventos in list view when cat is all or evento
               ...(activeCat === 'all' || activeCat === 'evento' ? mapEvents.filter(e => e.lat && e.lng).map(e => ({
                 ...e, isEvent: true,
-                _dist: distanceKm(userLoc?.lat||CORDOBA.latitude, userLoc?.lng||CORDOBA.longitude, e.lat, e.lng),
+                _dist: distanceKm(userLoc?.lat||40.4168, userLoc?.lng||(-3.7038), e.lat, e.lng),
                 minPrice: e.price_from || null,
               })) : []),
               ...gasFiltered.slice(0,150).map(s=>({
                 ...s, isGas:true,
-                _dist: distanceKm(userLoc?.lat||CORDOBA.latitude, userLoc?.lng||CORDOBA.longitude, s.lat, s.lng),
+                _dist: distanceKm(userLoc?.lat||40.4168, userLoc?.lng||(-3.7038), s.lat, s.lng),
                 minPrice: activeFuel && activeFuel!=='all' ? (s.prices?.[activeFuel]||null) : stationMinPrice(s.prices),
               })),
             ].sort((a,b)=>{

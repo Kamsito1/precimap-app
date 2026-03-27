@@ -10,6 +10,14 @@ import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
 import { useNavigation } from '@react-navigation/native';
 
+// Safe hook wrapper — useNavigation crashes when rendered outside a Navigator (e.g. embedded)
+function useSafeNavigation() {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useNavigation();
+  } catch(_) { return null; }
+}
+
 const TABS = [
   { key:'ranking',      label:'🏆 Ranking',    desc:'¿Cuál es más barato?' },
   { key:'productos',    label:'🔍 Productos',   desc:'Compara precios reales' },
@@ -195,8 +203,7 @@ const CONSEJOS = [
 
 export default function SupermarketsScreen({ embedded = false }) {
   const { isLoggedIn } = useAuth();
-  let navigation;
-  try { navigation = useNavigation(); } catch(_) { navigation = null; }
+  const navigation = useSafeNavigation();
   const Wrapper = embedded ? View : SafeAreaView;
   const wrapperProps = embedded ? {style:{flex:1,backgroundColor:COLORS.bg}} : {style:s.safe, edges:['top']};
   const [tab, setTab]             = useState('ranking');

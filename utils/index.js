@@ -195,88 +195,28 @@ export function detectStore(url) {
 // Web-safe URL opener — usa expo-web-browser en iOS para mejor compatibilidad con Amazon
 export async function openURL(url) {
   if (!url) return;
-  try {
-    if (typeof window !== 'undefined' && window.open && typeof document !== 'undefined') {
-      // Web: ventana normal
-      window.open(url, '_blank', 'noopener,noreferrer');
-    } else {
-      // Native iOS/Android
-      // Si es URL de Amazon → intentar abrir en app nativa de Amazon
-      const isAmazon = /amazon\.(es|com|co\.uk|de|fr|it)|amzn\.to|amzn\.eu/i.test(url);
-      if (isAmazon) {
-        await openAmazonApp(url);
-        return;
-      }
-      // Resto de URLs: expo-web-browser
-      try {
-        const WebBrowser = require('expo-web-browser');
-        await WebBrowser.openBrowserAsync(url, {
-          presentationStyle: WebBrowser.WebBrowserPresentationStyle?.FULL_SCREEN,
-          showTitle: true,
-        });
-      } catch(_) {
-        const { Linking } = require('react-native');
-        Linking.openURL(url).catch(() => {});
-      }
-    }
-  } catch(_) {}
-}
-
-// Abre Amazon en la app nativa si está instalada, con el ASIN y tag de afiliado
-// URL schemes de Amazon iOS: com.amazon.mobile.shopping.web://www.amazon.es/dp/ASIN
-async function openAmazonApp(url) {
   const TAG = 'juanantonioex-21';
   try {
-    const { Linking } = require('react-native');
-
-    // Extraer ASIN
-    const asinMatch = url.match(/\/(?:dp|gp\/product|ASIN)\/([A-Z0-9]{10})/i);
-    const asin = asinMatch ? asinMatch[1] : null;
-
-    if (asin) {
-      // URL scheme de la app nativa de Amazon España
-      // Abre directamente la página del producto dentro de la app
-      const appUrl = `com.amazon.mobile.shopping.web://www.amazon.es/dp/${asin}?tag=${TAG}`;
-
-      const canOpen = await Linking.canOpenURL(appUrl).catch(() => false);
-      if (canOpen) {
-        await Linking.openURL(appUrl);
-        return;
-      }
-
-      // Fallback 1: URL scheme alternativo de Amazon
-      const appUrl2 = `amazon-spain://www.amazon.es/dp/${asin}?tag=${TAG}`;
-      const canOpen2 = await Linking.canOpenURL(appUrl2).catch(() => false);
-      if (canOpen2) {
-        await Linking.openURL(appUrl2);
-        return;
-      }
+    const isWeb = typeof window !== 'undefined' && typeof document !== 'undefined';
+    if (isWeb) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
     }
-
-    // Fallback 2: Amazon Universal Link (abre la app si está instalada, si no el navegador)
-    // Añadir tag si no tiene
-    let finalUrl = url;
-    try {
-      const u = new URL(url.startsWith('http') ? url : 'https://' + url);
-      u.searchParams.set('tag', TAG);
-      finalUrl = u.toString();
-    } catch(_) {}
-
-    // Universal link — iOS lo redirige a la app si está instalada
-    await Linking.openURL(finalUrl);
-  } catch(_) {
-    // Último fallback: web browser
-    try {
-      const WebBrowser = require('expo-web-browser');
-      let finalUrl = url;
-      try {
-        const u = new URL(url.startsWith('http') ? url : 'https://' + url);
-        u.searchParams.set('tag', 'juanantonioex-21');
-        finalUrl = u.toString();
-      } catch(_) {}
-      await WebBrowser.openBrowserAsync(finalUrl);
-    } catch(_) {}
-  }
+    const { Linking } = require('react-native');
+    // Amazon: usar Universal Link con tag — iOS abre app nativa si está instalada
+    const isAmazon = /amazon\.(es|com|co\.uk|de|fr|it)|amzn\.to|amzn\.eu/i.test(url);
+    if (isAmazon) {
+      const asinMatch = url.match(/\/(?:dp|gp\/product|ASIN)\/([A-Z0-9]{10})/i);
+      const asin = asinMatch ? asinMatch[1] : null;
+      const targetUrl = asin
+        ? `https://www.amazon.es/dp/${asin}?tag=${TAG}`
+        : url;
+      await Linking.openURL(targetUrl);
+      return;
+    }
+    // Resto de URLs
+    await Linking.openURL(url).catch(() => {});
+  } catch(_) {}
 }
 
 export function applyAffiliateTag(url, tag = 'juanantonioex-21') {

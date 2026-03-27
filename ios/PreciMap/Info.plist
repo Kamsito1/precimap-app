@@ -33,7 +33,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>16</string>
+    <string>20</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSMinimumSystemVersion</key>
@@ -76,11 +76,11 @@
     <string>Automatic</string>
     <key>UIViewControllerBasedStatusBarAppearance</key>
     <false/>
-  	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>com.amazon.mobile.shopping.web</string>
-		<string>amazon-spain</string>
-		<string>amazon</string>
-	</array>
-</dict>
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+      <string>com.amazon.mobile.shopping.web</string>
+      <string>amazon-spain</string>
+      <string>amazon</string>
+    </array>
+  </dict>
 </plist>

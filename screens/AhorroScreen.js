@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated, FlatList, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS, apiGet, openURL, distanceKm } from '../utils';
+import { COLORS, apiGet, openURL } from '../utils';
 import BanksScreen from './BanksScreen';
 import SupermarketsScreen from './SupermarketsScreen';
 import FlightSearchScreen from './FlightSearchScreen';
