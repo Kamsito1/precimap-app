@@ -9,7 +9,6 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "description": "Compara precios de gasolina, supermercados y bancos en toda España. Ahorra dinero con la comunidad.",
-    "privacy": "public",
     "primaryColor": "#2563EB",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -19,7 +18,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "5",
+      "buildNumber": "11",
       "requireFullScreen": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "PreciMap usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",
@@ -63,7 +62,8 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

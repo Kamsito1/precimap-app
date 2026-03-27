@@ -19,7 +19,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.2.1</string>
+    <string>1.3.0</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -28,11 +28,12 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>com.kamsito.precimap</string>
+          <string>com.kamsito.precimap</string>
         </array>
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>4</string>
+    <string>11</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSMinimumSystemVersion</key>
@@ -48,8 +49,14 @@
     </dict>
     <key>NSCameraUsageDescription</key>
     <string>PreciMap necesita acceso a la cámara para fotografiar precios.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your location</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>PreciMap usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>PreciMap guarda fotos de precios en tu galería.</string>
     <key>NSPhotoLibraryUsageDescription</key>

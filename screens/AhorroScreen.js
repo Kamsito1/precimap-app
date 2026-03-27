@@ -137,25 +137,29 @@ function GymScreen() {
   const [userLoc, setUserLoc]   = useState(null);
   const [locCity, setLocCity]   = useState(''); // detected city from GPS
 
-  // Get user location on mount
+  // Get user location on mount — fully guarded for iOS/Android
   useEffect(() => {
+    let active = true;
     (async () => {
       try {
+        if (!Location?.requestForegroundPermissionsAsync) return;
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== 'granted') return;
+        if (status !== 'granted' || !active) return;
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (!active) return;
         const { latitude: lat, longitude: lng } = loc.coords;
         setUserLoc({ lat, lng });
-        // Reverse geocode to get city name
+        if (!Location.reverseGeocodeAsync) return;
         const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+        if (!active) return;
         const detectedCity = geo?.[0]?.city || geo?.[0]?.subregion || '';
         if (detectedCity) {
-          // Match to known cities
           const match = CITIES_GYM.find(c => c !== 'Toda España' && detectedCity.toLowerCase().includes(c.toLowerCase()));
           if (match) { setLocCity(match); setCity(match); }
         }
       } catch {}
     })();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => { load(); }, [city]);

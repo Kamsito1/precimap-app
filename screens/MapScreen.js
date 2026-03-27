@@ -912,6 +912,12 @@ export default function MapScreen() {
               : visibleGas;
             const listData = [
               ...visiblePlaces,
+              // Include eventos in list view when cat is all or evento
+              ...(activeCat === 'all' || activeCat === 'evento' ? mapEvents.map(e => ({
+                ...e, isEvent: true,
+                _dist: distanceKm(userLoc?.lat||CORDOBA.latitude, userLoc?.lng||CORDOBA.longitude, e.lat||0, e.lng||0),
+                minPrice: e.price_from || null,
+              })) : []),
               ...gasFiltered.slice(0,150).map(s=>({
                 ...s, isGas:true,
                 _dist: distanceKm(userLoc?.lat||CORDOBA.latitude, userLoc?.lng||CORDOBA.longitude, s.lat, s.lng),
@@ -928,8 +934,23 @@ export default function MapScreen() {
                 contentContainerStyle={{padding:12,gap:10,paddingBottom:100}}
                 renderItem={({item})=>(
                   <ListCard item={item}
-                    onPress={()=>item.isGas?setSelectedStation(item):setSelectedPlace(item)}
-                    onNav={()=>navigateTo(item.lat,item.lng,item.name)}
+                    onPress={()=>{
+                      if (item.isEvent) {
+                        Alert.alert(
+                          `🎭 ${item.title}`,
+                          `📍 ${item.city||''}\n📅 ${item.date ? new Date(item.date).toLocaleDateString('es-ES') : ''}\n💶 ${item.price_from ? `Desde ${item.price_from}€` : (item.is_free ? 'Gratis' : '')}`,
+                          [
+                            item.url ? { text:'Ver evento', onPress:()=>openURL(item.url) } : null,
+                            {text:'Cerrar'},
+                          ].filter(Boolean)
+                        );
+                      } else if (item.isGas) {
+                        setSelectedStation(item);
+                      } else {
+                        setSelectedPlace(item);
+                      }
+                    }}
+                    onNav={()=>navigateTo(item.lat,item.lng,item.name||item.title)}
                     activeFuel={activeFuel}
                     isFav={item.isGas && favIds.has(item.id)}
                   />
@@ -948,6 +969,18 @@ export default function MapScreen() {
               />
             );
           })()}
+
+          {/* FAB en lista — añadir lugar/precio */}
+          <TouchableOpacity style={[ms.fab, {position:'absolute', bottom:20, right:16}]} onPress={() => {
+            if (!isLoggedIn) { setShowAuth(true); return; }
+            Alert.alert('Añadir', '¿Qué quieres añadir?', [
+              { text:'⛽ Gasolinera no registrada', onPress:()=>setShowAddGas(true) },
+              { text:'📍 Supermercado / Farmacia / Otro', onPress:()=>setShowAddPlace(true) },
+              { text:'Cancelar', style:'cancel' },
+            ]);
+          }}>
+            <Ionicons name="add" size={28} color="#fff"/>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -970,6 +1003,39 @@ export default function MapScreen() {
 
 // === LIST CARD ===
 function ListCard({ item, onPress, onNav, activeFuel, isFav }) {
+  // Events get special treatment
+  if (item.isEvent) {
+    const dist = item._dist != null && item._dist < 999 ? (item._dist < 1 ? `${Math.round(item._dist*1000)}m` : `${item._dist.toFixed(1)}km`) : null;
+    return (
+      <TouchableOpacity style={lcs.card} onPress={onPress} activeOpacity={0.75}>
+        <View style={[lcs.icon, {backgroundColor:'#EDE9FE'}]}>
+          <Text style={{fontSize:22}}>🎭</Text>
+        </View>
+        <View style={lcs.info}>
+          <Text style={lcs.name} numberOfLines={1}>{item.title||'Evento'}</Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:1}}>
+            <View style={{backgroundColor:'#EDE9FE',borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>
+              <Text style={{fontSize:10,fontWeight:'700',color:'#7C3AED'}}>🎭 Evento</Text>
+            </View>
+            {item.city && <Text style={lcs.sub}>📍 {item.city}</Text>}
+            {item.date && <Text style={lcs.sub}>📅 {new Date(item.date).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</Text>}
+          </View>
+          {item.price_from != null && (
+            <View style={[lcs.pricePill,{backgroundColor:'#F5F3FF'}]}>
+              <Text style={[lcs.pricePillTxt,{color:'#7C3AED'}]}>{item.is_free ? '🆓 Gratis' : `desde ${item.price_from}€`}</Text>
+            </View>
+          )}
+        </View>
+        <View style={lcs.right}>
+          {dist && <Text style={lcs.dist}>📍 {dist}</Text>}
+          <TouchableOpacity style={lcs.navBtn} onPress={onNav}>
+            <Text style={lcs.navTxt}>Ir</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   const info = item.isGas ? {emoji:'⛽',bg:'#FEF3C7',label:'Gasolinera'} : (CATEGORY_INFO[item.category]||CATEGORY_INFO.default);
   const fuelLabel = activeFuel && activeFuel !== 'all' ? FUEL_LABELS[activeFuel] : 'G95';
   const col = item.isGas && item.minPrice ? gasPriceColor(item.minPrice) : null;
