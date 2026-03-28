@@ -1401,7 +1401,7 @@ function PlaceModal({ place, catKey, onClose, onNavigate, isLoggedIn, onAuthNeed
             <TouchableOpacity key={p.id} style={pcs.priceRow} onPress={() => onProposePrice(place, p.product)} activeOpacity={0.7}>
               <View style={{flex:1}}>
                 <Text style={pcs.product}>{p.product}</Text>
-                <Text style={pcs.reporter}>Por {p.users?.name || p.reporter_name || 'usuario'} · {timeAgo(p.reported_at)}</Text>
+                <Text style={pcs.reporter}>Por {p.users?.name || p.reporter_name || 'la comunidad'} · {timeAgo(p.reported_at)}</Text>
                 <View style={[pcs.statusBadge,{backgroundColor:p.status==='verified'?COLORS.successLight:COLORS.warningLight}]}>
                   <Text style={[pcs.statusTxt,{color:p.status==='verified'?COLORS.success:COLORS.warning}]}>{p.status==='verified'?'✅ Verificado':'⏳ Pendiente · toca para proponer cambio'}</Text>
                 </View>
