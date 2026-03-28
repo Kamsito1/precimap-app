@@ -474,7 +474,7 @@ function CalculadoraSuper({ onBack }) {
   const totalAldi = basket.reduce((s,i)=>s+i.qty*i.aldi,0);
   const totalMerc = basket.reduce((s,i)=>s+i.qty*i.merc,0);
   const saving = totalMerc - totalAldi;
-  const pct = ((saving/totalMerc)*100).toFixed(0);
+  const pct = totalMerc > 0 ? ((saving/totalMerc)*100).toFixed(0) : '0';
 
   function changeQty(id, delta) {
     setBasket(b=>b.map(x=>x.id===id?{...x,qty:Math.max(0,x.qty+delta)}:x));
