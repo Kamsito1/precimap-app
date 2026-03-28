@@ -907,6 +907,21 @@ export default function MapScreen() {
               {(visiblePlaces.length + visibleGas.length).toLocaleString('es-ES')} resultados
             </Text>
           </View>
+          {/* Chips de marcas — solo para gasolinera */}
+          {activeCat === 'gasolinera' && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{paddingHorizontal:12,paddingVertical:6,gap:6}}>
+              {['Repsol','Cepsa','BP','Galp','Shell','Plenoil','Ballenoil','Alcampo','Carrefour','Petronor'].map(marca => (
+                <TouchableOpacity key={marca}
+                  style={{paddingHorizontal:10,paddingVertical:3,borderRadius:99,borderWidth:1.5,
+                    borderColor: gasSearch===marca ? COLORS.primary : COLORS.border,
+                    backgroundColor: gasSearch===marca ? COLORS.primaryLight : COLORS.bg}}
+                  onPress={()=>setGasSearch(gasSearch===marca ? '' : marca)}>
+                  <Text style={{fontSize:12,fontWeight:'600',color:gasSearch===marca ? COLORS.primary : COLORS.text2}}>{marca}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          )}
           {loading ? <ActivityIndicator color={COLORS.primary} style={{marginTop:40}}/> : (() => {
             // Filter gas by name search
             const searchLow = gasSearch.toLowerCase();
@@ -1106,7 +1121,12 @@ function ListCard({ item, onPress, onNav, activeFuel, catKey, isFav }) {
         {isFav && <View style={{position:'absolute',top:-4,right:-4}}><Text style={{fontSize:12}}>❤️</Text></View>}
       </View>
       <View style={lcs.info}>
-        <Text style={lcs.name} numberOfLines={1}>{item.name||item.address}</Text>
+        <Text style={lcs.name} numberOfLines={1}>{
+          // Gasolineras vienen en MAYÚSCULAS del Ministerio — capitalizar para legibilidad
+          item.isGas && item.name && item.name === item.name.toUpperCase()
+            ? item.name.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+            : item.name || item.address
+        }</Text>
         <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:1}}>
           <View style={{backgroundColor:info.bg||COLORS.bg3,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>
             <Text style={{fontSize:10,fontWeight:'700',color:info.text||COLORS.text2}}>{info.emoji} {info.label}</Text>
@@ -1115,8 +1135,16 @@ function ListCard({ item, onPress, onNav, activeFuel, catKey, isFav }) {
         </View>
         {item.bestFor ? <Text style={lcs.bestFor}>{item.bestFor}</Text> : null}
         {pLabel && (
-          <View style={[lcs.pricePill,{backgroundColor: pColor ? pColor.bg : (col ? col.bg+'22' : COLORS.warningLight)}]}>
-            <Text style={[lcs.pricePillTxt,{color: pColor ? pColor.text : (col ? col.bg : COLORS.warning)}]}>{pLabel}</Text>
+          <View style={[lcs.pricePill,{
+            backgroundColor: pColor ? pColor.bg
+              : col ? col.bg  // gasolina: fondo sólido con color verde/rojo/naranja
+              : COLORS.warningLight
+          }]}>
+            <Text style={[lcs.pricePillTxt,{
+              color: pColor ? pColor.text
+                : col ? col.text
+                : COLORS.warning
+            }]}>{pLabel}</Text>
           </View>
         )}
       </View>
