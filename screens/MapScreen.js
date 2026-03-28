@@ -260,7 +260,12 @@ export default function MapScreen() {
     try {
       const lat = userLoc?.lat || 40.4168;
       const lng = userLoc?.lng || -3.7038;
-      const effectiveSort = (!city && !userLoc) ? 'price' : sort;
+      // Sin ciudad ni GPS → price puro (mejores de España)
+      // Con GPS sin ciudad → price_proximity (barato + cercano)
+      // Con ciudad → sort elegido por el usuario (default: price)
+      const effectiveSort = !city && !userLoc ? 'price'
+        : !city && userLoc ? 'price_proximity'
+        : sort;
       let url = `/api/places?sort=${effectiveSort}&lat=${lat}&lng=${lng}&cat=${activeCat}`;
       if (city) {
         url += `&city=${encodeURIComponent(city)}`;
