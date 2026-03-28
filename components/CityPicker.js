@@ -22,7 +22,9 @@ export default function CityPicker({ value, onChange, placeholder = 'Toda Españ
     setLoading(true);
     try {
       const r = await apiGet(`/api/cities?q=${encodeURIComponent(query)}`);
-      setResults(r);
+      if (r && typeof r === 'object' && !Array.isArray(r)) {
+        setResults({ cities: Array.isArray(r.cities) ? r.cities : [], provinces: Array.isArray(r.provinces) ? r.provinces : [] });
+      }
     } catch(_) {}
     finally { setLoading(false); }
   }
