@@ -191,6 +191,14 @@ export default function ProfileScreen() {
           streak:     data.streak,
           is_admin:   data.is_admin,
         });
+      } else if (dataRes.status === 'rejected') {
+        // Si /api/users/me falla (cuenta borrada, token inválido), hacer logout
+        const errMsg = dataRes.reason?.message || '';
+        if (errMsg.includes('404') || errMsg.includes('no encontrado') || errMsg.includes('401')) {
+          logout();
+          return;
+        }
+        setServerOk(false);
       }
       setMyDeals(Array.isArray(deals) ? deals : []);
       // Find rank position

@@ -100,7 +100,8 @@ let _onUnauthorized = null;
 export function setUnauthorizedHandler(fn) { _onUnauthorized = fn; }
 
 function handleUnauthorized(status) {
-  if (status === 401 && _onUnauthorized) {
+  // 401 = token inválido/expirado, 404 en /api/users/me = cuenta borrada
+  if ((status === 401 || status === 403) && _onUnauthorized) {
     _onUnauthorized();
   }
 }
