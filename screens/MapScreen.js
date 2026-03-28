@@ -675,8 +675,8 @@ export default function MapScreen() {
               <Text style={{fontSize:16}}>{emoji}</Text>
               <View style={{flex:1}}>
                 <Text style={{fontSize:12,fontWeight:'700',color:COLORS.primary}}>
-                  En {city}: desde <Text style={{fontSize:14}}>{found.min.toFixed(2)}€</Text>
-                  {found.max !== found.min ? ` hasta ${found.max.toFixed(2)}€` : ''}
+                  {`En ${city}: desde `}<Text style={{fontSize:14}}>{found.min.toFixed(2)}€</Text>
+                  {found.max !== found.min ? <Text>{` hasta ${found.max.toFixed(2)}€`}</Text> : null}
                 </Text>
                 <Text style={{fontSize:10,color:COLORS.text3}}>{found.count} precios reportados</Text>
               </View>

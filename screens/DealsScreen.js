@@ -146,6 +146,35 @@ export default function DealsScreen() {
     catch(_) { /* revert on error */ setMyVotes(mv => ({ ...mv, [dealId]: prev })); }
   }
 
+  // Votar expirado — directo, sin Alert, con feedback visual
+  const [expireVoted, setExpireVoted] = React.useState({}); // dealId -> bool
+
+  async function reportExpired(deal) {
+    if (!isLoggedIn) return setShowAuth(true);
+    if (expireVoted[deal.id]) return; // ya votado en esta sesión
+    setExpireVoted(prev => ({ ...prev, [deal.id]: true }));
+    // Optimistic update
+    setDeals(prev => prev.map(d =>
+      d.id === deal.id ? { ...d, expire_reports: (d.expire_reports || 0) + 1 } : d
+    ));
+    try {
+      const res = await apiPost(`/api/deals/${deal.id}/report-expired`, {});
+      if (res?.deactivated) {
+        setDeals(prev => prev.filter(d => d.id !== deal.id));
+      } else if (res?.expire_reports != null) {
+        setDeals(prev => prev.map(d =>
+          d.id === deal.id ? { ...d, expire_reports: res.expire_reports } : d
+        ));
+      }
+    } catch(_) {
+      // Revert optimistic on error
+      setExpireVoted(prev => ({ ...prev, [deal.id]: false }));
+      setDeals(prev => prev.map(d =>
+        d.id === deal.id ? { ...d, expire_reports: Math.max(0, (d.expire_reports||1)-1) } : d
+      ));
+    }
+  }
+
   function temperature(up = 0, down = 0) {
     const score = up - down;
     if (score >= 50) return { label: '🔥🔥🔥 Ardiendo', color: '#DC2626' };
@@ -433,7 +462,7 @@ export default function DealsScreen() {
                   </TouchableOpacity>
                 )}
 
-                {/* Actions — voto + comentar + share + expirar. Sin texto largo, todo icono+número */}
+                {/* Actions — voto + comentar + share + expirar */}
                 <View style={s.actions}>
                   {/* Voto caliente / frío */}
                   <View style={s.voteGroup}>
@@ -466,7 +495,7 @@ export default function DealsScreen() {
                     const text = `🔥 ${deal.title||''}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent != null && deal.discount_percent > 0 ?` (-${Math.round(Number(deal.discount_percent)||0)}%)`:''}${deal.url?'\n🔗 '+applyAffiliateTag(deal.url):''}\n\nVía PreciMap`;
                     try {
                       if (typeof navigator !== 'undefined' && navigator.share) {
-                        await navigator.share({ title: deal.title, text, url: deal.url || '' });
+                        await navigator.share({ title: deal.title||'', text, url: deal.url || '' });
                       } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
                         await navigator.clipboard.writeText(text);
                         Alert.alert('✅ Copiado', 'Enlace copiado al portapapeles');
@@ -489,56 +518,59 @@ export default function DealsScreen() {
                     </TouchableOpacity>
                   )}
 
-                  {/* Reportar expirado / Admin borrar */}
-                  {isLoggedIn && (
-                    <TouchableOpacity style={s.iconBtn} onPress={async () => {
-                      if (user?.is_admin) {
-                        Alert.alert('🛡️ Eliminar', '¿Eliminar este chollo?', [
-                          {text:'Cancelar',style:'cancel'},
-                          {text:'Eliminar',style:'destructive', onPress: async () => {
-                            try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch(_) {}
-                          }},
-                        ]);
-                      } else if (deal.reported_by === user?.id) {
-                        Alert.alert('Tu chollo', '¿Retirar tu oferta?', [
-                          {text:'Cancelar',style:'cancel'},
-                          {text:'Retirar',style:'destructive', onPress: async () => {
-                            try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch(_) {}
-                          }},
-                        ]);
-                      } else {
-                        Alert.alert('⏰ ¿Ya expiró?',
-                          `${deal.expire_reports||0}/5 votos. Con 5 votos se retira automáticamente.`,
-                          [
-                            {text:'Sí, ya expiró', onPress: async () => {
-                              try {
-                                const res = await apiPost(`/api/deals/${deal.id}/report-expired`, {});
-                                if (res.ok) {
-                                  if (res.deactivated) {
-                                    setDeals(prev => prev.filter(d => d.id !== deal.id));
-                                  } else {
-                                    setDeals(prev => prev.map(d => d.id===deal.id ? {...d,expire_reports:res.expire_reports} : d));
-                                    Alert.alert('Gracias',`Voto registrado (${res.expire_reports}/5)`);
-                                  }
-                                }
-                              } catch(_) {}
-                            }},
-                            {text:'Cancelar', style:'cancel'},
-                          ]
-                        );
-                      }
+                  {/* Admin: borrar directo */}
+                  {isLoggedIn && user?.is_admin && (
+                    <TouchableOpacity style={s.iconBtn} onPress={() => {
+                      Alert.alert('🛡️ Eliminar', '¿Eliminar este chollo?', [
+                        {text:'Cancelar',style:'cancel'},
+                        {text:'Eliminar',style:'destructive', onPress: async () => {
+                          try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch(_) {}
+                        }},
+                      ]);
                     }}>
-                      <View style={{position:'relative'}}>
-                        <Ionicons name={user?.is_admin ? 'shield' : 'alert-circle-outline'} size={16} color={user?.is_admin?'#DC2626':COLORS.text3}/>
-                        {(deal.expire_reports||0)>0 && !user?.is_admin && (
-                          <View style={{position:'absolute',top:-4,right:-6,backgroundColor:COLORS.danger,borderRadius:99,width:12,height:12,alignItems:'center',justifyContent:'center'}}>
-                            <Text style={{fontSize:7,color:'#fff',fontWeight:'800'}}>{deal.expire_reports}</Text>
-                          </View>
-                        )}
-                      </View>
+                      <Ionicons name="shield" size={16} color="#DC2626"/>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Propietario: retirar su oferta */}
+                  {isLoggedIn && !user?.is_admin && deal.reported_by === user?.id && (
+                    <TouchableOpacity style={s.iconBtn} onPress={() => {
+                      Alert.alert('Tu chollo', '¿Retirar tu oferta?', [
+                        {text:'Cancelar',style:'cancel'},
+                        {text:'Retirar',style:'destructive', onPress: async () => {
+                          try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch(_) {}
+                        }},
+                      ]);
+                    }}>
+                      <Ionicons name="trash-outline" size={16} color={COLORS.text3}/>
                     </TouchableOpacity>
                   )}
                 </View>
+
+                {/* Pill "⏰ Expirado" — visible para todos (no propietario, no admin) — toque directo sin Alert */}
+                {isLoggedIn && !user?.is_admin && deal.reported_by !== user?.id && (
+                  <TouchableOpacity
+                    onPress={() => reportExpired(deal)}
+                    disabled={!!expireVoted[deal.id]}
+                    style={{
+                      flexDirection:'row', alignItems:'center', justifyContent:'center',
+                      gap:6, paddingVertical:8, marginHorizontal:12, marginBottom:10,
+                      borderRadius:99, borderWidth:1.5,
+                      borderColor: expireVoted[deal.id] ? '#D1D5DB' : '#FCA5A5',
+                      backgroundColor: expireVoted[deal.id] ? COLORS.bg3 : '#FEF2F2',
+                    }}>
+                    <Ionicons name="time-outline" size={14}
+                      color={expireVoted[deal.id] ? COLORS.text3 : '#DC2626'}/>
+                    <Text style={{
+                      fontSize:12, fontWeight:'700',
+                      color: expireVoted[deal.id] ? COLORS.text3 : '#DC2626',
+                    }}>
+                      {expireVoted[deal.id]
+                        ? `✓ Reportado · ${deal.expire_reports||0}/50`
+                        : `¿Expiró? · ${deal.expire_reports||0}/50`}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             );
           }}
