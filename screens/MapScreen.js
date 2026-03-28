@@ -270,6 +270,7 @@ export default function MapScreen() {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (!loc?.coords?.latitude || !loc?.coords?.longitude) { loadAllGasolineras(null); return; }
         const { latitude: lat, longitude: lng } = loc.coords;
         setUserLoc({ lat, lng });
         mapRef.current?.animateToRegion({ latitude:lat, longitude:lng, latitudeDelta:0.06, longitudeDelta:0.06 }, 1000);
