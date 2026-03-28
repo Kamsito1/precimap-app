@@ -139,8 +139,8 @@ export default function DealsScreen() {
     // Optimistic update on deal count
     setDeals(prev => prev.map(d => d.id === dealId ? {
       ...d,
-      votes_up:   d.votes_up   + (newVote===1?1 : prev===1?-1:0),
-      votes_down: d.votes_down + (newVote===-1?1: prev===-1?-1:0),
+      votes_up:   (d.votes_up||0)   + (newVote===1?1 : prev===1?-1:0),
+      votes_down: (d.votes_down||0) + (newVote===-1?1: prev===-1?-1:0),
     } : d));
     try { await apiPost(`/api/deals/${dealId}/vote`, { vote: v }); }
     catch(_) { /* revert on error */ setMyVotes(mv => ({ ...mv, [dealId]: prev })); }
