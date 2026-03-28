@@ -859,8 +859,8 @@ export default function MapScreen() {
             <View style={{position:'absolute',top:16,left:16,right:16,backgroundColor:'rgba(15,23,42,0.88)',borderRadius:14,padding:14,flexDirection:'row',gap:10,alignItems:'center'}}>
               <Text style={{fontSize:20}}>💡</Text>
               <View style={{flex:1}}>
-                <Text style={{fontSize:13,fontWeight:'700',color:'#fff'}}>Toca cualquier gasolinera</Text>
-                <Text style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginTop:2}}>Ve precios y distancia · Guarda favoritas con ❤️</Text>
+                <Text style={{fontSize:13,fontWeight:'700',color:'#fff'}}>Encuentra los precios más baratos</Text>
+                <Text style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginTop:2}}>⛽ Gasolina · ☕ Cafés · 🍺 Cervezas · 🍽️ Menús · 🛒 Súper cerca de ti</Text>
               </View>
               <TouchableOpacity onPress={()=>setShowHint(false)} style={{padding:4}}>
                 <Text style={{fontSize:16,color:'rgba(255,255,255,0.6)'}}>✕</Text>
