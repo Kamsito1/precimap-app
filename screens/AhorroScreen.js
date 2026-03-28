@@ -16,9 +16,7 @@ import { COLORS, apiGet, openURL } from '../utils';
 const SUBTABS = [
   { key:'super',    label:'🛒 Súper' },
   { key:'bancos',   label:'🏦 Bancos' },
-  { key:'vuelos',   label:'✈️ Vuelos' },
   { key:'apps',     label:'💰 Apps' },
-  { key:'gimnasio', label:'💪 Gym' },
 ];
 
 const TIPS = [
@@ -77,9 +75,7 @@ export default function AhorroScreen() {
       <View style={{flex:1}}>
         {visited.super    && <View style={{flex:1,display:sub==='super'   ?'flex':'none'}}><SuperTab/></View>}
         {visited.bancos   && <View style={{flex:1,display:sub==='bancos'  ?'flex':'none'}}><BancosTab/></View>}
-        {visited.vuelos   && <View style={{flex:1,display:sub==='vuelos'  ?'flex':'none'}}><VuelosTab/></View>}
         {visited.apps     && <View style={{flex:1,display:sub==='apps'    ?'flex':'none'}}><AppsTab/></View>}
-        {visited.gimnasio && <View style={{flex:1,display:sub==='gimnasio'?'flex':'none'}}><GymTab/></View>}
       </View>
     </View>
   );
@@ -87,9 +83,25 @@ export default function AhorroScreen() {
 
 // ─── SUPER TAB ───────────────────────────────────────────────────────────────
 // Selector ciudad/CCAA/España → Ranking supermercados reales con botón IR
-const CCAAS = ['Toda España','Andalucía','Aragón','Asturias','Baleares','Canarias',
-  'Cantabria','C. La Mancha','C. y León','Cataluña','Extremadura','Galicia',
-  'La Rioja','Madrid','Murcia','Navarra','País Vasco','C. Valenciana'];
+const CCAA_CITIES = {
+  'Andalucía': ['Sevilla','Málaga','Córdoba','Granada','Almería','Cádiz','Jaén','Huelva','Jerez','Marbella','Dos Hermanas','Villafranca de Córdoba'],
+  'Aragón': ['Zaragoza','Huesca','Teruel','Calatayud'],
+  'Asturias': ['Oviedo','Gijón','Avilés','Mieres'],
+  'Baleares': ['Palma','Ibiza','Manacor','Inca'],
+  'Canarias': ['Las Palmas','Santa Cruz de Tenerife','La Laguna','Arrecife'],
+  'Cantabria': ['Santander','Torrelavega','Castro Urdiales'],
+  'C. La Mancha': ['Toledo','Ciudad Real','Albacete','Guadalajara','Cuenca','Talavera de la Reina'],
+  'C. y León': ['Valladolid','Burgos','Salamanca','León','Segovia','Ávila','Zamora','Palencia','Soria'],
+  'Cataluña': ['Barcelona','Tarragona','Lleida','Girona','Sabadell','Terrassa','Badalona'],
+  'Extremadura': ['Badajoz','Cáceres','Mérida','Plasencia'],
+  'Galicia': ['Vigo','A Coruña','Ourense','Lugo','Santiago','Pontevedra'],
+  'La Rioja': ['Logroño','Calahorra','Arnedo'],
+  'Madrid': ['Madrid','Alcalá de Henares','Móstoles','Getafe','Leganés','Alcorcón','Fuenlabrada'],
+  'Murcia': ['Murcia','Cartagena','Lorca','Molina de Segura'],
+  'Navarra': ['Pamplona','Tudela','Estella'],
+  'País Vasco': ['Bilbao','San Sebastián','Vitoria','Barakaldo','Getxo'],
+  'C. Valenciana': ['Valencia','Alicante','Castellón','Elche','Torrent','Gandia','Benidorm'],
+};
 
 // Datos OCU 2024 + Google Maps ratings — ranking nacional de supermercados
 const RANKING_NACIONAL = [
@@ -119,10 +131,9 @@ function SuperTab() {
   const [scope, setScope] = useState(''); // ciudad, CCAA o '' = toda España
   const [scopeType, setScopeType] = useState(''); // 'ciudad' | 'ccaa' | ''
   const [superSearch, setSuperSearch] = useState('');
-  const [cityInput, setCityInput] = useState('');
+  const [selectedCCAA, setSelectedCCAA] = useState(null); // which CCAA is expanded
   const [nearbySupers, setNearbySupers] = useState([]);
   const [loadingSupers, setLoadingSupers] = useState(false);
-  const [reportModal, setReportModal] = useState(null);
 
   async function loadNearby(city) {
     setLoadingSupers(true);
@@ -159,36 +170,40 @@ function SuperTab() {
           <Text style={{fontSize:12,color:'#fff',opacity:0.8}}>Ranking nacional OCU 2024</Text>
         </TouchableOpacity>
 
-        {/* Buscar ciudad */}
+        {/* Buscar ciudad — ahora por selectores, sin escribir */}
         <View style={{backgroundColor:COLORS.bg2,borderRadius:14,padding:14,borderWidth:1,borderColor:COLORS.border}}>
-          <Text style={{fontSize:13,fontWeight:'700',color:COLORS.text,marginBottom:8}}>📍 Tu ciudad o pueblo</Text>
-          <View style={{flexDirection:'row',gap:8}}>
-            <TextInput
-              style={{flex:1,backgroundColor:COLORS.bg3,borderRadius:10,borderWidth:1,borderColor:COLORS.border,paddingHorizontal:12,paddingVertical:10,fontSize:14,color:COLORS.text}}
-              placeholder="Ej: Córdoba, Villafranca..."
-              placeholderTextColor={COLORS.text3}
-              value={cityInput}
-              onChangeText={setCityInput}
-              onSubmitEditing={() => cityInput.trim() && selectScope('ciudad', cityInput.trim())}
-              returnKeyType="search"
-            />
-            <TouchableOpacity style={{backgroundColor:COLORS.primary,borderRadius:10,paddingHorizontal:14,alignItems:'center',justifyContent:'center'}}
-              onPress={() => cityInput.trim() && selectScope('ciudad', cityInput.trim())}>
-              <Ionicons name="search" size={20} color="#fff"/>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Selector CCAA */}
-        <View style={{backgroundColor:COLORS.bg2,borderRadius:14,padding:14,borderWidth:1,borderColor:COLORS.border}}>
-          <Text style={{fontSize:13,fontWeight:'700',color:COLORS.text,marginBottom:10}}>🗺️ Por Comunidad Autónoma</Text>
-          <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-            {CCAAS.slice(1).map(cc=>(
-              <TouchableOpacity key={cc}
-                style={{paddingHorizontal:10,paddingVertical:6,borderRadius:10,backgroundColor:COLORS.bg3,borderWidth:1,borderColor:COLORS.border}}
-                onPress={()=>selectScope('ccaa',cc)}>
-                <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text2}}>{cc}</Text>
-              </TouchableOpacity>
+          <Text style={{fontSize:13,fontWeight:'700',color:COLORS.text,marginBottom:8}}>📍 Elige tu Comunidad Autónoma</Text>
+          <View style={{gap:6}}>
+            {Object.keys(CCAA_CITIES).map(ccaa => (
+              <View key={ccaa}>
+                <TouchableOpacity
+                  style={{paddingHorizontal:12,paddingVertical:10,borderRadius:10,
+                    backgroundColor: selectedCCAA===ccaa ? COLORS.primaryLight : COLORS.bg3,
+                    borderWidth:1,borderColor: selectedCCAA===ccaa ? COLORS.primary : COLORS.border,
+                    flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}
+                  onPress={() => setSelectedCCAA(selectedCCAA===ccaa ? null : ccaa)}>
+                  <Text style={{fontSize:13,fontWeight:'600',color: selectedCCAA===ccaa ? COLORS.primary : COLORS.text}}>{ccaa}</Text>
+                  <Ionicons name={selectedCCAA===ccaa ? 'chevron-up' : 'chevron-down'} size={16} color={selectedCCAA===ccaa ? COLORS.primary : COLORS.text3}/>
+                </TouchableOpacity>
+                {selectedCCAA === ccaa && (
+                  <View style={{flexDirection:'row',flexWrap:'wrap',gap:6,paddingTop:8,paddingLeft:8}}>
+                    {/* Toda la CCAA */}
+                    <TouchableOpacity
+                      style={{paddingHorizontal:10,paddingVertical:6,borderRadius:8,backgroundColor:COLORS.primary}}
+                      onPress={() => selectScope('ccaa', ccaa)}>
+                      <Text style={{fontSize:12,fontWeight:'600',color:'#fff'}}>Toda {ccaa}</Text>
+                    </TouchableOpacity>
+                    {/* Ciudades */}
+                    {CCAA_CITIES[ccaa].map(city => (
+                      <TouchableOpacity key={city}
+                        style={{paddingHorizontal:10,paddingVertical:6,borderRadius:8,backgroundColor:COLORS.bg3,borderWidth:1,borderColor:COLORS.border}}
+                        onPress={() => selectScope('ciudad', city)}>
+                        <Text style={{fontSize:12,fontWeight:'500',color:COLORS.text2}}>{city}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
             ))}
           </View>
         </View>
@@ -884,26 +899,21 @@ function VuelosTab() {
 
 // ─── APPS TAB ─────────────────────────────────────────────────────────────────
 const APPS_DATA = [
-  {cat:'💰 Cashback y recompensas',apps:[
-    {name:'iGraal',desc:'Cashback en +2000 tiendas online: Zara, Amazon, Booking, El Corte Inglés...',earn:'Hasta 15% cashback',url:'https://es.igraal.com/padrinazgo?padrino=vpbWSouX',emoji:'🛍️',referral:true,note:'Enlace de referido — los dos ganamos cashback extra'},
-    {name:'Attapoll',desc:'Encuestas pagadas. 5-10 min por encuesta. Retira desde 3€ por PayPal o Bizum.',earn:'~5-15€/mes',url:'https://attapoll.app/join/qarui',emoji:'📊',referral:true,note:'Enlace de referido'},
-    {name:'WeWard',desc:'Gana puntos caminando. Canjea por Amazon, Carrefour, SEUR...',earn:'~5-10€/mes',url:null,emoji:'🚶',code:'DevotoArana4251',referral:true,note:'Código al registrarte'},
-    {name:'Swagbucks',desc:'Encuestas, vídeos y compras. Acumula SB y canjea por PayPal o vales.',earn:'~10-20€/mes',url:'https://www.swagbucks.com',emoji:'⭐',referral:false},
+  {cat:'💰 Con mi referido — Ganamos los dos',apps:[
+    {name:'iGraal',desc:'Cashback en +2000 tiendas online (Zara, Amazon, Booking, El Corte Inglés...). Al registrarte por mi enlace, los dos ganamos 5€ de bienvenida. Luego cada compra online te devuelve un % del precio.',earn:'Hasta 15% cashback · 5€ bienvenida',url:'https://es.igraal.com/padrinazgo?padrino=vpbWSouX',emoji:'🛍️',referral:true},
+    {name:'Attapoll',desc:'Encuestas pagadas de 5-10 min. Retira desde 3€ por PayPal o Bizum. Al entrar con mi enlace, empiezas con saldo extra.',earn:'~5-15€/mes · saldo de bienvenida',url:'https://attapoll.app/join/qarui',emoji:'📊',referral:true},
+    {name:'WeWard',desc:'Gana puntos solo caminando. Canjea por Amazon, Carrefour, SEUR... Pon mi código al registrarte para empezar con puntos extra.',earn:'~5-10€/mes · código: DevotoArana4251',url:null,emoji:'🚶',code:'DevotoArana4251',referral:true},
   ]},
   {cat:'⛽ Gasolina y transporte',apps:[
-    {name:'Gasolina PreciMap',desc:'Ya la tienes: 12.200+ gasolineras en tiempo real. La más barata a tu lado.',earn:'Hasta 44€/mes',url:null,emoji:'⛽',note:'Usa la pestaña Mapa → Gasolina'},
-    {name:'Waze',desc:'Navegación con alertas de tráfico. Evita atascos y llega antes.',earn:'Tiempo = dinero',url:'https://www.waze.com/es/live-map',emoji:'🗺️'},
-    {name:'RENFE',desc:'Billetes de tren. Tarifa Joven y descuentos hasta 40% con antelación.',earn:'Hasta 40% dto.',url:'https://www.renfe.com',emoji:'🚄'},
+    {name:'Gasolina MapaTacaño',desc:'Ya la tienes: 12.200+ gasolineras en tiempo real. Busca la más barata a tu lado antes de repostar.',earn:'Hasta 44€/mes de ahorro',url:null,emoji:'⛽'},
+    {name:'Waze',desc:'Navegación con alertas de tráfico en tiempo real. Evita atascos y ahorra gasolina.',earn:'Tiempo + gasolina',url:'https://www.waze.com/es/live-map',emoji:'🗺️'},
   ]},
   {cat:'🛒 Compras inteligentes',apps:[
-    {name:'Idealo',desc:'Comparador de precios en miles de tiendas. Encuentra el más barato de internet.',earn:'Ahorra 10-40%',url:'https://www.idealo.es',emoji:'🔍'},
-    {name:'Too Good To Go',desc:'Bolsas sorpresa de restaurantes y pastelerías a 2-5€. Contra el desperdicio.',earn:'Hasta 70% dto.',url:'https://toogoodtogo.com/es',emoji:'🍱'},
-    {name:'Wallapop',desc:'Segunda mano: muebles, ropa, tecnología desde 1€. Vende lo que no usas.',earn:'Variable',url:'https://es.wallapop.com',emoji:'♻️'},
-    {name:'Vinted',desc:'Moda de segunda mano. Compra y vende sin comisión para el comprador.',earn:'Variable',url:'https://www.vinted.es',emoji:'👗'},
+    {name:'Too Good To Go',desc:'Bolsas sorpresa de restaurantes y pastelerías a 2-5€ (valor 15-20€). Contra el desperdicio alimentario.',earn:'Hasta 70% dto. en comida',url:'https://toogoodtogo.com/es',emoji:'🍱'},
+    {name:'Idealo',desc:'Comparador de precios de miles de tiendas. Encuentra el producto más barato de internet antes de comprar.',earn:'Ahorra 10-40% por compra',url:'https://www.idealo.es',emoji:'🔍'},
   ]},
-  {cat:'💡 Energía y hogar',apps:[
-    {name:'Selectra',desc:'Compara tarifas de luz y gas. Cambia de compañía y ahorra hasta 400€/año.',earn:'Hasta 400€/año',url:'https://selectra.es',emoji:'⚡'},
-    {name:'Holaluz',desc:'Luz 100% renovable. Tarifa nocturna muy competitiva para cargadores EV.',earn:'Variable',url:'https://www.holaluz.com',emoji:'🌱'},
+  {cat:'💡 Energía',apps:[
+    {name:'Selectra',desc:'Compara tarifas de luz y gas gratis. Te ayudan a cambiar de compañía por teléfono.',earn:'Hasta 400€/año',url:'https://selectra.es',emoji:'⚡'},
   ]},
 ];
 
@@ -964,7 +974,7 @@ function AppsTab() {
                   </TouchableOpacity>
                 ) : (
                   <View style={{backgroundColor:COLORS.bg3,borderRadius:12,padding:10,alignItems:'center'}}>
-                    <Text style={{color:COLORS.text3,fontSize:12}}>Disponible en PreciMap ↑</Text>
+                    <Text style={{color:COLORS.text3,fontSize:12}}>Disponible en MapaTacaño ↑</Text>
                   </View>
                 )}
               </View>

@@ -12,8 +12,10 @@ import RankingScreen from './screens/RankingScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import AhorroScreen from './screens/AhorroScreen';
 import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiGet } from './utils';
 import { APP_VERSION } from './utils';
+import OnboardingSlider from './components/OnboardingSlider';
 
 const Tab = createBottomTabNavigator();
 
@@ -42,7 +44,15 @@ function AppNavigator() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [splashG95, setSplashG95] = useState(null);
   const [splashStats, setSplashStats] = useState(null);
+  const [showOnboarding, setShowOnboarding] = useState(null); // null=checking, true/false
   const insets = useSafeAreaInsets();
+
+  // Check if onboarding has been shown
+  useEffect(() => {
+    AsyncStorage.getItem('onboarding_done').then(v => {
+      setShowOnboarding(!v);
+    }).catch(() => setShowOnboarding(false));
+  }, []);
 
   // Fetch real data for splash screen — MUST be before any conditional return
   useEffect(() => {
@@ -68,21 +78,25 @@ function AppNavigator() {
     return () => clearInterval(t);
   }, [isLoggedIn]);
 
-  if (authLoading) return (
+  if (showOnboarding === null || authLoading) return (
     <View style={{ flex: 1, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
-      <Text style={{ fontSize: 52 }}>🗺️</Text>
-      <Text style={{ fontSize: 26, fontWeight: '800', color: '#fff', letterSpacing: -0.5 }}>PreciMap</Text>
+      <Text style={{ fontSize: 52 }}>💰</Text>
+      <Text style={{ fontSize: 26, fontWeight: '800', color: '#fff', letterSpacing: -0.5 }}>MapaTacaño</Text>
       <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>La app de ahorro de España</Text>
       <ActivityIndicator color="rgba(255,255,255,0.8)" style={{ marginTop: 16 }} />
       <View style={{ position: 'absolute', bottom: 40, alignItems: 'center', gap: 4 }}>
         <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
           {splashG95
             ? `⛽ G95 desde ${splashG95}€/L · 🔥 ${splashStats?.deals||50} chollos · 🎭 ${splashStats?.events||30} eventos`
-            : '🗺️ Gasolineras · Chollos · Supermercados · Bancos'}
+            : '💰 Gasolineras · Chollos · Supermercados · Bancos'}
         </Text>
-        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v{APP_VERSION} · La app de ahorro de España</Text>
+        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v{APP_VERSION} · MapaTacaño</Text>
       </View>
     </View>
+  );
+
+  if (showOnboarding) return (
+    <OnboardingSlider onFinish={() => setShowOnboarding(false)} />
   );
 
   return (

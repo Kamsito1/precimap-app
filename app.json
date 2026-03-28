@@ -1,32 +1,32 @@
 {
   "expo": {
-    "name": "PreciMap",
-    "slug": "precimap",
+    "name": "MapaTacaño",
+    "slug": "mapatacano",
     "scheme": "com.kamsito.precimap",
-    "version": "1.3.1",
+    "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
-    "description": "Compara precios de gasolina, supermercados y bancos en toda España. Ahorra dinero con la comunidad.",
+    "description": "Encuentra lo más barato cerca de ti: gasolina, supermercados, chollos, eventos y más. La app de ahorro de España.",
     "primaryColor": "#2563EB",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#2563EB"
+      "backgroundColor": "#1D4ED8"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "79",
+      "buildNumber": "80",
       "requireFullScreen": true,
       "infoPlist": {
-        "NSLocationWhenInUseUsageDescription": "PreciMap usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",
-        "NSCameraUsageDescription": "PreciMap necesita la cámara para fotografiar precios y chollos.",
-        "NSPhotoLibraryUsageDescription": "PreciMap necesita tu galería para subir fotos de chollos y tu avatar.",
-        "NSPhotoLibraryAddUsageDescription": "PreciMap guarda fotos de precios en tu galería.",
+        "NSLocationWhenInUseUsageDescription": "MapaTacaño usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",
+        "NSCameraUsageDescription": "MapaTacaño necesita la cámara para fotografiar precios y chollos.",
+        "NSPhotoLibraryUsageDescription": "MapaTacaño necesita tu galería para subir fotos de chollos y tu avatar.",
+        "NSPhotoLibraryAddUsageDescription": "MapaTacaño guarda fotos de precios en tu galería.",
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUserTrackingUsageDescription": "PreciMap puede usar identificadores de publicidad para mostrarte anuncios más relevantes.",
+        "NSUserTrackingUsageDescription": "MapaTacaño puede usar identificadores de publicidad para mostrarte anuncios más relevantes.",
         "LSApplicationQueriesSchemes": [
           "com.amazon.mobile.shopping.web",
           "amazon-spain",
@@ -56,8 +56,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "PreciMap necesita acceso a tu galería para subir fotos de chollos.",
-          "cameraPermission": "PreciMap necesita acceso a la cámara para fotografiar precios."
+          "photosPermission": "MapaTacaño necesita acceso a tu galería para subir fotos de chollos.",
+          "cameraPermission": "MapaTacaño necesita acceso a la cámara para fotografiar precios."
         }
       ],
       "expo-web-browser",

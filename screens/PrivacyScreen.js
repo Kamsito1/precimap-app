@@ -19,7 +19,7 @@ export default function PrivacyScreen({ onClose }) {
         <Text style={s.updated}>Última actualización: marzo 2026</Text>
 
         <Text style={s.h2}>1. Quién somos</Text>
-        <Text style={s.p}>PreciMap es una aplicación de ahorro y comparación de precios. El responsable del tratamiento es el desarrollador de PreciMap.</Text>
+        <Text style={s.p}>MapaTacaño es una aplicación de ahorro y comparación de precios. El responsable del tratamiento es el desarrollador de MapaTacaño.</Text>
 
         <Text style={s.h2}>2. Datos que recogemos</Text>
         <Text style={s.p}>• Email y nombre de usuario al registrarte (o datos de Google/Apple si usas Google Sign-In o Sign in with Apple){'\n'}• Precios de productos que reportas voluntariamente{'\n'}• Ubicación aproximada (solo cuando abres el mapa, nunca en segundo plano){'\n'}• Fotos que subes voluntariamente al publicar chollos{'\n'}• ID de publicidad anónimo (para mostrar anuncios relevantes vía Google AdMob)</Text>
@@ -34,7 +34,7 @@ export default function PrivacyScreen({ onClose }) {
         <Text style={s.p}>No vendemos ni compartimos tus datos con terceros. Los precios reportados son públicos por naturaleza (son el producto principal de la app). Tu email nunca es público.</Text>
 
         <Text style={s.h2}>6. Publicidad</Text>
-        <Text style={s.p}>PreciMap muestra anuncios a través de Google AdMob y banners propios de servicios afiliados. Los anuncios son no intrusivos (banners pequeños) y se pueden cerrar temporalmente. No vendemos tus datos a anunciantes. Google AdMob puede usar identificadores de publicidad anónimos para mostrar anuncios más relevantes.</Text>
+        <Text style={s.p}>MapaTacaño muestra anuncios a través de Google AdMob y banners propios de servicios afiliados. Los anuncios son no intrusivos (banners pequeños) y se pueden cerrar temporalmente. No vendemos tus datos a anunciantes. Google AdMob puede usar identificadores de publicidad anónimos para mostrar anuncios más relevantes.</Text>
 
         <Text style={s.h2}>7. Cookies y almacenamiento</Text>
         <Text style={s.p}>Solo almacenamos tu sesión localmente en tu dispositivo (AsyncStorage). Google AdMob puede almacenar cookies propias para el servicio de publicidad.</Text>
@@ -53,22 +53,22 @@ export default function PrivacyScreen({ onClose }) {
         <Text style={s.updated}>En vigor desde: marzo 2026</Text>
 
         <Text style={s.h2}>1. Aceptación</Text>
-        <Text style={s.p}>Al usar PreciMap aceptas estos términos. El uso de la app implica la aceptación de estas condiciones y de la Política de Privacidad.</Text>
+        <Text style={s.p}>Al usar MapaTacaño aceptas estos términos. El uso de la app implica la aceptación de estas condiciones y de la Política de Privacidad.</Text>
 
         <Text style={s.h2}>2. Uso permitido</Text>
-        <Text style={s.p}>PreciMap es una herramienta de comparación de precios para uso personal. Queda prohibido usar la app para fines comerciales, scraping automatizado o publicación masiva de precios falsos.</Text>
+        <Text style={s.p}>MapaTacaño es una herramienta de comparación de precios para uso personal. Queda prohibido usar la app para fines comerciales, scraping automatizado o publicación masiva de precios falsos.</Text>
 
         <Text style={s.h2}>3. Contenido del usuario</Text>
-        <Text style={s.p}>Al publicar precios, chollos o eventos, garantizas que la información es veraz y actual. PreciMap puede eliminar contenido incorrecto o inapropiado sin previo aviso.</Text>
+        <Text style={s.p}>Al publicar precios, chollos o eventos, garantizas que la información es veraz y actual. MapaTacaño puede eliminar contenido incorrecto o inapropiado sin previo aviso.</Text>
 
         <Text style={s.h2}>4. Exactitud de datos</Text>
-        <Text style={s.p}>Los precios son aportados por la comunidad y el Ministerio de Energía. PreciMap no garantiza su exactitud. Verifica siempre el precio en el establecimiento antes de comprar.</Text>
+        <Text style={s.p}>Los precios son aportados por la comunidad y el Ministerio de Energía. MapaTacaño no garantiza su exactitud. Verifica siempre el precio en el establecimiento antes de comprar.</Text>
 
         <Text style={s.h2}>5. Limitación de responsabilidad</Text>
-        <Text style={s.p}>PreciMap no se hace responsable de decisiones económicas tomadas basándose en los datos de la app. Los precios de bancos y productos financieros pueden cambiar sin previo aviso.</Text>
+        <Text style={s.p}>MapaTacaño no se hace responsable de decisiones económicas tomadas basándose en los datos de la app. Los precios de bancos y productos financieros pueden cambiar sin previo aviso.</Text>
 
         <Text style={s.h2}>6. Propiedad intelectual</Text>
-        <Text style={s.p}>El código y diseño de PreciMap son propiedad de sus desarrolladores. Los datos de gasolineras son del Ministerio para la Transición Ecológica (datos abiertos).</Text>
+        <Text style={s.p}>El código y diseño de MapaTacaño son propiedad de sus desarrolladores. Los datos de gasolineras son del Ministerio para la Transición Ecológica (datos abiertos).</Text>
 
         <View style={{ height: 40 }}/>
       </ScrollView>

@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColorScheme } from 'react-native';
 
 // ─── APP VERSION (single source of truth) ─────────────────────────────────────
-export const APP_VERSION = '1.3.0';
+export const APP_VERSION = '2.0.0';
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 // API URL — hardcoded para producción (Railway)

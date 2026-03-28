@@ -207,8 +207,50 @@ export default function EventsScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={s.filterLabel}>Filtrar por ciudad / provincia</Text>
-            <CityPicker value={city} onChange={setCity} placeholder="Toda España"/>
+            <Text style={s.filterLabel}>Filtrar por ubicación</Text>
+            {city ? (
+              <View style={{flexDirection:'row',alignItems:'center',gap:8,marginBottom:8}}>
+                <Text style={{fontSize:13,color:COLORS.text,fontWeight:'600'}}>📍 {city}</Text>
+                <TouchableOpacity onPress={() => setCity('')} style={{paddingHorizontal:8,paddingVertical:4,backgroundColor:COLORS.bg3,borderRadius:8}}>
+                  <Text style={{fontSize:11,color:COLORS.text3}}>✕ Quitar</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+            <ScrollView style={{maxHeight:200}} nestedScrollEnabled>
+              {Object.entries({
+                'Andalucía':['Sevilla','Málaga','Córdoba','Granada','Almería','Cádiz','Jaén','Huelva'],
+                'Madrid':['Madrid'],
+                'Cataluña':['Barcelona','Tarragona','Girona','Lleida'],
+                'C. Valenciana':['Valencia','Alicante','Castellón'],
+                'País Vasco':['Bilbao','San Sebastián','Vitoria'],
+                'Galicia':['Vigo','A Coruña','Santiago','Ourense'],
+                'Aragón':['Zaragoza','Huesca','Teruel'],
+                'Asturias':['Oviedo','Gijón'],
+                'Canarias':['Las Palmas','Santa Cruz de Tenerife'],
+                'Baleares':['Palma','Ibiza'],
+                'Murcia':['Murcia','Cartagena'],
+                'C. y León':['Valladolid','Burgos','Salamanca','León'],
+                'Extremadura':['Badajoz','Cáceres','Mérida'],
+                'Navarra':['Pamplona'],
+                'La Rioja':['Logroño'],
+                'Cantabria':['Santander'],
+              }).map(([ccaa, cities]) => (
+                <View key={ccaa} style={{marginBottom:6}}>
+                  <Text style={{fontSize:11,fontWeight:'700',color:COLORS.text3,marginBottom:4}}>{ccaa}</Text>
+                  <View style={{flexDirection:'row',flexWrap:'wrap',gap:4}}>
+                    {cities.map(c => (
+                      <TouchableOpacity key={c}
+                        style={{paddingHorizontal:8,paddingVertical:4,borderRadius:8,
+                          backgroundColor: city===c ? COLORS.purple : COLORS.bg3,
+                          borderWidth:1,borderColor: city===c ? COLORS.purple : COLORS.border}}
+                        onPress={() => setCity(city===c ? '' : c)}>
+                        <Text style={{fontSize:11,color: city===c ? '#fff' : COLORS.text2}}>{c}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
           </View>
         )}
       </View>
@@ -353,7 +395,7 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
         </TouchableOpacity>
         <TouchableOpacity style={ec.voteBtn} onPress={async () => {
           const price = ev?.is_free ? '🆓 Gratis' : ev?.price_from ? `desde ${ev.price_from}€` : '';
-          const msg = `🎭 ${ev?.title||''}\n📍 ${ev?.city||''} · ${ev?.date||''}\n${price ? price+'\n' : ''}Via PreciMap 🗺️`;
+          const msg = `🎭 ${ev?.title||''}\n📍 ${ev?.city||''} · ${ev?.date||''}\n${price ? price+'\n' : ''}Via MapaTacaño 💰`;
           try {
             if (typeof navigator !== 'undefined' && navigator.share) {
               await navigator.share({ title: ev?.title||'', text: msg, url: ev?.url||'' });

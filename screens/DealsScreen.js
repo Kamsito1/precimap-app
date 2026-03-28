@@ -75,6 +75,8 @@ export default function DealsScreen() {
   const [showAuth, setShowAuth]     = useState(false);
   const [showAdd, setShowAdd]       = useState(false);
   const [commentsFor, setCommentsFor] = useState(null);
+  const [showSearch, setShowSearch] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [editDeal, setEditDeal]     = useState(null);  // deal being edited
   const [editPrice, setEditPrice]   = useState('');
   const [editTitle, setEditTitle]   = useState('');
@@ -216,9 +218,16 @@ export default function DealsScreen() {
             <Ionicons name="add" size={18} color="#fff"/>
             <Text style={s.addBtnTxt}>Publicar</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={{padding:6}} onPress={() => setShowSearch(!showSearch)}>
+            <Ionicons name="search-outline" size={20} color={showSearch ? COLORS.danger : COLORS.text2}/>
+          </TouchableOpacity>
+          <TouchableOpacity style={{padding:6}} onPress={() => setShowSettings(!showSettings)}>
+            <Ionicons name="options-outline" size={20} color={showSettings ? COLORS.danger : COLORS.text2}/>
+          </TouchableOpacity>
         </View>
 
-        {/* Search bar */}
+        {/* Search bar — toggled by search icon */}
+        {showSearch && (
         <View style={s.searchRow}>
           <Ionicons name="search-outline" size={16} color={COLORS.text3} style={{marginRight:8}}/>
           <TextInput
@@ -236,8 +245,66 @@ export default function DealsScreen() {
             </TouchableOpacity>
           )}
         </View>
+        )}
 
-        {/* Sort tabs — row 1 */}
+        {/* Settings panel — filters for categories, sorts, discount */}
+        {showSettings && (
+          <View style={{backgroundColor:COLORS.bg2,borderBottomWidth:0.5,borderBottomColor:COLORS.border,padding:12}}>
+            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+              <Text style={{fontSize:14,fontWeight:'700',color:COLORS.text}}>Filtros</Text>
+              <TouchableOpacity onPress={() => setShowSettings(false)} style={{width:26,height:26,borderRadius:13,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+                <Ionicons name="close" size={14} color={COLORS.text2}/>
+              </TouchableOpacity>
+            </View>
+
+            {/* Sort */}
+            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>ORDENAR</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,marginBottom:10}}>
+              {SORTS.map(so => (
+                <TouchableOpacity key={so.key}
+                  style={{paddingHorizontal:14,paddingVertical:8,borderRadius:20,borderWidth:1.5,
+                    borderColor: sort===so.key ? COLORS.danger : COLORS.border,
+                    backgroundColor: sort===so.key ? COLORS.danger : COLORS.bg}}
+                  onPress={() => setSort(so.key)}>
+                  <Text style={{fontSize:12,fontWeight:'700',color: sort===so.key ? '#fff' : COLORS.text2}}>{so.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {/* Discount filter */}
+            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>DESCUENTO MÍNIMO</Text>
+            <View style={{flexDirection:'row',gap:6,marginBottom:10}}>
+              {[0,20,30,50].map(d => (
+                <TouchableOpacity key={d}
+                  style={{paddingHorizontal:12,paddingVertical:6,borderRadius:16,borderWidth:1.5,
+                    borderColor: minDiscount===d ? COLORS.danger : COLORS.border,
+                    backgroundColor: minDiscount===d ? COLORS.danger : COLORS.bg}}
+                  onPress={() => setMinDiscount(d)}>
+                  <Text style={{fontSize:12,fontWeight:'700',color: minDiscount===d ? '#fff' : COLORS.text2}}>
+                    {d===0 ? 'Todos' : `-${d}%+`}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Categories */}
+            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>CATEGORÍA</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+              {CATS.map(c => (
+                <TouchableOpacity key={c.key} style={{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:5,borderRadius:99,
+                    borderWidth:1.5,borderColor: cat===c.key ? COLORS.danger : COLORS.border,
+                    backgroundColor: cat===c.key ? COLORS.danger : COLORS.bg}}
+                  onPress={()=>setCat(c.key)}>
+                  <Text style={{fontSize:11}}>{c.emoji}</Text>
+                  <Text style={{fontSize:11,fontWeight:'600',color: cat===c.key ? '#fff' : COLORS.text2}}>{c.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Sort tabs — row 1 (visible when settings closed) */}
+        {!showSettings && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false}
           contentContainerStyle={{paddingHorizontal:12,gap:8,paddingBottom:6}}>
           {SORTS.map(so => (
@@ -251,32 +318,7 @@ export default function DealsScreen() {
           ))}
           <View style={{width:1,height:1}}/>
         </ScrollView>
-        {/* Discount filter — row 2 */}
-        <View style={{flexDirection:'row',paddingHorizontal:12,gap:8,paddingBottom:10}}>
-          <Text style={{fontSize:12,color:COLORS.text3,alignSelf:'center',marginRight:4}}>Descuento:</Text>
-          {[0,20,30,50].map(d => (
-            <TouchableOpacity key={d}
-              style={{paddingHorizontal:12,paddingVertical:6,borderRadius:16,borderWidth:1.5,
-                borderColor: minDiscount===d ? COLORS.danger : COLORS.border,
-                backgroundColor: minDiscount===d ? COLORS.danger : COLORS.bg}}
-              onPress={() => setMinDiscount(d)}>
-              <Text style={{fontSize:12,fontWeight:'700',color: minDiscount===d ? '#fff' : COLORS.text2}}>
-                {d===0 ? 'Todos' : `-${d}%+`}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Category pills — ScrollView en lugar de FlatList (evita VirtualizedList nested crash) */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{paddingHorizontal:12,gap:6,paddingBottom:10}}>
-          {CATS.map(c => (
-            <TouchableOpacity key={c.key} style={[s.catBtn, cat===c.key && s.catBtnOn]} onPress={()=>setCat(c.key)}>
-              <Text style={s.catEmoji}>{c.emoji}</Text>
-              <Text style={[s.catTxt, cat===c.key && {color:'#fff',fontWeight:'600'}]}>{c.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        )}
       </View>
 
       {!isLoggedIn && (
@@ -437,6 +479,34 @@ export default function DealsScreen() {
                     )}
                   </View>
 
+                  {/* Discount code badge */}
+                  {deal.discount_code && (
+                    <TouchableOpacity style={{flexDirection:'row',alignItems:'center',gap:6,backgroundColor:'#EFF6FF',borderRadius:8,paddingHorizontal:10,paddingVertical:6,marginBottom:6,borderWidth:1,borderColor:'#BFDBFE'}}
+                      onPress={() => {
+                        if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText(deal.discount_code); }
+                        Alert.alert('📋 Código copiado', deal.discount_code);
+                      }}>
+                      <Ionicons name="pricetag-outline" size={14} color={COLORS.primary}/>
+                      <Text style={{fontSize:13,fontWeight:'700',color:COLORS.primary,letterSpacing:1}}>{deal.discount_code}</Text>
+                      <Text style={{fontSize:10,color:COLORS.text3}}>· toca para copiar</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Description preview */}
+                  {deal.description && (
+                    <Text style={{fontSize:12,color:COLORS.text2,lineHeight:17,marginBottom:6}} numberOfLines={2}>{deal.description}</Text>
+                  )}
+
+                  {/* Availability badge */}
+                  {deal.availability && deal.availability !== 'online' && (
+                    <View style={{flexDirection:'row',alignItems:'center',gap:4,marginBottom:6}}>
+                      <Ionicons name={deal.availability === 'tienda' ? 'storefront-outline' : 'globe-outline'} size={12} color={COLORS.text3}/>
+                      <Text style={{fontSize:10,color:COLORS.text3}}>
+                        {deal.availability === 'tienda' ? `🏪 Solo en tienda${deal.store_location ? ' · '+deal.store_location : ''}` : '🔄 Online y tienda'}
+                      </Text>
+                    </View>
+                  )}
+
                   {/* Reporter */}
                   <View style={s.reporterRow}>
                     <View style={s.reporterAvatar}>
@@ -492,7 +562,7 @@ export default function DealsScreen() {
 
                   {/* Compartir */}
                   <TouchableOpacity style={s.iconBtn} onPress={async () => {
-                    const text = `🔥 ${deal.title||''}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent != null && deal.discount_percent > 0 ?` (-${Math.round(Number(deal.discount_percent)||0)}%)`:''}${deal.url?'\n🔗 '+applyAffiliateTag(deal.url):''}\n\nVía PreciMap`;
+                    const text = `🔥 ${deal.title||''}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent != null && deal.discount_percent > 0 ?` (-${Math.round(Number(deal.discount_percent)||0)}%)`:''}${deal.url?'\n🔗 '+applyAffiliateTag(deal.url):''}\n\nVía MapaTacaño`;
                     try {
                       if (typeof navigator !== 'undefined' && navigator.share) {
                         await navigator.share({ title: deal.title||'', text, url: deal.url || '' });
@@ -569,6 +639,26 @@ export default function DealsScreen() {
                         ? `✓ Reportado · ${deal.expire_reports||0}/50`
                         : `¿Expiró? · ${deal.expire_reports||0}/50`}
                     </Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Report scam button */}
+                {isLoggedIn && !user?.is_admin && deal.reported_by !== user?.id && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      Alert.alert('🚨 Reportar timo', '¿Este chollo es falso o engañoso?', [
+                        {text:'Cancelar',style:'cancel'},
+                        {text:'Sí, reportar',style:'destructive', onPress: async () => {
+                          try {
+                            await apiPost(`/api/deals/${deal.id}/report-scam`, { reason: 'timo' });
+                            Alert.alert('✅ Reportado', 'Gracias. Si acumula reportes se eliminará automáticamente.');
+                          } catch(_) {}
+                        }},
+                      ]);
+                    }}
+                    style={{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:4,paddingVertical:6,marginHorizontal:12,marginBottom:10}}>
+                    <Ionicons name="flag-outline" size={12} color={COLORS.text3}/>
+                    <Text style={{fontSize:11,color:COLORS.text3}}>Reportar timo</Text>
                   </TouchableOpacity>
                 )}
               </View>

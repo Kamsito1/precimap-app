@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet,
   ActivityIndicator, Alert, Image, RefreshControl, TextInput,
-  Modal, KeyboardAvoidingView, Platform, Linking,
+  Modal, KeyboardAvoidingView, Platform, Linking, Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -160,6 +160,7 @@ export default function ProfileScreen() {
   const [myDeals,     setMyDeals]     = useState([]);
   const [profileTab,  setProfileTab]  = useState('info');
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [notificationsOn, setNotificationsOn] = useState(true);
 
   useEffect(() => { checkServer(); if (isLoggedIn) loadProfile(); }, [isLoggedIn]);
 
@@ -277,8 +278,8 @@ export default function ProfileScreen() {
       {serverOk === false && <ServerBanner url={API_BASE}/>}
       <ScrollView contentContainerStyle={s.guestScroll} showsVerticalScrollIndicator={false}>
         <View style={s.guestHero}>
-          <Text style={{fontSize:60}}>🗺️</Text>
-          <Text style={s.guestTitle}>PreciMap</Text>
+          <Text style={{fontSize:60}}>💰</Text>
+          <Text style={s.guestTitle}>MapaTacaño</Text>
           <Text style={s.guestSub}>La app de ahorro de España</Text>
         </View>
         <View style={s.statsRow}>
@@ -700,6 +701,25 @@ export default function ProfileScreen() {
           </Section>
         )}
 
+        {/* ── Notificaciones ── */}
+        <Section title="🔔 Notificaciones">
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingVertical:8}}>
+            <View style={{flex:1}}>
+              <Text style={{fontSize:14,color:COLORS.text,fontWeight:'600'}}>Notificaciones en la app</Text>
+              <Text style={{fontSize:12,color:COLORS.text3,marginTop:2}}>Alertas de precios, chollos y eventos</Text>
+            </View>
+            <Switch
+              value={notificationsOn}
+              onValueChange={(val) => {
+                setNotificationsOn(val);
+                apiPatch('/api/users/me', { notifications_enabled: val ? 1 : 0 }).catch(() => {});
+              }}
+              trackColor={{false:'#D1D5DB',true:COLORS.primary+'66'}}
+              thumbColor={notificationsOn ? COLORS.primary : '#f4f3f4'}
+            />
+          </View>
+        </Section>
+
         {/* ── Peligroso ── */}
         <Section title="⚠️ ZONA PELIGROSA">
           <Text style={s.dangerNote}>Estas acciones son permanentes y no se pueden deshacer.</Text>
@@ -728,7 +748,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           ))}
           <Text style={{fontSize:11,color:COLORS.text3,marginTop:10,textAlign:'center'}}>
-            PreciMap v{APP_VERSION} · Hecho con ❤️ en España
+            MapaTacaño v{APP_VERSION} · Hecho con ❤️ en España
           </Text>
         </Section>
 

@@ -114,7 +114,7 @@ export default function RankingScreen() {
       {mainTab === 'comunidad' && (
         <ScrollView contentContainerStyle={{padding:16,gap:12,paddingBottom:100}}>
           {!stats ? <ActivityIndicator color={COLORS.primary} style={{marginTop:40}}/> : (<>
-          <Text style={{fontSize:13,color:COLORS.text3,marginBottom:4}}>Estadísticas de la comunidad PreciMap</Text>
+          <Text style={{fontSize:13,color:COLORS.text3,marginBottom:4}}>Estadísticas de la comunidad MapaTacaño</Text>
           {[
             ['⛽', Number(stats?.gasolineras||12213).toLocaleString('es-ES')+'+', 'Gasolineras indexadas','Del Ministerio de Energía (RITE)'],
             ['👤', String(stats.users||0), 'Usuarios activos','Ahorradores registrados'],

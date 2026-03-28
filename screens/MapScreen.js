@@ -82,13 +82,22 @@ function getWeeklyCost(placeName) {
 }
 
 const CATS = [
-  { key:'gasolinera',   label:'Gasolina',    emoji:'⛽' },
-  { key:'restaurante',  label:'Cafés',       emoji:'☕', product:'Café con leche',  key2:'cafe' },
-  { key:'restaurante',  label:'Cervezas',    emoji:'🍺', product:'Caña de cerveza', key2:'cerveza' },
-  { key:'restaurante',  label:'Restaurantes',emoji:'🍽️', product:'Menú del día',    key2:'restaurante_menu' },
-  { key:'supermercado', label:'Súper',       emoji:'🛒' },
-  { key:'farmacia',     label:'Farmacia',    emoji:'💊' },
-  { key:'gimnasio',     label:'Gimnasios',   emoji:'💪' },
+  { key:'gasolinera',   label:'Gasolina',    emoji:'⛽', group:'gasolina' },
+  { key:'restaurante',  label:'Cafés',       emoji:'☕', product:'Café con leche',  key2:'cafe',   group:'restaurantes' },
+  { key:'restaurante',  label:'Cervezas',    emoji:'🍺', product:'Caña de cerveza', key2:'cerveza', group:'restaurantes' },
+  { key:'restaurante',  label:'Restaurantes',emoji:'🍽️', product:'Menú del día',    key2:'restaurante_menu', group:'restaurantes' },
+  { key:'supermercado', label:'Súper',       emoji:'🛒', group:'servicios' },
+  { key:'farmacia',     label:'Farmacia',    emoji:'💊', group:'servicios' },
+  { key:'gimnasio',     label:'Gimnasios',   emoji:'💪', group:'servicios' },
+  { key:'peluqueria',   label:'Peluquerías', emoji:'💇', group:'servicios' },
+  { key:'peluqueria_canina', label:'Peluq. Canina', emoji:'🐕', group:'servicios' },
+  { key:'veterinario',  label:'Veterinarios',emoji:'🏥', group:'servicios' },
+];
+
+const FILTER_GROUPS = [
+  { key:'gasolina',     label:'⛽ Gasolina',     desc:'Estaciones de servicio' },
+  { key:'restaurantes', label:'🍽️ Restaurantes', desc:'Cafés, bares y restaurantes' },
+  { key:'servicios',    label:'🏪 Servicios',    desc:'Farmacias, gimnasios, peluquerías...' },
 ];
 
 const SORT_OPTS = [
@@ -153,6 +162,8 @@ export default function MapScreen() {
   const [recentPrices, setRecentPrices] = useState([]); // feed actividad comunidad
   const [priceRange, setPriceRange] = useState(null); // null | 1 | 2 | 3 | 4 (€/€€/€€€/€€€€)
   const [showLocationPrompt, setShowLocationPrompt] = useState(false); // pre-permission screen
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false); // new settings dropdown
+  const [activeGroup, setActiveGroup] = useState('gasolina'); // gasolina | restaurantes | servicios
   const mapRef = useRef(null);
 
   useEffect(() => {
@@ -546,7 +557,7 @@ export default function MapScreen() {
           Activa la ubicación
         </Text>
         <Text style={{fontSize:15,color:COLORS.text2,textAlign:'center',lineHeight:22,marginBottom:8}}>
-          PreciMap usa tu ubicación para mostrarte las <Text style={{fontWeight:'700',color:COLORS.primary}}>gasolineras más baratas cerca de ti</Text> y los mejores precios de tu zona.
+          MapaTacaño usa tu ubicación para mostrarte las <Text style={{fontWeight:'700',color:COLORS.primary}}>gasolineras más baratas cerca de ti</Text> y los mejores precios de tu zona.
         </Text>
         <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center',marginBottom:32}}>
           Solo se usa mientras tienes la app abierta. Nunca en segundo plano.
@@ -578,7 +589,7 @@ export default function MapScreen() {
       {/* Header */}
       <View style={s.header}>
         <View style={s.headerRow}>
-          <Text style={s.logo}>🗺️ PreciMap</Text>
+          <Text style={s.logo}>💰 MapaTacaño</Text>
           {/* Badge carburante — solo cuando estamos en gasolinera */}
           {activeCat === 'gasolinera' && activeFuel && activeFuel !== 'all' && (
             <TouchableOpacity
@@ -613,45 +624,112 @@ export default function MapScreen() {
                 <Ionicons name={showFavsOnly ? 'heart' : 'heart-outline'} size={18} color={showFavsOnly ? COLORS.danger : COLORS.text2}/>
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={s.filterIconBtn} onPress={() => setShowFilters(!showFilters)}>
-              <Ionicons name="options-outline" size={20} color={showFilters?COLORS.primary:COLORS.text2}/>
+            <TouchableOpacity style={s.filterIconBtn} onPress={() => setShowSettingsMenu(!showSettingsMenu)}>
+              <Ionicons name="options-outline" size={20} color={showSettingsMenu?COLORS.primary:COLORS.text2}/>
             </TouchableOpacity>
           </View>
         </View>
 
-        {/* Category pills */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{paddingHorizontal:12,gap:6,paddingBottom:8}}>
-          {CATS.map((c,i)=>{
-            const ck = c.key2 || c.key;
-            const isOn = activeCatKey === ck;
-            // Color específico por categoría cuando está activa
-            const catColor = {
-              gasolinera:'#F59E0B', cafe:'#EA580C', cerveza:'#D97706',
-              restaurante_menu:'#E11D48', supermercado:'#16A34A',
-              farmacia:'#2563EB', gimnasio:'#7C3AED',
-            }[ck] || COLORS.primary;
-            return (
-              <TouchableOpacity key={ck+i}
-                style={[s.catBtn, isOn && {backgroundColor:catColor, borderColor:catColor}]}
-                onPress={()=>{
-                  setActiveCat(c.key);
-                  setActiveCatKey(ck);
-                  setProduct(c.product||'');
-                  setPriceRange(null); // resetear filtro de precio al cambiar categoría
-                  if (c.key === 'gasolinera') {
-                    setActiveFuel(null);
-                    setSort('proximity');
-                  } else {
-                    setSort('price'); // más barato primero para cafés, cervezas, menús, etc.
-                  }
-                }}>
-                <Text style={s.catEmoji}>{c.emoji}</Text>
-                <Text style={[s.catTxt,isOn&&{color:'#fff',fontWeight:'700'}]}>{c.label}</Text>
+        {/* Settings menu dropdown — replaces old category pills */}
+        {showSettingsMenu && (
+          <View style={{position:'absolute',top:52,right:12,zIndex:999,backgroundColor:COLORS.bg2,borderRadius:16,padding:14,shadowColor:'#000',shadowOpacity:0.15,shadowRadius:20,shadowOffset:{width:0,height:4},elevation:10,borderWidth:1,borderColor:COLORS.border,width:280}}>
+            {/* Close button */}
+            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <Text style={{fontSize:15,fontWeight:'700',color:COLORS.text}}>Filtros</Text>
+              <TouchableOpacity onPress={() => setShowSettingsMenu(false)} style={{width:28,height:28,borderRadius:14,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+                <Ionicons name="close" size={16} color={COLORS.text2}/>
               </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+            </View>
+
+            {/* Filter groups */}
+            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>TIPO</Text>
+            {FILTER_GROUPS.map(g => (
+              <TouchableOpacity key={g.key}
+                style={{flexDirection:'row',alignItems:'center',gap:10,paddingVertical:10,paddingHorizontal:8,borderRadius:10,marginBottom:4,
+                  backgroundColor: activeGroup===g.key ? COLORS.primaryLight : 'transparent',
+                  borderWidth: activeGroup===g.key ? 1.5 : 0, borderColor: COLORS.primary}}
+                onPress={() => {
+                  setActiveGroup(g.key);
+                  // Auto-select first subcategory
+                  const firstCat = CATS.find(c => c.group === g.key);
+                  if (firstCat) {
+                    setActiveCat(firstCat.key);
+                    setActiveCatKey(firstCat.key2 || firstCat.key);
+                    setProduct(firstCat.product || '');
+                    if (g.key === 'gasolina') { setActiveFuel(activeFuel || 'g95'); setSort('proximity'); }
+                    else { setSort('price'); }
+                  }
+                  setPriceRange(null);
+                }}>
+                <Text style={{fontSize:15}}>{g.label.split(' ')[0]}</Text>
+                <View style={{flex:1}}>
+                  <Text style={{fontSize:14,fontWeight:'600',color: activeGroup===g.key ? COLORS.primary : COLORS.text}}>{g.label.substring(g.label.indexOf(' ')+1)}</Text>
+                  <Text style={{fontSize:11,color:COLORS.text3}}>{g.desc}</Text>
+                </View>
+                {activeGroup===g.key && <Ionicons name="checkmark-circle" size={18} color={COLORS.primary}/>}
+              </TouchableOpacity>
+            ))}
+
+            {/* Subcategories for active group */}
+            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginTop:10,marginBottom:6,letterSpacing:0.5}}>SUBFILTRO</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+              {CATS.filter(c => c.group === activeGroup).map((c,i) => {
+                const ck = c.key2 || c.key;
+                const isOn = activeCatKey === ck;
+                return (
+                  <TouchableOpacity key={ck+i}
+                    style={{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:6,borderRadius:99,
+                      borderWidth:1.5, borderColor: isOn ? COLORS.primary : COLORS.border,
+                      backgroundColor: isOn ? COLORS.primary : COLORS.bg}}
+                    onPress={() => {
+                      setActiveCat(c.key);
+                      setActiveCatKey(ck);
+                      setProduct(c.product || '');
+                      setPriceRange(null);
+                      if (c.key === 'gasolinera') { setSort('proximity'); }
+                      else { setSort('price'); }
+                      setShowSettingsMenu(false);
+                    }}>
+                    <Text style={{fontSize:13}}>{c.emoji}</Text>
+                    <Text style={{fontSize:12,fontWeight:'600',color: isOn ? '#fff' : COLORS.text2}}>{c.label}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Fuel type selector — only for gasolina group */}
+            {activeGroup === 'gasolina' && (
+              <View style={{marginTop:10}}>
+                <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>CARBURANTE</Text>
+                <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+                  {FUELS.map(f => (
+                    <TouchableOpacity key={f.key}
+                      style={{paddingHorizontal:10,paddingVertical:6,borderRadius:99,borderWidth:1.5,
+                        borderColor: activeFuel===f.key ? f.color : COLORS.border,
+                        backgroundColor: activeFuel===f.key ? f.bg : COLORS.bg}}
+                      onPress={() => setActiveFuel(f.key)}>
+                      <Text style={{fontSize:11,fontWeight:'600',color: activeFuel===f.key ? f.color : COLORS.text2}}>{f.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            )}
+
+            {/* Sort options */}
+            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginTop:10,marginBottom:6,letterSpacing:0.5}}>ORDENAR POR</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+              {SORT_OPTS.map(so => (
+                <TouchableOpacity key={so.key}
+                  style={{paddingHorizontal:10,paddingVertical:6,borderRadius:99,borderWidth:1.5,
+                    borderColor: sort===so.key ? COLORS.primary : COLORS.border,
+                    backgroundColor: sort===so.key ? COLORS.primaryLight : COLORS.bg}}
+                  onPress={() => setSort(so.key)}>
+                  <Text style={{fontSize:11,fontWeight:'600',color: sort===so.key ? COLORS.primary : COLORS.text2}}>{so.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Barra de búsqueda de producto — solo para farmacia y gimnasio (supermercado usa Ahorro) */}
         {(activeCat === 'farmacia' || activeCat === 'gimnasio') && (
@@ -774,99 +852,6 @@ export default function MapScreen() {
           );
         })()}
 
-        {showFilters && (
-          <View style={s.filtersPanel}>
-            {/* Info solo para gasolineras — viewport loading */}
-            {activeCat === 'gasolinera' && (
-              <View style={{backgroundColor:COLORS.primaryLight,borderRadius:10,padding:10,marginBottom:10,flexDirection:'row',gap:8}}>
-                <Text style={{fontSize:14}}>💡</Text>
-                <Text style={{flex:1,fontSize:12,color:COLORS.primary}}>El mapa carga gasolineras según lo que tienes en pantalla. Haz zoom o desplázate para ver más.</Text>
-              </View>
-            )}
-            {/* Sort */}
-            <Text style={s.filterLabel}>Ordenar por</Text>
-            <View style={s.radRow}>
-              {SORT_OPTS.map(so=>(
-                <TouchableOpacity key={so.key} style={[s.sortBtn,sort===so.key&&s.sortBtnOn]} onPress={()=>setSort(so.key)}>
-                  <Text style={[s.sortTxt,sort===so.key&&{color:'#fff'}]}>{so.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Filtro precio relativo €/€€/€€€/€€€€ — solo Restaurantes (menú) y Farmacias */}
-            {(activeCat === 'restaurante' && activeCatKey === 'restaurante_menu' || activeCat === 'farmacia') && (
-              <View style={{marginTop:8}}>
-                <Text style={s.filterLabel}>
-                  {activeCat === 'restaurante' ? '🍽️ Precio del menú' : '💊 Precio del medicamento'}
-                </Text>
-                <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
-                  {[
-                    {r:null, label:'Todos'},
-                    {r:1, label:'€'},
-                    {r:2, label:'€€'},
-                    {r:3, label:'€€€'},
-                    {r:4, label:'€€€€'},
-                  ].map(({r, label}) => {
-                    const isOn = priceRange === r;
-                    const color = r===1?'#16A34A':r===2?'#65A30D':r===3?'#D97706':r===4?'#DC2626':COLORS.text2;
-                    return (
-                      <TouchableOpacity key={String(r)} onPress={()=>setPriceRange(r)}
-                        style={{paddingHorizontal:14,paddingVertical:7,borderRadius:99,borderWidth:1.5,
-                          borderColor: isOn ? color : COLORS.border,
-                          backgroundColor: isOn ? color : COLORS.bg}}>
-                        <Text style={{fontSize:14,fontWeight:'700',color: isOn ? '#fff' : color}}>{label}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
-                {priceRange && (() => {
-                  const DESC_REST = {1:'hasta 10€',2:'10–15€',3:'15–25€',4:'más de 25€'};
-                  const DESC_FARM = {1:'hasta 3€',2:'3–8€',3:'8–20€',4:'más de 20€'};
-                  const desc = activeCat==='restaurante' ? DESC_REST[priceRange] : DESC_FARM[priceRange];
-                  return <Text style={{fontSize:11,color:COLORS.text3,marginTop:4}}>Mostrando: {desc}</Text>;
-                })()}
-              </View>
-            )}
-
-            {/* Fuel type filter — only when gasolinera is active */}
-            {activeCat==='gasolinera' && (
-              <>
-                <Text style={s.filterLabel}>⛽ Carburante</Text>
-                <View style={s.fuelsGrid}>
-                  {FUELS.map(f => (
-                    <TouchableOpacity key={f.key}
-                      style={[s.fuelCard, activeFuel===f.key && {borderColor:f.color,backgroundColor:f.bg}]}
-                      onPress={() => setActiveFuel(f.key)}>
-                      {activeFuel===f.key && <View style={[s.fuelCardDot,{backgroundColor:f.color}]}/>}
-                      <Text style={[s.fuelCardTxt, activeFuel===f.key && {color:f.color,fontWeight:'700'}]}>{f.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-                {activeFuel !== 'all' && (
-                  <View style={s.fuelInfo}>
-                    <Ionicons name="information-circle-outline" size={13} color={COLORS.primary}/>
-                    <Text style={s.fuelInfoTxt}>
-                      Colores basados en precio de {FUELS.find(f=>f.key===activeFuel)?.label}. Solo aparecen gasolineras que ofrecen este carburante.
-                    </Text>
-                  </View>
-                )}
-              </>
-            )}
-
-            {/* Product search — solo farmacia en panel de filtros (súper busca por nombre) */}
-            {activeCat==='farmacia' && (
-              <>
-                <Text style={s.filterLabel}>Buscar medicamento</Text>
-                <View style={s.productRow}>
-                  <TextInput style={s.productInput} value={product} onChangeText={setProduct}
-                    placeholder="Ej: ibuprofeno 600mg, paracetamol..."
-                    placeholderTextColor={COLORS.text3} returnKeyType="search" onSubmitEditing={loadPlaces}/>
-                  {product ? <TouchableOpacity onPress={()=>{setProduct('');loadPlaces();}}><Ionicons name="close-circle" size={18} color={COLORS.text3}/></TouchableOpacity> : null}
-                </View>
-              </>
-            )}
-          </View>
-        )}
       </View>
 
       {/* MAP VIEW */}
@@ -905,19 +890,28 @@ export default function MapScreen() {
                   else borderColor = '#D97706';                           // normal → naranja
                 }
               }
-              // Label precio claro
+              // Label precio — €/€€/€€€/€€€€ con color para servicios, precio fijo para gimnasio y gasolinera
               let priceLabel = null;
-              if (weeklyCost) priceLabel = `${weeklyCost.toFixed(0)}€`;
-              else if (repP > 0 && !isNaN(repP)) {
-                if (p.category === 'gimnasio') priceLabel = `${repP.toFixed(0)}€/m`;
-                else priceLabel = `${repP.toFixed(2)}€`;
+              let priceBg = null;
+              if (weeklyCost) {
+                priceLabel = `${weeklyCost.toFixed(0)}€`;
+              } else if (p.category === 'gimnasio' && repP > 0) {
+                priceLabel = `${repP.toFixed(0)}€/m`;
+              } else if (repP > 0 && !isNaN(repP)) {
+                // Show €/€€/€€€/€€€€ instead of exact price
+                const AVG_SVC = { cafe:1.4, cerveza:2.2, restaurante_menu:12, restaurante:12, farmacia:4, supermercado:AVG_WEEKLY_COST };
+                const avg = AVG_SVC[activeCatKey] || AVG_SVC[p.category] || 10;
+                if (repP < avg * 0.75)      { priceLabel = '€';    priceBg = '#16A34A'; }
+                else if (repP < avg)         { priceLabel = '€€';   priceBg = '#65A30D'; }
+                else if (repP < avg * 1.3)   { priceLabel = '€€€';  priceBg = '#D97706'; }
+                else                          { priceLabel = '€€€€'; priceBg = '#DC2626'; }
               }
               if (!p.lat || !p.lng) return null;
               return (
                 <Marker key={`p${p.id}`} coordinate={{latitude:p.lat,longitude:p.lng}} onPress={()=>setSelectedPlace(p)}>
-                  <View style={[ms.marker,{backgroundColor:info.bg,borderColor,borderWidth:2}]}>
+                  <View style={[ms.marker,{backgroundColor: priceBg ? priceBg+'22' : info.bg, borderColor: priceBg || borderColor, borderWidth:2}]}>
                     <Text style={ms.markerEmoji}>{info.emoji}</Text>
-                    {priceLabel && <Text style={ms.markerPrice}>{priceLabel}</Text>}
+                    {priceLabel && <Text style={[ms.markerPrice, priceBg && {color: priceBg, fontWeight:'800'}]}>{priceLabel}</Text>}
                   </View>
                 </Marker>
               );
@@ -1518,7 +1512,7 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
         <TouchableOpacity
           style={[gcs.navBtn,{backgroundColor:COLORS.bg3,marginTop:8}]}
           onPress={async ()=>{
-            const msg = `⛽ ${station.name}\nG95: ${station.prices?.g95?.toFixed(3)||'N/D'}€ | Diesel: ${station.prices?.diesel?.toFixed(3)||'N/D'}€\nVía PreciMap 🗺️`;
+            const msg = `⛽ ${station.name}\nG95: ${station.prices?.g95?.toFixed(3)||'N/D'}€ | Diesel: ${station.prices?.diesel?.toFixed(3)||'N/D'}€\nVía MapaTacaño 💰`;
             try {
               if (typeof navigator !== 'undefined' && navigator.share) {
                 await navigator.share({ title: station.name, text: msg });
