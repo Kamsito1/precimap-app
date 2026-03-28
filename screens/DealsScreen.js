@@ -323,7 +323,7 @@ export default function DealsScreen() {
                     </View>
                     <Text style={{fontSize:12,fontWeight:'700',color:COLORS.text}} numberOfLines={2}>{t.title}</Text>
                     <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
-                      <Text style={{fontSize:14,fontWeight:'800',color:COLORS.primary}}>{t.deal_price != null ? t.deal_price.toFixed(2)+'€' : '—'}</Text>
+                      <Text style={{fontSize:14,fontWeight:'800',color:COLORS.primary}}>{t.deal_price != null ? (t.deal_price === 0 ? '¡GRATIS!' : t.deal_price.toFixed(2)+'€') : '—'}</Text>
                       {t.discount_percent != null && t.discount_percent > 0 && <View style={{backgroundColor:'#FEE2E2',borderRadius:4,paddingHorizontal:4}}>
                         <Text style={{fontSize:10,fontWeight:'700',color:COLORS.danger}}>-{Math.round(Number(t.discount_percent)||0)}%</Text>
                       </View>}
@@ -346,8 +346,9 @@ export default function DealsScreen() {
           ) : null}
           renderItem={({item:deal}) => {
             const temp = deal.temperature
-              ? { label: deal.temperature, color: deal.temp_color }
+              ? { label: deal.temperature, color: deal.temp_color || '#6B7280' }
               : temperature(deal.votes_up, deal.votes_down);
+            const tempColor = temp.color || '#6B7280';
             const affUrl = applyAffiliateTag(deal.url);
             const catEmoji = CATS.find(c=>c.key===deal.category)?.emoji || '🏷️';
             const catLabel = CATS.find(c=>c.key===deal.category)?.label || deal.category || 'otros';
@@ -355,8 +356,8 @@ export default function DealsScreen() {
             return (
               <View style={s.card}>
                 {/* Temp badge */}
-                <View style={[s.tempBadge, {backgroundColor: temp.color+'20'}]}>
-                  <Text style={[s.tempTxt, {color: temp.color}]}>{temp.label}</Text>
+                <View style={[s.tempBadge, {backgroundColor: tempColor+'20'}]}>
+                  <Text style={[s.tempTxt, {color: tempColor}]}>{temp.label}</Text>
                 </View>
 
                 {/* Image carousel — supports multiple images */}
@@ -654,9 +655,11 @@ export default function DealsScreen() {
               style={{backgroundColor:COLORS.primary,borderRadius:12,paddingVertical:14,alignItems:'center'}}
               onPress={async () => {
                 if (!editTitle.trim() || !editPrice) return Alert.alert('Error','Rellena todos los campos');
+                const parsedEditPrice = parseFloat(editPrice);
+                if (isNaN(parsedEditPrice) || parsedEditPrice < 0) return Alert.alert('Error','Introduce un precio válido');
                 try {
-                  await apiPost(`/api/deals/${editDeal.id}/edit`,{title:editTitle.trim(),deal_price:parseFloat(editPrice)});
-                  setDeals(prev=>prev.map(d=>d.id===editDeal.id?{...d,title:editTitle.trim(),deal_price:parseFloat(editPrice)}:d));
+                  await apiPost(`/api/deals/${editDeal.id}/edit`,{title:editTitle.trim(),deal_price:parsedEditPrice});
+                  setDeals(prev=>prev.map(d=>d.id===editDeal.id?{...d,title:editTitle.trim(),deal_price:parsedEditPrice}:d));
                   setEditDeal(null);
                 } catch(_) { Alert.alert('Error','No se pudo guardar'); }
               }}>

@@ -180,6 +180,7 @@ export function timeAgo(dateStr) {
 
 export function formatPrice(price) {
   if (price == null || isNaN(price)) return '—';
+  if (price === 0) return '¡GRATIS!';
   return `${Number(price).toFixed(2)}€`;
 }
 
