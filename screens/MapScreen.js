@@ -258,15 +258,15 @@ export default function MapScreen() {
         const { latitude: lat, longitude: lng } = loc.coords;
         setUserLoc({ lat, lng });
         mapRef.current?.animateToRegion({ latitude:lat, longitude:lng, latitudeDelta:0.06, longitudeDelta:0.06 }, 1000);
-        // Auto-set nearest city for non-gas categories
+        // Auto-set nearest city para categorías no-gasolina (restaurantes, farmacias, etc.)
+        // Para gasolineras NO seteamos ciudad — se muestran por GPS/viewport automáticamente
         try {
-          const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
-          const detectedCity = geo?.[0]?.city || geo?.[0]?.subregion || '';
-          if (detectedCity && !city) {
-            // Only auto-set if no city filter is already active
-            const KNOWN = ['Madrid','Barcelona','Sevilla','Valencia','Bilbao','Zaragoza','Málaga','Córdoba','Alicante','Murcia','Granada','Valladolid','Palma','Santander'];
-            const match = KNOWN.find(c => detectedCity.toLowerCase().includes(c.toLowerCase()) || c.toLowerCase().includes(detectedCity.toLowerCase().slice(0,5)));
-            if (match) setCity(match);
+          if (activeCat !== 'gasolinera') {
+            const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
+            const detectedCity = geo?.[0]?.city || geo?.[0]?.subregion || '';
+            if (detectedCity && !city) {
+              setCity(detectedCity);
+            }
           }
         } catch(_) {}
         // Carga progresiva — primero las cercanas al usuario
@@ -307,21 +307,13 @@ export default function MapScreen() {
   useEffect(() => {
     let filtered = allGas;
     if (city) {
-      // Si tenemos coords de la ciudad, filtrar por radio de 25km (no por provincia entera)
-      const cityCoord = CITY_COORDS[city];
-      if (cityCoord) {
-        filtered = filtered.filter(s => {
-          const d = distanceKm(cityCoord.lat, cityCoord.lng, s.lat, s.lng);
-          s._dist = d;
-          return d <= 25;
-        });
-      } else {
-        // Fallback: filtrar por nombre de ciudad exacto
-        const nc = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-        filtered = filtered.filter(s =>
-          (s.city||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(nc)
-        );
-      }
+      // Filtrar por ciudad exacta del Ministerio (normalize para acentos)
+      const nc = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      filtered = filtered.filter(s => {
+        const sc = (s.city||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        // Coincidencia exacta de ciudad (no por provincia)
+        return sc === nc || sc.startsWith(nc + ' ') || nc.startsWith(sc + ' ');
+      });
     } else if (mapRegion && radius < 999) {
       const { latitude: cLat, longitude: cLng, latitudeDelta, longitudeDelta } = mapRegion;
       const latPad = latitudeDelta * 0.6;

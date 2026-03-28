@@ -42,13 +42,17 @@ const SORTS = [
 
 // SafeImage: maneja onError sin setNativeProps (compatible con Hermes/iOS)
 function SafeImage({ uri, fallback, style }) {
-  const [src, setSrc] = React.useState(uri);
+  const [src, setSrc] = React.useState(uri && uri.startsWith('http') ? uri : fallback);
+  React.useEffect(() => {
+    setSrc(uri && uri.startsWith('http') ? uri : fallback);
+  }, [uri, fallback]);
+  if (!src) return <View style={[style, {backgroundColor:'#f3f4f6'}]}/>;
   return (
     <Image
       source={{ uri: src }}
       style={style}
       resizeMode="cover"
-      onError={() => { if (src !== fallback) setSrc(fallback); }}
+      onError={() => { if (src !== fallback && fallback) setSrc(fallback); }}
     />
   );
 }
@@ -169,10 +173,11 @@ export default function DealsScreen() {
             <Text style={s.sub}>
               {deals.length > 0
                 ? (() => {
-                    const discs = deals.filter(d => d.discount_percent > 0).map(d => d.discount_percent || 0);
+                    const discs = deals.filter(d => d.discount_percent != null && d.discount_percent > 0).map(d => Number(d.discount_percent));
                     const filterTxt = minDiscount > 0 ? ` · filtro -${minDiscount}%+` : '';
                     const searchTxt = search.trim() ? ` · "${search.trim()}"` : '';
-                    return `${deals.length} ofertas${discs.length ? ' · mejor ' + Math.round(Math.max(...discs)) + '%' : ''}${filterTxt}${searchTxt}`;
+                    const bestDisc = discs.length > 0 ? Math.round(Math.max(...discs)) : 0;
+                    return `${deals.length} ofertas${bestDisc > 0 ? ' · mejor -' + bestDisc + '%' : ''}${filterTxt}${searchTxt}`;
                   })()
                 : loading ? '⏳ Cargando chollos...' : deals.length > 0 ? `${deals.length} chollos · desliza para ver más` : 'Sin chollos con ese filtro'
               }
@@ -339,17 +344,18 @@ export default function DealsScreen() {
                   const fallbackUri = `https://ui-avatars.com/api/?name=${encodeURIComponent(deal.store||deal.category||'?')}&size=400&background=random`;
                   if (imgs.length === 1) return (
                     <TouchableOpacity onPress={() => affUrl && openURL(affUrl)} activeOpacity={0.9}>
-                      <SafeImage uri={imgs[0].startsWith('/') ? `${API_BASE}${imgs[0]}` : imgs[0]} fallback={fallbackUri} style={s.img}/>
+                      <SafeImage uri={imgs[0] && imgs[0].startsWith('/') ? `${API_BASE}${imgs[0]}` : (imgs[0]||'')} fallback={fallbackUri} style={s.img}/>
                     </TouchableOpacity>
                   );
-                  // Multi-image carousel
+                  // Multi-image carousel — nestedScrollEnabled para evitar crash en iOS
                   return (
                     <View style={{position:'relative'}}>
                       <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}
+                        nestedScrollEnabled={true}
                         style={{width: CARD_W}} contentContainerStyle={{width: CARD_W * imgs.length}}>
                         {imgs.map((uri,idx) => (
                           <TouchableOpacity key={idx} onPress={() => affUrl && openURL(affUrl)} activeOpacity={0.9}>
-                            <SafeImage uri={uri.startsWith('/') ? `${API_BASE}${uri}` : uri} fallback={fallbackUri} style={[s.img, {width: CARD_W}]}/>
+                            <SafeImage uri={uri && uri.startsWith('/') ? `${API_BASE}${uri}` : (uri||'')} fallback={fallbackUri} style={[s.img, {width: CARD_W}]}/>
                           </TouchableOpacity>
                         ))}
                       </ScrollView>

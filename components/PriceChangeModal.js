@@ -53,21 +53,27 @@ export default function PriceChangeModal({ visible, onClose, place, product = nu
   }
 
   async function propose() {
-    if (!isLoggedIn) { Alert.alert('Inicia sesión', 'Para proponer cambios necesitas una cuenta.'); return; }
-    if (!newProduct.trim() || !newPrice.trim()) { Alert.alert('Faltan datos', 'Introduce el producto y el precio nuevo.'); return; }
+    if (!isLoggedIn) { Alert.alert('Inicia sesión', 'Para reportar precios necesitas una cuenta.'); return; }
+    if (!newProduct.trim() || !newPrice.trim()) { Alert.alert('Faltan datos', 'Introduce el producto y el precio.'); return; }
     const price = parseFloat(newPrice.replace(',', '.'));
-    if (isNaN(price) || price <= 0) { Alert.alert('Precio inválido', 'Introduce un precio numérico válido.'); return; }
+    if (isNaN(price) || price <= 0) { Alert.alert('Precio inválido', 'Introduce un precio numérico válido (ej: 1.20).'); return; }
+    if (price > 500) { Alert.alert('Precio inválido', 'El precio parece demasiado alto. Compruébalo.'); return; }
     setSubmitting(true);
     try {
-      const res = await apiPost(`/api/places/${place?.id}/price-changes`, {
-        product: newProduct.trim(), new_price: price, reason: reason.trim() || null,
+      // Usar POST /api/prices para reporte directo (se guarda en BD inmediatamente)
+      const res = await apiPost('/api/prices', {
+        place_id: place?.id,
+        product: newProduct.trim(),
+        price: price,
+        unit: 'unidad',
       });
-      if (res.ok) {
-        Alert.alert('✅ Enviado', 'Tu propuesta está pendiente de votación. Si 5 usuarios la aprueban, el precio se actualiza automáticamente.');
-        setNewPrice(''); setReason('');
+      if (res?.id || res?.place_id) {
+        Alert.alert('✅ ¡Gracias!', `Precio de ${newProduct.trim()} (${price.toFixed(2)}€) guardado. +10 puntos.`);
+        setNewPrice(''); setNewProduct(''); setReason('');
         setTab('changes'); loadChanges();
+        onClose?.();
       } else {
-        Alert.alert('Error', res.error || 'No se pudo enviar la propuesta');
+        Alert.alert('Error', res?.error || 'No se pudo guardar el precio');
       }
     } catch (e) { Alert.alert('Error', e.message); }
     setSubmitting(false);
