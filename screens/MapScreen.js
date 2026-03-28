@@ -117,6 +117,7 @@ export default function MapScreen() {
   const [favStations, setFavStations] = useState([]); // from AsyncStorage
   const [showFavsOnly, setShowFavsOnly] = useState(false);
   const [cityStats, setCityStats] = useState(null); // resumen de precios de la ciudad
+  const [recentPrices, setRecentPrices] = useState([]); // feed actividad comunidad
   const mapRef = useRef(null);
 
   useEffect(() => { initLocation(); loadFuelStats(); loadFavs(); loadEvents(); }, []);
@@ -151,6 +152,13 @@ export default function MapScreen() {
     } catch(_) {}
   }
   useEffect(() => { loadPlaces(); }, [activeCat, sort, radius, product, city, userLoc]);
+
+  // Cargar precios recientes para el feed de comunidad (solo al montar)
+  useEffect(() => {
+    apiGet('/api/prices/recent?limit=8')
+      .then(d => setRecentPrices(Array.isArray(d) ? d : []))
+      .catch(() => {});
+  }, []);
 
   // Cargar stats de precios de la ciudad cuando cambia
   useEffect(() => {
@@ -650,6 +658,28 @@ export default function MapScreen() {
             </View>
           );
         })()}
+
+        {/* Feed actividad comunidad — visible sin ciudad ni GPS para restaurantes */}
+        {!city && !userLoc && activeCat === 'restaurante' && recentPrices.length > 0 && (() => {
+          const rest = recentPrices.filter(p => p.category === 'restaurante').slice(0, 5);
+          if (!rest.length) return null;
+          return (
+            <View style={{marginHorizontal:12,marginBottom:6}}>
+              <Text style={{fontSize:10,fontWeight:'700',color:COLORS.text3,marginBottom:4,letterSpacing:0.5}}>🔥 ACTUALIZADOS HOY</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
+                {rest.map(p => (
+                  <View key={p.id} style={{backgroundColor:COLORS.bg2,borderRadius:10,padding:8,borderWidth:1,borderColor:COLORS.border,minWidth:110,maxWidth:140}}>
+                    <Text style={{fontSize:11,fontWeight:'700',color:COLORS.text}} numberOfLines={1}>{p.place_name}</Text>
+                    <Text style={{fontSize:9,color:COLORS.text3,marginBottom:2}} numberOfLines={1}>{p.city}</Text>
+                    <Text style={{fontSize:14,fontWeight:'800',color:COLORS.primary}}>{p.price?.toFixed(2)}€</Text>
+                    <Text style={{fontSize:9,color:COLORS.text3}} numberOfLines={1}>{p.product}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          );
+        })()}
+
         {showFilters && (
           <View style={s.filtersPanel}>
             {/* Info solo para gasolineras — viewport loading */}
