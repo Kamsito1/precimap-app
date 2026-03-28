@@ -1083,7 +1083,7 @@ export default function MapScreen() {
             return (
               <FlatList
                 data={listData}
-                keyExtractor={(it,i)=>String(it.id||i)}
+                keyExtractor={(it,i)=>it.isGas ? `gas_${it.id||i}` : it.isEvent ? `evt_${it.id||i}` : `pl_${it.id||i}`}
                 contentContainerStyle={{padding:12,gap:10,paddingBottom:100}}
                 renderItem={({item})=>(
                   <ListCard item={item}

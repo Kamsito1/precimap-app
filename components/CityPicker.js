@@ -34,8 +34,8 @@ export default function CityPicker({ value, onChange, placeholder = 'Toda Españ
   }
 
   const combined = [
-    ...results.provinces.map(p => ({ label: p, type: 'province' })),
-    ...results.cities.map(c => ({ label: c, type: 'city' })),
+    ...(Array.isArray(results.provinces) ? results.provinces : []).map(p => ({ label: p, type: 'province' })),
+    ...(Array.isArray(results.cities)    ? results.cities    : []).map(c => ({ label: c, type: 'city' })),
   ].filter((v, i, a) => a.findIndex(x => x.label === v.label) === i).slice(0, 40);
 
   return (

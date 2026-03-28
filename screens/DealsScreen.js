@@ -420,7 +420,7 @@ export default function DealsScreen() {
                   {/* Price — enhanced layout */}
                   <View style={s.priceRow}>
                     <Text style={s.dealPrice}>{formatPrice(deal.deal_price)}</Text>
-                    {deal.original_price && <Text style={s.origPrice}>{formatPrice(deal.original_price)}</Text>}
+                    {deal.original_price != null && deal.original_price > 0 && <Text style={s.origPrice}>{formatPrice(deal.original_price)}</Text>}
                     {deal.discount_percent != null && deal.discount_percent >= 5 && (
                       <View style={[s.discBadge,
                         deal.discount_percent >= 50 ? {backgroundColor:'#7C3AED'} :
