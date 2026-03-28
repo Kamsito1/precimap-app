@@ -161,12 +161,14 @@ export default function MapScreen() {
 
   // Show first-time hint after 3 seconds
   useEffect(() => {
+    let t;
     AsyncStorage.getItem('map_hint_shown').then(v => {
       if (!v) {
-        setTimeout(() => setShowHint(true), 3000);
+        t = setTimeout(() => setShowHint(true), 3000);
         AsyncStorage.setItem('map_hint_shown', '1');
       }
     }).catch(() => {});
+    return () => clearTimeout(t);
   }, []);
 
   async function loadFavs() {
