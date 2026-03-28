@@ -1208,7 +1208,11 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
       <View style={gcs.header}>
         <View style={[gcs.iconBg,{backgroundColor:'#FEF3C7'}]}><Text style={{fontSize:28}}>⛽</Text></View>
         <View style={{flex:1}}>
-          <Text style={gcs.title} numberOfLines={2}>{station.name||'Gasolinera'}</Text>
+          <Text style={gcs.title} numberOfLines={2}>{
+            station.name && station.name === station.name.toUpperCase()
+              ? station.name.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
+              : station.name||'Gasolinera'
+          }</Text>
           <Text style={gcs.sub} numberOfLines={1}>{station.address}</Text>
           {station.schedule&&<Text style={gcs.hours}>🕐 {station.schedule}</Text>}
         </View>
@@ -1315,7 +1319,9 @@ function PlaceModal({ place, catKey, onClose, onNavigate, isLoggedIn, onAuthNeed
         {/* Representative price banner */}
         {place.repPrice != null && prices.length > 0 && (() => {
           const cat = place.category;
-          const label = cat==='restaurante' ? 'precio medio plato'
+          // Label específico por subcategoría de restaurante
+          const restLabel = { cafe:'precio café', cerveza:'precio caña', restaurante_menu:'precio menú del día' };
+          const label = cat==='restaurante' ? (restLabel[catKey] || 'precio medio plato')
             : cat==='farmacia' ? 'precio medio medicamento'
             : cat==='supermercado' ? 'cesta semanal estimada'
             : cat==='gimnasio' ? 'cuota mensual desde'
@@ -1331,7 +1337,9 @@ function PlaceModal({ place, catKey, onClose, onNavigate, isLoggedIn, onAuthNeed
             ? `${prices.length} tarifas reportadas · media España ~25-40€/mes`
             : `${prices.length} productos reportados por la comunidad`);
           // Color refs per category
-          const REF = {restaurante:12, farmacia:5, supermercado:100, gimnasio:30};
+          // Referencia de precio por subcategoría
+          const REST_REF = { cafe:1.4, cerveza:2.2, restaurante_menu:12 };
+          const REF = {restaurante: REST_REF[catKey] || 12, farmacia:5, supermercado:100, gimnasio:30};
           const ref = REF[cat];
           const priceColor = !ref ? COLORS.primary
             : place.repPrice < ref*0.85 ? '#16A34A'
