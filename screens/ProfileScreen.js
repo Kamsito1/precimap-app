@@ -449,9 +449,9 @@ export default function ProfileScreen() {
                     <Text style={{fontSize:14,fontWeight:'600',color:COLORS.text}} numberOfLines={2}>{d.title}</Text>
                     <View style={{flexDirection:'row',gap:8,marginTop:4,alignItems:'center'}}>
                       <Text style={{fontSize:15,fontWeight:'800',color:COLORS.primary}}>{d.deal_price?.toFixed(2)}€</Text>
-                      {d.discount_percent > 0 && (
+                      {d.discount_percent != null && Number(d.discount_percent) > 0 && (
                         <View style={{backgroundColor:'#FEE2E2',borderRadius:4,paddingHorizontal:6,paddingVertical:2}}>
-                          <Text style={{fontSize:11,fontWeight:'700',color:COLORS.danger}}>-{Math.round(d.discount_percent)}%</Text>
+                          <Text style={{fontSize:11,fontWeight:'700',color:COLORS.danger}}>-{Math.round(Number(d.discount_percent)||0)}%</Text>
                         </View>
                       )}
                     </View>
