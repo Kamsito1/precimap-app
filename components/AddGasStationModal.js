@@ -21,6 +21,7 @@ export default function AddGasStationModal({ visible, onClose, onSuccess }) {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') return Alert.alert('Permiso denegado', 'Necesitamos acceso a tu ubicación.');
       const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High });
+      if (!loc?.coords?.latitude || !loc?.coords?.longitude) return Alert.alert('Error', 'No se pudo obtener la ubicación.');
       setLat(loc.coords.latitude.toFixed(6));
       setLng(loc.coords.longitude.toFixed(6));
       // Reverse geocode for address hint
