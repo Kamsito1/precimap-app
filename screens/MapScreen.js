@@ -605,11 +605,13 @@ export default function MapScreen() {
           />
         </View>
         {/* Aviso si no hay ciudad ni GPS para categorías que lo necesitan */}
-        {!city && !userLoc && activeCat !== 'gasolinera' && activeCat !== 'supermercado' && (
+        {!city && !userLoc && activeCat !== 'gasolinera' && (
           <View style={{marginHorizontal:12,marginBottom:6,backgroundColor:'#FFF7ED',borderRadius:10,padding:8,flexDirection:'row',gap:6,alignItems:'center',borderWidth:1,borderColor:'#FED7AA'}}>
             <Text style={{fontSize:14}}>📍</Text>
             <Text style={{flex:1,fontSize:12,color:'#92400E',fontWeight:'600'}}>
-              Elige una ciudad arriba para ver los precios más baratos cerca de ti
+              {activeCat === 'supermercado'
+                ? 'Elige tu ciudad para ver supermercados cerca de ti'
+                : 'Elige una ciudad arriba para ver los precios más baratos cerca de ti'}
             </Text>
           </View>
         )}
