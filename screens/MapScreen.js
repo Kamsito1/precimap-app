@@ -1548,9 +1548,7 @@ function AddPlaceModal({ visible, onClose, userLoc, onSuccess }) {
     {key:'gimnasio',     label:'💪 Gimnasio'},
     {key:'farmacia',     label:'💊 Farmacia'},
     {key:'gasolinera',   label:'⛽ Gasolinera'},
-    {key:'restaurante',  label:'🍽️ Restaurante'},
-    {key:'bar',          label:'🍺 Bar'},
-    {key:'cafe',         label:'☕ Café'},
+    {key:'restaurante',  label:'🍽️ Bar / Restaurante / Café'},
     {key:'otro',         label:'📍 Otro'},
   ];
 
