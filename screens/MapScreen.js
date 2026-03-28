@@ -116,6 +116,7 @@ export default function MapScreen() {
   const [serverFuelStats, setServerFuelStats] = useState(null);
   const [favStations, setFavStations] = useState([]); // from AsyncStorage
   const [showFavsOnly, setShowFavsOnly] = useState(false);
+  const [cityStats, setCityStats] = useState(null); // resumen de precios de la ciudad
   const mapRef = useRef(null);
 
   useEffect(() => { initLocation(); loadFuelStats(); loadFavs(); loadEvents(); }, []);
@@ -150,6 +151,14 @@ export default function MapScreen() {
     } catch(_) {}
   }
   useEffect(() => { loadPlaces(); }, [activeCat, sort, radius, product, city, userLoc]);
+
+  // Cargar stats de precios de la ciudad cuando cambia
+  useEffect(() => {
+    if (!city) { setCityStats(null); return; }
+    apiGet(`/api/places/stats?city=${encodeURIComponent(city)}`)
+      .then(d => setCityStats(d))
+      .catch(() => setCityStats(null));
+  }, [city]);
 
   // Load ALL gasolineras once into client cache (server already has them cached at 5ms)
   async function loadFuelStats() {
@@ -616,7 +625,31 @@ export default function MapScreen() {
           </View>
         )}
 
-        {/* Expanded filter panel */}
+        {/* Banner resumen de precios de la ciudad — solo para restaurantes */}
+        {city && cityStats && activeCat === 'restaurante' && (() => {
+          const stats = cityStats.stats || {};
+          const KEY_MAP = {
+            cafe:             ['Café con leche','Café solo'],
+            cerveza:          ['Caña de cerveza','Cerveza caña'],
+            restaurante_menu: ['Menú del día','Menú del día completo'],
+          };
+          const keys = KEY_MAP[activeCatKey] || [];
+          const found = keys.map(k => stats[k]).find(v => v);
+          if (!found) return null;
+          const emoji = activeCatKey === 'cafe' ? '☕' : activeCatKey === 'cerveza' ? '🍺' : '🍽️';
+          return (
+            <View style={{marginHorizontal:12,marginBottom:6,backgroundColor:COLORS.primaryLight,borderRadius:10,padding:8,flexDirection:'row',gap:8,alignItems:'center',borderWidth:1,borderColor:COLORS.primary+'33'}}>
+              <Text style={{fontSize:16}}>{emoji}</Text>
+              <View style={{flex:1}}>
+                <Text style={{fontSize:12,fontWeight:'700',color:COLORS.primary}}>
+                  En {city}: desde <Text style={{fontSize:14}}>{found.min.toFixed(2)}€</Text>
+                  {found.max !== found.min ? ` hasta ${found.max.toFixed(2)}€` : ''}
+                </Text>
+                <Text style={{fontSize:10,color:COLORS.text3}}>{found.count} precios reportados</Text>
+              </View>
+            </View>
+          );
+        })()}
         {showFilters && (
           <View style={s.filtersPanel}>
             {/* Info solo para gasolineras — viewport loading */}
