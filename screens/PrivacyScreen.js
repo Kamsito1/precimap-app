@@ -22,7 +22,7 @@ export default function PrivacyScreen({ onClose }) {
         <Text style={s.p}>PreciMap es una aplicación de ahorro y comparación de precios. El responsable del tratamiento es el desarrollador de PreciMap.</Text>
 
         <Text style={s.h2}>2. Datos que recogemos</Text>
-        <Text style={s.p}>• Email y nombre de usuario al registrarte (o datos de Google si usas Google Sign-In){'\n'}• Precios de productos que reportas voluntariamente{'\n'}• Ubicación aproximada (solo cuando abres el mapa, nunca en segundo plano){'\n'}• Fotos que subes voluntariamente al publicar chollos{'\n'}• ID de publicidad anónimo (para mostrar anuncios relevantes vía Google AdMob)</Text>
+        <Text style={s.p}>• Email y nombre de usuario al registrarte (o datos de Google/Apple si usas Google Sign-In o Sign in with Apple){'\n'}• Precios de productos que reportas voluntariamente{'\n'}• Ubicación aproximada (solo cuando abres el mapa, nunca en segundo plano){'\n'}• Fotos que subes voluntariamente al publicar chollos{'\n'}• ID de publicidad anónimo (para mostrar anuncios relevantes vía Google AdMob)</Text>
 
         <Text style={s.h2}>3. Para qué usamos tus datos</Text>
         <Text style={s.p}>• Gestionar tu cuenta y autenticación{'\n'}• Mostrar tu actividad en el ranking comunitario{'\n'}• Enviarte notificaciones sobre tus reportes (en la app, no push){'\n'}• Mejorar la app con datos agregados y anónimos</Text>

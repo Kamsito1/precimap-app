@@ -152,9 +152,24 @@ export default function MapScreen() {
   const [cityStats, setCityStats] = useState(null); // resumen de precios de la ciudad
   const [recentPrices, setRecentPrices] = useState([]); // feed actividad comunidad
   const [priceRange, setPriceRange] = useState(null); // null | 1 | 2 | 3 | 4 (€/€€/€€€/€€€€)
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false); // pre-permission screen
   const mapRef = useRef(null);
 
-  useEffect(() => { initLocation(); loadFuelStats(); loadFavs(); loadEvents(); }, []);
+  useEffect(() => {
+    // Mostrar pantalla de contexto antes de pedir permisos de localización (Apple guideline 5.1.1)
+    AsyncStorage.getItem('location_permission_asked').then(asked => {
+      if (asked) {
+        // Ya explicado antes — pedir directamente
+        initLocation(); loadFuelStats(); loadFavs(); loadEvents();
+      } else {
+        // Primera vez — mostrar contexto primero
+        setShowLocationPrompt(true);
+        loadFuelStats(); loadFavs(); loadEvents();
+      }
+    }).catch(() => {
+      initLocation(); loadFuelStats(); loadFavs(); loadEvents();
+    });
+  }, []);
 
   // Re-load favs when login state changes (e.g. user logs in after app opened)
   useEffect(() => { loadFavs(); }, [isLoggedIn]);
@@ -520,6 +535,42 @@ export default function MapScreen() {
       ? `maps://maps.apple.com/?daddr=${lat},${lng}&q=${encodeURIComponent(name||'')}`
       : `geo:${lat},${lng}?q=${encodeURIComponent(name||'')}`;
     Linking.openURL(url).catch(() => openURL(googleMapsUrl));
+  }
+
+  // Pre-permission screen — contexto antes del alert del sistema (Apple guideline 5.1.1)
+  if (showLocationPrompt) {
+    return (
+      <SafeAreaView style={{flex:1,backgroundColor:COLORS.bg,justifyContent:'center',alignItems:'center',padding:32}} edges={['top','bottom']}>
+        <Text style={{fontSize:60,marginBottom:16}}>📍</Text>
+        <Text style={{fontSize:24,fontWeight:'800',color:COLORS.text,textAlign:'center',marginBottom:12}}>
+          Activa la ubicación
+        </Text>
+        <Text style={{fontSize:15,color:COLORS.text2,textAlign:'center',lineHeight:22,marginBottom:8}}>
+          PreciMap usa tu ubicación para mostrarte las <Text style={{fontWeight:'700',color:COLORS.primary}}>gasolineras más baratas cerca de ti</Text> y los mejores precios de tu zona.
+        </Text>
+        <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center',marginBottom:32}}>
+          Solo se usa mientras tienes la app abierta. Nunca en segundo plano.
+        </Text>
+        <TouchableOpacity
+          style={{backgroundColor:COLORS.primary,borderRadius:16,paddingVertical:16,paddingHorizontal:40,width:'100%',alignItems:'center',marginBottom:12}}
+          onPress={() => {
+            AsyncStorage.setItem('location_permission_asked','1').catch(()=>{});
+            setShowLocationPrompt(false);
+            initLocation();
+          }}>
+          <Text style={{color:'#fff',fontWeight:'800',fontSize:16}}>Activar ubicación</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={{padding:12}}
+          onPress={() => {
+            AsyncStorage.setItem('location_permission_asked','1').catch(()=>{});
+            setShowLocationPrompt(false);
+            loadAllGasolineras(null);
+          }}>
+          <Text style={{color:COLORS.text3,fontSize:14}}>Continuar sin ubicación</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
   }
 
   return (

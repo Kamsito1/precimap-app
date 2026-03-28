@@ -253,8 +253,8 @@ export default function ProfileScreen() {
   }
 
   async function executeDelete() {
-    const isGoogleUser = profile?.google_id || user?.google_id;
-    if (!isGoogleUser && !deletePassword) return setDeleteError('Introduce tu contraseña');
+    const isSocialUser = profile?.google_id || user?.google_id || profile?.apple_id || user?.apple_id;
+    if (!isSocialUser && !deletePassword) return setDeleteError('Introduce tu contraseña');
     setDeleteLoading(true);
     try {
       const res = await apiPost('/api/users/me/delete', { password: deletePassword || '' });
@@ -755,9 +755,9 @@ export default function ProfileScreen() {
           <View style={{backgroundColor:COLORS.bg2,borderRadius:20,padding:24}}>
             <Text style={{fontSize:20,fontWeight:'800',color:'#DC2626',marginBottom:8}}>⚠️ Eliminar cuenta</Text>
             <Text style={{fontSize:14,color:COLORS.text2,marginBottom:20,lineHeight:21}}>
-              Esta acción es permanente e irreversible.{'\n'}{(profile?.google_id || user?.google_id) ? 'Pulsa "Eliminar" para confirmar.' : 'Introduce tu contraseña para confirmar.'}
+              Esta acción es permanente e irreversible.{'\n'}{(profile?.google_id || user?.google_id || profile?.apple_id || user?.apple_id) ? 'Pulsa "Eliminar" para confirmar.' : 'Introduce tu contraseña para confirmar.'}
             </Text>
-            {!(profile?.google_id || user?.google_id) && (
+            {!(profile?.google_id || user?.google_id || profile?.apple_id || user?.apple_id) && (
               <TextInput
                 style={[em.input,{marginBottom:12}]}
                 value={deletePassword}

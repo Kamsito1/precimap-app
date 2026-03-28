@@ -131,5 +131,5 @@ const s = StyleSheet.create({
   ctaBtn: { backgroundColor:'rgba(255,255,255,0.25)', borderRadius:8, paddingHorizontal:10, paddingVertical:5 },
   ctaTxt: { fontSize:11, fontWeight:'700', color:'#fff' },
   xBtn: { padding:8 },
-  label: { position:'absolute', top:2, right:8, fontSize:7, color:'rgba(255,255,255,0.35)', fontWeight:'600' },
+  label: { position:'absolute', top:2, right:8, fontSize:9, color:'rgba(255,255,255,0.6)', fontWeight:'700', letterSpacing:0.5 },
 });
