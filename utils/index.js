@@ -248,8 +248,8 @@ export function stationMinPrice(prices = {}) {
 }
 
 export const FUEL_LABELS = {
-  g95: 'G95 E5', g98: 'G98 E5', diesel: 'Diésel A',
-  diesel_plus: 'Diésel+', glp: 'GLP', gnc: 'GNC', all: 'Todos',
+  g95: 'Gasolina 95', g98: 'Gasolina 98', diesel: 'Diésel A',
+  diesel_plus: 'Diésel+', glp: 'GLP/Autogas', gnc: 'Gas Natural', all: 'Todos',
 };
 
 export const CATEGORY_INFO = {

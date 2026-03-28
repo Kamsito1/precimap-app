@@ -1061,7 +1061,11 @@ function ListCard({ item, onPress, onNav, activeFuel, catKey, isFav }) {
     }
     const p = item.repPrice || item.minPrice;
     if (!p || isNaN(p)) return null;
-    if (item.isGas)              return `${fuelLabel} ${p.toFixed(3)}€/L`;
+    if (item.isGas) {
+      // Etiqueta corta: "G95 1.539€" — sin "Gasolina" para ahorrar espacio
+      const shortLabel = {g95:'G95',g98:'G98',diesel:'Diésel',diesel_plus:'Diésel+',glp:'GLP',gnc:'GNC'}[activeFuel] || 'G95';
+      return `${shortLabel} ${p.toFixed(3)}€/L`;
+    }
     if (item.category === 'restaurante') {
       // Mostrar qué producto es el precio según subcategoría
       const labels = { cafe:'☕ Café', cerveza:'🍺 Caña', restaurante_menu:'🍽️ Menú' };
