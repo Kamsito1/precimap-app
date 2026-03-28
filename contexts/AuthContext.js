@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { Auth } from '../utils';
+import { Auth, setUnauthorizedHandler } from '../utils';
 
 const AuthContext = createContext(null);
 
@@ -13,6 +13,12 @@ export function AuthProvider({ children }) {
       setUser(Auth.user);
       setLoggedIn(Auth.isLoggedIn);
       setLoading(false);
+    });
+    // Auto-logout cuando el servidor devuelve 401 (token expirado)
+    setUnauthorizedHandler(() => {
+      Auth.clear();
+      setUser(null);
+      setLoggedIn(false);
     });
   }, []);
 

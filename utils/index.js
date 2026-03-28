@@ -95,13 +95,30 @@ export const Auth = {
 };
 
 // ─── API HELPERS ──────────────────────────────────────────────────────────────
+// Auto-logout callback — se establece desde AuthContext para limpiar sesión en 401
+let _onUnauthorized = null;
+export function setUnauthorizedHandler(fn) { _onUnauthorized = fn; }
+
+function handleUnauthorized(status) {
+  if (status === 401 && _onUnauthorized) {
+    _onUnauthorized();
+  }
+}
+
 export async function apiGet(path) {
   try {
-    const r = await fetch(API_BASE + path, { headers: Auth.headers() });
-    if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error||`HTTP ${r.status}`); }
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+    const r = await fetch(API_BASE + path, { headers: Auth.headers(), signal: controller.signal });
+    clearTimeout(timeout);
+    if (!r.ok) {
+      handleUnauthorized(r.status);
+      const e = await r.json().catch(()=>({}));
+      throw new Error(e.error||`HTTP ${r.status}`);
+    }
     return r.json();
   } catch(e) {
-    // Re-throw so callers using allSettled see the rejection
+    if (e.name === 'AbortError') throw new Error('Tiempo de espera agotado. Comprueba tu conexión.');
     throw e;
   }
 }
@@ -110,6 +127,7 @@ export async function apiPost(path, body) {
   const r = await fetch(API_BASE + path, {
     method: 'POST', headers: Auth.headers(), body: JSON.stringify(body),
   });
+  if (r.status === 401) handleUnauthorized(401);
   const data = await r.json().catch(() => ({}));
   if (!r.ok && !data.ok) { throw new Error(data.error || `HTTP ${r.status}`); }
   return data;
@@ -119,6 +137,7 @@ export async function apiPatch(path, body) {
   const r = await fetch(API_BASE + path, {
     method: 'PATCH', headers: Auth.headers(), body: JSON.stringify(body),
   });
+  if (r.status === 401) handleUnauthorized(401);
   const data = await r.json().catch(() => ({}));
   if (!r.ok && !data.ok) { throw new Error(data.error || `HTTP ${r.status}`); }
   return data;
@@ -126,6 +145,7 @@ export async function apiPatch(path, body) {
 
 export async function apiDelete(path) {
   const r = await fetch(API_BASE + path, { method: 'DELETE', headers: Auth.headers() });
+  if (r.status === 401) handleUnauthorized(401);
   const data = await r.json().catch(() => ({}));
   if (!r.ok && !data.ok) { throw new Error(data.error || `HTTP ${r.status}`); }
   return data;
