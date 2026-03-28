@@ -508,6 +508,7 @@ export default function MapScreen() {
   }
 
   function navigateTo(lat, lng, name) {
+    if (!lat || !lng) return;
     const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name||'')}`;
     // Web: always Google Maps in new tab
     if (typeof document !== 'undefined') { openURL(googleMapsUrl); return; }
@@ -856,6 +857,7 @@ export default function MapScreen() {
                 if (p.category === 'gimnasio') priceLabel = `${repP.toFixed(0)}€/m`;
                 else priceLabel = `${repP.toFixed(2)}€`;
               }
+              if (!p.lat || !p.lng) return null;
               return (
                 <Marker key={`p${p.id}`} coordinate={{latitude:p.lat,longitude:p.lng}} onPress={()=>setSelectedPlace(p)}>
                   <View style={[ms.marker,{backgroundColor:info.bg,borderColor,borderWidth:2}]}>
@@ -879,6 +881,7 @@ export default function MapScreen() {
               const displayPrice = displayFuel ? s.prices[displayFuel] : null;
               const col = displayPrice ? gasPriceColor(displayPrice) : { bg: '#9CA3AF', text: '#fff', label: 'Sin datos' };
               if (activeFuel && activeFuel !== 'all' && !s.prices?.[activeFuel]) return null;
+              if (!s.lat || !s.lng) return null;
               return (
                 <Marker key={s.id} coordinate={{ latitude: s.lat, longitude: s.lng }} onPress={() => {
                   setSelectedStation(s);
