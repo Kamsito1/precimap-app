@@ -384,11 +384,11 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.kamsito.precimap;
-				PRODUCT_NAME = PreciMap;
+				PRODUCT_NAME = "MapaTacao";
 				SWIFT_OBJC_BRIDGING_HEADER = "PreciMap/PreciMap-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1";
 				VERSIONING_SYSTEM = "apple-generic";
 				DEVELOPMENT_TEAM = "6G97KZY6FD";
 				CODE_SIGN_IDENTITY = "Apple Development";
@@ -418,10 +418,10 @@
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.kamsito.precimap;
-				PRODUCT_NAME = PreciMap;
+				PRODUCT_NAME = "MapaTacao";
 				SWIFT_OBJC_BRIDGING_HEADER = "PreciMap/PreciMap-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1";
 				VERSIONING_SYSTEM = "apple-generic";
 				DEVELOPMENT_TEAM = "6G97KZY6FD";
 				CODE_SIGN_IDENTITY = "Apple Development";

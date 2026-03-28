@@ -139,7 +139,6 @@ export default function MapScreen() {
   const [product, setProduct]       = useState('');
   const [gasSearch, setGasSearch]   = useState('');
   const [city, setCity]             = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [activeFuel, setActiveFuel]   = useState('g95'); // por defecto G95 para gasolineras
   const [loading, setLoading]         = useState(false);
   const [gasLoading, setGasLoading]   = useState(false);
@@ -149,7 +148,6 @@ export default function MapScreen() {
   const [selectedStation, setSelectedStation] = useState(null);
   const [showAuth, setShowAuth]     = useState(false);
   const [showAddGas, setShowAddGas] = useState(false);
-  const [showAddPlace, setShowAddPlace] = useState(false);
   const [priceChangePlace, setPriceChangePlace] = useState(null);
   const [mapRegion, setMapRegion]   = useState(null); // current visible region
   const [allGas, setAllGas]         = useState([]);
@@ -1070,11 +1068,7 @@ export default function MapScreen() {
           {/* Add FAB */}
           <TouchableOpacity style={ms.fab} onPress={() => {
             if (!isLoggedIn) { setShowAuth(true); return; }
-            Alert.alert('Añadir', '¿Qué quieres añadir?', [
-              { text:'⛽ Gasolinera no registrada', onPress:()=>setShowAddGas(true) },
-              { text:'📍 Supermercado / Farmacia / Otro', onPress:()=>setShowAddPlace(true) },
-              { text:'Cancelar', style:'cancel' },
-            ]);
+            setShowAddGas(true);
           }}>
             <Ionicons name="add" size={28} color="#fff"/>
           </TouchableOpacity>
@@ -1196,11 +1190,7 @@ export default function MapScreen() {
           {/* FAB en lista — añadir lugar/precio */}
           <TouchableOpacity style={[ms.fab, {position:'absolute', bottom:20, right:16}]} onPress={() => {
             if (!isLoggedIn) { setShowAuth(true); return; }
-            Alert.alert('Añadir', '¿Qué quieres añadir?', [
-              { text:'⛽ Gasolinera no registrada', onPress:()=>setShowAddGas(true) },
-              { text:'📍 Supermercado / Farmacia / Otro', onPress:()=>setShowAddPlace(true) },
-              { text:'Cancelar', style:'cancel' },
-            ]);
+            setShowAddGas(true);
           }}>
             <Ionicons name="add" size={28} color="#fff"/>
           </TouchableOpacity>
@@ -1215,10 +1205,8 @@ export default function MapScreen() {
       <Modal visible={!!selectedStation} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedStation(null)}>
         {selectedStation && <GasModal station={selectedStation} onClose={()=>setSelectedStation(null)} onNavigate={navigateTo} onFavChange={loadFavs}/>}
       </Modal>
-      <AddGasStationModal visible={showAddGas} onClose={()=>setShowAddGas(false)} userLoc={userLoc}
-        onSuccess={()=>{ setShowAddGas(false); loadPlaces(); loadAllGasolineras(); Alert.alert('✅ Añadida','Gracias. La comunidad la verificará con sus votos.'); }}/>
-      <AddPlaceModal visible={showAddPlace} onClose={()=>setShowAddPlace(false)} userLoc={userLoc}
-        onSuccess={()=>{ setShowAddPlace(false); loadPlaces(); Alert.alert('✅ Lugar añadido','¡Gracias! Ya aparece en el mapa para que la comunidad reporte precios.'); }}/>
+      <AddGasStationModal visible={showAddGas} onClose={()=>setShowAddGas(false)} activeCat={activeCat}
+        onSuccess={()=>{ setShowAddGas(false); loadPlaces(); Alert.alert('✅ Lugar añadido','¡Aparecerá con badge "NUEVO". La comunidad votará para verificar.'); }}/>
       <AuthModal visible={showAuth} onClose={()=>setShowAuth(false)}/>
     </SafeAreaView>
   );
@@ -1786,81 +1774,4 @@ const pcs = StyleSheet.create({
   fuelActiveTxt:{fontSize:12,fontWeight:'700'},
 });
 
-// ─── ADD PLACE MODAL ──────────────────────────────────────────────────────────
-function AddPlaceModal({ visible, onClose, userLoc, onSuccess }) {
-  const [name, setName]   = useState('');
-  const [cat, setCat]     = useState('supermercado');
-  const [address, setAddr] = useState('');
-  const [city, setCity]   = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const CATS = [
-    {key:'supermercado', label:'🛒 Supermercado'},
-    {key:'gimnasio',     label:'💪 Gimnasio'},
-    {key:'farmacia',     label:'💊 Farmacia'},
-    {key:'gasolinera',   label:'⛽ Gasolinera'},
-    {key:'restaurante',  label:'🍽️ Bar / Restaurante / Café'},
-    {key:'otro',         label:'📍 Otro'},
-  ];
-
-  function reset() { setName(''); setCat('supermercado'); setAddr(''); setCity(''); setError(''); }
-
-  async function submit() {
-    if (!name.trim()) return setError('El nombre es obligatorio');
-    if (!city.trim()) return setError('La ciudad es obligatoria para que el lugar aparezca bien en el mapa');
-    if (!address.trim()) return setError('La dirección es obligatoria');
-    if (!userLoc) return setError('Necesitas tener el GPS activo para añadir un lugar con la ubicación correcta. Activa la localización e inténtalo de nuevo.');
-    setLoading(true);
-    try {
-      const lat = userLoc.lat;
-      const lng = userLoc.lng;
-      await apiPost('/api/places', { name: name.trim(), category: cat, lat, lng, address: address.trim(), city: city.trim() });
-      reset();
-      onSuccess?.();
-    } catch(e) { setError(e.message || 'Error al añadir'); }
-    finally { setLoading(false); }
-  }
-
-  return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'flex-end'}}>
-        <KeyboardAvoidingView behavior={Platform.OS==='ios'?'padding':'height'}>
-          <View style={{backgroundColor:COLORS.bg2,borderTopLeftRadius:20,borderTopRightRadius:20,padding:20,gap:12}}>
-            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
-              <Text style={{fontSize:18,fontWeight:'700',color:COLORS.text}}>📍 Añadir lugar</Text>
-              <TouchableOpacity onPress={()=>{reset();onClose();}}>
-                <Ionicons name="close" size={22} color={COLORS.text2}/>
-              </TouchableOpacity>
-            </View>
-            {error ? <Text style={{color:COLORS.danger,fontSize:13}}>{error}</Text> : null}
-            <TextInput style={{backgroundColor:COLORS.bg3,borderRadius:12,padding:12,fontSize:15,color:COLORS.text,borderWidth:1.5,borderColor:COLORS.border}}
-              value={name} onChangeText={setName} placeholder="Nombre del lugar *" placeholderTextColor={COLORS.text3}/>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{marginVertical:4}}>
-              <View style={{flexDirection:'row',gap:8}}>
-                {CATS.map(c => (
-                  <TouchableOpacity key={c.key}
-                    style={{paddingHorizontal:12,paddingVertical:8,borderRadius:99,borderWidth:1.5,borderColor:cat===c.key?COLORS.primary:COLORS.border,backgroundColor:cat===c.key?COLORS.primaryLight:COLORS.bg3}}
-                    onPress={()=>setCat(c.key)}>
-                    <Text style={{fontSize:13,fontWeight:'700',color:cat===c.key?COLORS.primary:COLORS.text2}}>{c.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </ScrollView>
-            <TextInput style={{backgroundColor:COLORS.bg3,borderRadius:12,padding:12,fontSize:14,color:COLORS.text,borderWidth:1.5,borderColor:COLORS.border}}
-              value={address} onChangeText={setAddr} placeholder="Dirección *" placeholderTextColor={COLORS.text3}/>
-            <TextInput style={{backgroundColor:COLORS.bg3,borderRadius:12,padding:12,fontSize:14,color:COLORS.text,borderWidth:1.5,borderColor:COLORS.border}}
-              value={city} onChangeText={setCity} placeholder="Ciudad *" placeholderTextColor={COLORS.text3}/>
-            <Text style={{fontSize:11,color:COLORS.text3}}>📍 Se guardará con tu ubicación actual. Añade la dirección exacta para que sea más fácil encontrarlo.</Text>
-            <TouchableOpacity
-              style={{backgroundColor:COLORS.primary,borderRadius:12,padding:14,alignItems:'center',opacity:loading?0.7:1}}
-              onPress={submit} disabled={loading}>
-              {loading ? <ActivityIndicator color="#fff"/> : <Text style={{color:'#fff',fontWeight:'700',fontSize:16}}>Añadir al mapa</Text>}
-            </TouchableOpacity>
-            <View style={{height:20}}/>
-          </View>
-        </KeyboardAvoidingView>
-      </View>
-    </Modal>
-  );
-}

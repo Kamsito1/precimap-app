@@ -287,5 +287,8 @@ export const CATEGORY_INFO = {
   restaurante_cerveza:  { emoji: '🍺', bg: '#FFFBEB', text: '#92400E', color: '#D97706', label: 'Bar' },
   restaurante_menu:     { emoji: '🍽️', bg: '#FFF1F2', text: '#9F1239', color: '#E11D48', label: 'Restaurante' },
   panaderia:    { emoji: '🥖', bg: '#FFFBEB', text: '#92400E',  color: '#B45309', label: 'Panadería' },
+  peluqueria:   { emoji: '💇', bg: '#FCE7F3', text: '#9D174D',  color: '#EC4899', label: 'Peluquería' },
+  peluqueria_canina: { emoji: '🐕', bg: '#FEF3C7', text: '#92400E', color: '#D97706', label: 'Peluquería Canina' },
+  veterinario:  { emoji: '🏥', bg: '#ECFDF5', text: '#065F46',  color: '#059669', label: 'Veterinario' },
   default:      { emoji: '📍', bg: '#F8FAFC', text: '#475569',  color: '#64748B', label: 'Lugar' },
 };
