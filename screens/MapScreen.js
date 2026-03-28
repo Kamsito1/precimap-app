@@ -906,7 +906,16 @@ export default function MapScreen() {
             />
             {gasSearch ? <TouchableOpacity onPress={()=>setGasSearch('')}><Ionicons name="close-circle" size={16} color={COLORS.text3}/></TouchableOpacity> : null}
             <Text style={{fontSize:11,color:COLORS.text3}}>
-              {(visiblePlaces.length + visibleGas.length).toLocaleString('es-ES')} resultados
+              {activeCat === 'gasolinera'
+                ? `${visibleGas.length.toLocaleString('es-ES')} est.`
+                : (() => {
+                    const conPrecio = visiblePlaces.filter(p => p.repPrice > 0).length;
+                    const total = visiblePlaces.length;
+                    return conPrecio > 0
+                      ? `${conPrecio} con precio · ${total} total`
+                      : `${total} resultados`;
+                  })()
+              }
             </Text>
           </View>
           {/* Chips de marcas — solo para gasolinera */}
