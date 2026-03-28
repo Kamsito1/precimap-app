@@ -359,10 +359,11 @@ export default function MapScreen() {
     });
   })();
   // For gas stations in list: use G95 or Diesel price, never GLP
-  const favIds = new Set(favStations.map(f => f.id));
+  // favIds: comparar como string porque el servidor guarda station_id como String
+  const favIds = new Set(favStations.map(f => String(f.id)));
   const visibleGas = activeCat === 'gasolinera' ? gasolineras
     .filter(s => activeFuel === 'all' || (s.prices?.[activeFuel] > 0))
-    .filter(s => !showFavsOnly || favIds.has(s.id))
+    .filter(s => !showFavsOnly || favIds.has(String(s.id)))
     .map(s => {
       const fuelKey = activeFuel !== 'all' ? activeFuel
         : s.prices?.g95 ? 'g95'
@@ -1122,7 +1123,7 @@ export default function MapScreen() {
                     onNav={()=>navigateTo(item.lat,item.lng,item.name||item.title)}
                     activeFuel={activeFuel}
                     catKey={activeCatKey}
-                    isFav={item.isGas && favIds.has(item.id)}
+                    isFav={item.isGas && favIds.has(String(item.id))}
                   />
                 )}
                 ListEmptyComponent={
@@ -1574,9 +1575,10 @@ function PlaceModal({ place, catKey, onClose, onNavigate, isLoggedIn, onAuthNeed
           <View style={{marginBottom:16}}>
             <Text style={pcs.sectionTitle}>📈 TENDENCIA DE PRECIOS</Text>
             {Object.entries(history).slice(0,4).map(([prod, pts]) => {
-              if (pts.length < 2) return null;
-              const last = pts[pts.length-1].price;
-              const prev = pts[pts.length-2].price;
+              if (!pts || pts.length < 2) return null;
+              const last = pts[pts.length-1]?.price;
+              const prev = pts[pts.length-2]?.price;
+              if (last == null || prev == null) return null;
               const diff = last - prev;
               const min = Math.min(...pts.map(p=>p.price));
               const max = Math.max(...pts.map(p=>p.price));
@@ -1611,7 +1613,7 @@ function PlaceModal({ place, catKey, onClose, onNavigate, isLoggedIn, onAuthNeed
                 </View>
               </View>
               <View style={{alignItems:'flex-end',gap:4}}>
-                <Text style={pcs.price}>{p.price?.toFixed(2)}€<Text style={pcs.unit}>/{p.unit}</Text></Text>
+                <Text style={pcs.price}>{p.price != null ? p.price.toFixed(2) : '—'}€<Text style={pcs.unit}>/{p.unit||'ud'}</Text></Text>
                 <Ionicons name="chevron-forward" size={12} color={COLORS.text3}/>
               </View>
             </TouchableOpacity>
