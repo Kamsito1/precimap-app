@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal,
-  FlatList, ActivityIndicator, Linking, Platform, Alert, TextInput, Animated, Share, KeyboardAvoidingView,
+  FlatList, ActivityIndicator, Linking, Platform, Alert, TextInput, Animated, Share, KeyboardAvoidingView, Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker } from 'react-native-maps';
@@ -51,6 +51,26 @@ const WEEKLY_COST_BY_CHAIN = {
   'el corte':  110.00,  'El Corte Inglés': 110.00,
 };
 const AVG_WEEKLY_COST = 88.50; // media nacional (Mercadona como referencia)
+
+// Coordenadas de ciudades españolas para centrar el mapa y filtrar gasolineras por radio
+const CITY_COORDS = {
+  'Madrid': {lat:40.4168,lng:-3.7038}, 'Barcelona': {lat:41.3851,lng:2.1734},
+  'Sevilla': {lat:37.3886,lng:-5.9823}, 'Valencia': {lat:39.4699,lng:-0.3763},
+  'Bilbao': {lat:43.2630,lng:-2.9350}, 'Málaga': {lat:36.7213,lng:-4.4213},
+  'Zaragoza': {lat:41.6488,lng:-0.8891}, 'Murcia': {lat:37.9838,lng:-1.1332},
+  'Palma': {lat:39.5696,lng:2.6502}, 'Granada': {lat:37.1773,lng:-3.5986},
+  'Córdoba': {lat:37.8882,lng:-4.7794}, 'Alicante': {lat:38.3452,lng:-0.4810},
+  'Valladolid': {lat:41.6523,lng:-4.7245}, 'Vigo': {lat:42.2314,lng:-8.7124},
+  'Gijón': {lat:43.5453,lng:-5.6615}, 'Pamplona': {lat:42.8125,lng:-1.6458},
+  'Jerez de la Frontera': {lat:36.6869,lng:-6.1372},
+  'Salamanca': {lat:40.9701,lng:-5.6635}, 'Toledo': {lat:39.8628,lng:-4.0273},
+  'San Sebastián': {lat:43.3183,lng:-1.9812}, 'Santander': {lat:43.4623,lng:-3.8099},
+  'Almería': {lat:36.8340,lng:-2.4637}, 'Huelva': {lat:37.2614,lng:-6.9447},
+  'Badajoz': {lat:38.8794,lng:-6.9706}, 'Cáceres': {lat:39.4752,lng:-6.3724},
+  'Logroño': {lat:42.4627,lng:-2.4449}, 'Burgos': {lat:42.3440,lng:-3.6970},
+  'León': {lat:42.5987,lng:-5.5671}, 'Oviedo': {lat:43.3614,lng:-5.8593},
+  'Villafranca de Córdoba': {lat:37.9641,lng:-4.5301},
+};
 
 function getWeeklyCost(placeName) {
   if (!placeName) return null;
@@ -118,6 +138,7 @@ export default function MapScreen() {
   const [showFavsOnly, setShowFavsOnly] = useState(false);
   const [cityStats, setCityStats] = useState(null); // resumen de precios de la ciudad
   const [recentPrices, setRecentPrices] = useState([]); // feed actividad comunidad
+  const [priceRange, setPriceRange] = useState(null); // null | 1 | 2 | 3 | 4 (€/€€/€€€/€€€€)
   const mapRef = useRef(null);
 
   useEffect(() => { initLocation(); loadFuelStats(); loadFavs(); loadEvents(); }, []);
@@ -216,20 +237,7 @@ export default function MapScreen() {
   async function loadEvents() {
     try {
       const data = await apiGet('/api/events?limit=50&upcoming=1') || [];
-      // Geocode events by city using city coords lookup
-      const CITY_COORDS = {
-        'Madrid': {lat:40.4168,lng:-3.7038}, 'Barcelona': {lat:41.3851,lng:2.1734},
-        'Sevilla': {lat:37.3886,lng:-5.9823}, 'Valencia': {lat:39.4699,lng:-0.3763},
-        'Bilbao': {lat:43.2630,lng:-2.9350}, 'Málaga': {lat:36.7213,lng:-4.4213},
-        'Zaragoza': {lat:41.6488,lng:-0.8891}, 'Murcia': {lat:37.9838,lng:-1.1332},
-        'Palma': {lat:39.5696,lng:2.6502}, 'Granada': {lat:37.1773,lng:-3.5986},
-        'Córdoba': {lat:37.8882,lng:-4.7794}, 'Alicante': {lat:38.3452,lng:-0.4810},
-        'Valladolid': {lat:41.6523,lng:-4.7245}, 'Vigo': {lat:42.2314,lng:-8.7124},
-        'Gijón': {lat:43.5453,lng:-5.6615}, 'Pamplona': {lat:42.8125,lng:-1.6458},
-        'Jerez de la Frontera': {lat:36.6869,lng:-6.1372},
-        'Salamanca': {lat:40.9701,lng:-5.6635}, 'Toledo': {lat:39.8628,lng:-4.0273},
-        'San Sebastián': {lat:43.3183,lng:-1.9812},
-      };
+      // Geocode events by city using city coords lookup (CITY_COORDS definido a nivel de módulo)
       const withCoords = data
         .map(e => {
           const coords = CITY_COORDS[e.city];
@@ -299,13 +307,22 @@ export default function MapScreen() {
   useEffect(() => {
     let filtered = allGas;
     if (city) {
-      const nc = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-      filtered = filtered.filter(s =>
-        (s.city||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(nc) ||
-        (s.province||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(nc)
-      );
+      // Si tenemos coords de la ciudad, filtrar por radio de 25km (no por provincia entera)
+      const cityCoord = CITY_COORDS[city];
+      if (cityCoord) {
+        filtered = filtered.filter(s => {
+          const d = distanceKm(cityCoord.lat, cityCoord.lng, s.lat, s.lng);
+          s._dist = d;
+          return d <= 25;
+        });
+      } else {
+        // Fallback: filtrar por nombre de ciudad exacto
+        const nc = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+        filtered = filtered.filter(s =>
+          (s.city||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(nc)
+        );
+      }
     } else if (mapRegion && radius < 999) {
-      // Filter by current map viewport (user sees only what's on screen)
       const { latitude: cLat, longitude: cLng, latitudeDelta, longitudeDelta } = mapRegion;
       const latPad = latitudeDelta * 0.6;
       const lngPad = longitudeDelta * 0.6;
@@ -319,8 +336,23 @@ export default function MapScreen() {
   }, [allGas, city, mapRegion, activeFuel, radius]);
 
   // visiblePlaces ya viene filtrado del servidor (loadPlaces pasa &cat=activeCat)
-  // Solo necesitamos asegurar que no se mezclen categorías en modo 'all' (ya eliminado)
-  const visiblePlaces = activeCat === 'gasolinera' ? [] : places;
+  // Aplicar filtro de rango de precio para restaurantes y farmacias
+  const visiblePlaces = (() => {
+    const base = activeCat === 'gasolinera' ? [] : places;
+    if (!priceRange || !['restaurante','farmacia'].includes(activeCat)) return base;
+    // Rangos: 1=€, 2=€€, 3=€€€, 4=€€€€
+    const RANGES = {
+      restaurante: [{min:0,max:10},{min:10,max:15},{min:15,max:25},{min:25,max:Infinity}],
+      farmacia:    [{min:0,max:3}, {min:3,max:8},  {min:8,max:20}, {min:20,max:Infinity}],
+    };
+    const range = RANGES[activeCat]?.[priceRange-1];
+    if (!range) return base;
+    return base.filter(p => {
+      const price = p.repPrice;
+      if (!price || price <= 0) return false; // sin precio no se muestra al filtrar
+      return price >= range.min && price < range.max;
+    });
+  })();
   // For gas stations in list: use G95 or Diesel price, never GLP
   const favIds = new Set(favStations.map(f => f.id));
   const visibleGas = activeCat === 'gasolinera' ? gasolineras
@@ -545,6 +577,7 @@ export default function MapScreen() {
                   setActiveCat(c.key);
                   setActiveCatKey(ck);
                   setProduct(c.product||'');
+                  setPriceRange(null); // resetear filtro de precio al cambiar categoría
                   if (c.key === 'gasolinera') {
                     setActiveFuel(null);
                     setSort('proximity');
@@ -698,6 +731,41 @@ export default function MapScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Filtro precio relativo €/€€/€€€/€€€€ — solo Restaurantes (menú) y Farmacias */}
+            {(activeCat === 'restaurante' && activeCatKey === 'restaurante_menu' || activeCat === 'farmacia') && (
+              <View style={{marginTop:8}}>
+                <Text style={s.filterLabel}>
+                  {activeCat === 'restaurante' ? '🍽️ Precio del menú' : '💊 Precio del medicamento'}
+                </Text>
+                <View style={{flexDirection:'row',gap:8,flexWrap:'wrap'}}>
+                  {[
+                    {r:null, label:'Todos'},
+                    {r:1, label:'€'},
+                    {r:2, label:'€€'},
+                    {r:3, label:'€€€'},
+                    {r:4, label:'€€€€'},
+                  ].map(({r, label}) => {
+                    const isOn = priceRange === r;
+                    const color = r===1?'#16A34A':r===2?'#65A30D':r===3?'#D97706':r===4?'#DC2626':COLORS.text2;
+                    return (
+                      <TouchableOpacity key={String(r)} onPress={()=>setPriceRange(r)}
+                        style={{paddingHorizontal:14,paddingVertical:7,borderRadius:99,borderWidth:1.5,
+                          borderColor: isOn ? color : COLORS.border,
+                          backgroundColor: isOn ? color : COLORS.bg}}>
+                        <Text style={{fontSize:14,fontWeight:'700',color: isOn ? '#fff' : color}}>{label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+                {priceRange && (() => {
+                  const DESC_REST = {1:'hasta 10€',2:'10–15€',3:'15–25€',4:'más de 25€'};
+                  const DESC_FARM = {1:'hasta 3€',2:'3–8€',3:'8–20€',4:'más de 20€'};
+                  const desc = activeCat==='restaurante' ? DESC_REST[priceRange] : DESC_FARM[priceRange];
+                  return <Text style={{fontSize:11,color:COLORS.text3,marginTop:4}}>Mostrando: {desc}</Text>;
+                })()}
+              </View>
+            )}
 
             {/* Fuel type filter — only when gasolinera is active */}
             {activeCat==='gasolinera' && (
@@ -1166,9 +1234,18 @@ function ListCard({ item, onPress, onNav, activeFuel, catKey, isFav }) {
       // Mostrar qué producto es el precio según subcategoría
       const labels = { cafe:'☕ Café', cerveza:'🍺 Caña', restaurante_menu:'🍽️ Menú' };
       const productLabel = labels[catKey] || '🍽️';
+      // Para menú del día, añadir indicador €/€€/€€€/€€€€
+      if (catKey === 'restaurante_menu') {
+        const euros = p < 10 ? '€' : p < 15 ? '€€' : p < 25 ? '€€€' : '€€€€';
+        return `${productLabel} ${p.toFixed(2)}€  ${euros}`;
+      }
       return `${productLabel} ${p.toFixed(2)}€`;
     }
-    if (item.category === 'farmacia')  return `💊 ~${p.toFixed(2)}€`;
+    if (item.category === 'farmacia') {
+      // Indicador de precio relativo para farmacias
+      const euros = p < 3 ? '€' : p < 8 ? '€€' : p < 20 ? '€€€' : '€€€€';
+      return `💊 ~${p.toFixed(2)}€  ${euros}`;
+    }
     if (item.category === 'gimnasio')  return `💪 desde ${p.toFixed(0)}€/mes`;
     return `~${p.toFixed(2)}€`;
   }
@@ -1186,15 +1263,54 @@ function ListCard({ item, onPress, onNav, activeFuel, catKey, isFav }) {
       if (p > avg * 1.20) return { bg: '#FEE2E2', text: '#DC2626' }; // caro
       return { bg: '#FEF9C3', text: '#92400E' }; // normal
     }
+    if (item.category === 'supermercado') {
+      const price = getWeeklyCost(item.name) || item.repPrice;
+      if (!price) return null;
+      if (price < AVG_WEEKLY_COST * 0.92) return { bg: '#DCFCE7', text: '#15803D' }; // barato
+      if (price > AVG_WEEKLY_COST * 1.08) return { bg: '#FEE2E2', text: '#DC2626' }; // caro
+      return { bg: '#FEF9C3', text: '#92400E' }; // normal
+    }
+    if (item.category === 'farmacia') {
+      const p = item.repPrice;
+      if (!p) return null;
+      const AVG_FARM = 5;
+      if (p < AVG_FARM * 0.70) return { bg: '#DCFCE7', text: '#15803D' };
+      if (p > AVG_FARM * 1.40) return { bg: '#FEE2E2', text: '#DC2626' };
+      return { bg: '#FEF9C3', text: '#92400E' };
+    }
     return null;
   }
   const pColor = priceColor();
 
   return (
     <TouchableOpacity style={lcs.card} onPress={onPress} activeOpacity={0.75}>
-      <View style={[lcs.icon,{backgroundColor:info.bg}]}>
-        <Text style={{fontSize:22}}>{info.emoji}</Text>
-        {isFav && <View style={{position:'absolute',top:-4,right:-4}}><Text style={{fontSize:12}}>❤️</Text></View>}
+      <View style={[lcs.icon,{backgroundColor:info.bg, overflow:'hidden'}]}>
+        {(() => {
+          if (item.category === 'supermercado' && item.name) {
+            const n = item.name.toLowerCase();
+            const logoMap = {
+              'mercadona': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Mercadona_logo.svg/240px-Mercadona_logo.svg.png',
+              'lidl':      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Lidl-Logo.svg/240px-Lidl-Logo.svg.png',
+              'aldi':      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Aldi_Nord_Logo.svg/240px-Aldi_Nord_Logo.svg.png',
+              'carrefour': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/240px-Carrefour_logo.svg.png',
+              'dia':       'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Logo_Dia.svg/240px-Logo_Dia.svg.png',
+              'alcampo':   'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Alcampo_logo.svg/240px-Alcampo_logo.svg.png',
+              'hipercor':  'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/El_Corte_Ingl%C3%A9s_logo.svg/240px-El_Corte_Ingl%C3%A9s_logo.svg.png',
+              'el corte':  'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/El_Corte_Ingl%C3%A9s_logo.svg/240px-El_Corte_Ingl%C3%A9s_logo.svg.png',
+              'consum':    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Logo_Consum.svg/240px-Logo_Consum.svg.png',
+              'eroski':    'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Eroski_logo.svg/240px-Eroski_logo.svg.png',
+              'supersol':  'https://logo.clearbit.com/supersol.es',
+              'spar':      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/SPAR_logo.svg/240px-SPAR_logo.svg.png',
+              'froiz':     'https://logo.clearbit.com/froiz.es',
+              'ahorramas': 'https://logo.clearbit.com/ahorramas.com',
+              'simply':    'https://logo.clearbit.com/simply.es',
+            };
+            const logoUrl = Object.entries(logoMap).find(([key]) => n.includes(key))?.[1];
+            if (logoUrl) return <Image source={{uri: logoUrl}} style={{width:44,height:44,resizeMode:'contain'}}/>;
+          }
+          return <Text style={{fontSize:22}}>{info.emoji}</Text>;
+        })()}
+        {isFav ? <View style={{position:'absolute',top:-4,right:-4}}><Text style={{fontSize:12}}>❤️</Text></View> : null}
       </View>
       <View style={lcs.info}>
         <Text style={lcs.name} numberOfLines={1}>{
@@ -1630,10 +1746,13 @@ function AddPlaceModal({ visible, onClose, userLoc, onSuccess }) {
 
   async function submit() {
     if (!name.trim()) return setError('El nombre es obligatorio');
+    if (!city.trim()) return setError('La ciudad es obligatoria para que el lugar aparezca bien en el mapa');
+    if (!address.trim()) return setError('La dirección es obligatoria');
+    if (!userLoc) return setError('Necesitas tener el GPS activo para añadir un lugar con la ubicación correcta. Activa la localización e inténtalo de nuevo.');
     setLoading(true);
     try {
-      const lat = userLoc?.lat || 40.416775;
-      const lng = userLoc?.lng || -3.703790;
+      const lat = userLoc.lat;
+      const lng = userLoc.lng;
       await apiPost('/api/places', { name: name.trim(), category: cat, lat, lng, address: address.trim(), city: city.trim() });
       reset();
       onSuccess?.();
