@@ -44,7 +44,7 @@ function EditProfileModal({ visible, user, onClose, onSaved }) {
     try {
       const res = await apiPatch('/api/users/me', { name: name.trim(), bio: bio.trim() });
       if (res.error) { setError(res.error); return; }
-      onSaved(res.user);
+      if (res.user) onSaved(res.user);
       onClose();
     } catch(_) { setError('Error de conexión'); }
     finally { setLoading(false); }
