@@ -36,10 +36,14 @@ const ROTATE_EVERY  = 30000;   // cambia de anuncio cada 30s
  * 6. Posición: al fondo de la pantalla, ANTES del tab bar (no encima)
  */
 export default function AdBanner({ screen = 'unknown', style }) {
-  const [phase, setPhase] = useState('waiting'); // waiting | showing | hidden | cooldown
+  const [phase, setPhase] = useState('waiting');
   const [adIdx, setAdIdx] = useState(() => Math.floor(Math.random() * OWN_ADS.length));
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const timersRef = useRef({ show: null, hide: null, cooldown: null, rotate: null });
+  const isMounted = useRef(true);
+
+  const safeSetPhase = useCallback((p) => { if (isMounted.current) setPhase(p); }, []);
+  const safeSetAdIdx = useCallback((fn) => { if (isMounted.current) setAdIdx(fn); }, []);
 
   const clearAllTimers = useCallback(() => {
     Object.values(timersRef.current).forEach(t => { clearTimeout(t); clearInterval(t); });
@@ -47,16 +51,16 @@ export default function AdBanner({ screen = 'unknown', style }) {
 
   // Phase 1: Wait SHOW_DELAY, then fade in
   useEffect(() => {
+    isMounted.current = true;
     timersRef.current.show = setTimeout(() => {
-      setPhase('showing');
+      safeSetPhase('showing');
       Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
-      // Phase 2: Auto-hide after AUTO_HIDE ms
       timersRef.current.hide = setTimeout(() => {
         Animated.timing(fadeAnim, { toValue: 0, duration: 400, useNativeDriver: true })
-          .start(() => setPhase('hidden'));
+          .start(() => safeSetPhase('hidden'));
       }, AUTO_HIDE);
     }, SHOW_DELAY);
-    return clearAllTimers;
+    return () => { isMounted.current = false; clearAllTimers(); };
   }, []);
 
   // Rotate ads while showing
@@ -67,7 +71,7 @@ export default function AdBanner({ screen = 'unknown', style }) {
         Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
         Animated.timing(fadeAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
       ]).start();
-      setAdIdx(i => (i + 1) % OWN_ADS.length);
+      safeSetAdIdx(i => (i + 1) % OWN_ADS.length);
     }, ROTATE_EVERY);
     return () => clearInterval(timersRef.current.rotate);
   }, [phase]);
@@ -77,18 +81,16 @@ export default function AdBanner({ screen = 'unknown', style }) {
     clearTimeout(timersRef.current.hide);
     Animated.timing(fadeAnim, { toValue: 0, duration: 300, useNativeDriver: true })
       .start(() => {
-        setPhase('cooldown');
-        // After COOLDOWN, allow showing again (but don't force it)
+        safeSetPhase('cooldown');
         timersRef.current.cooldown = setTimeout(() => {
-          setPhase('waiting');
-          // Show again gently after cooldown
+          safeSetPhase('waiting');
           timersRef.current.show = setTimeout(() => {
-            setPhase('showing');
-            setAdIdx(i => (i + 1) % OWN_ADS.length);
+            safeSetPhase('showing');
+            safeSetAdIdx(i => (i + 1) % OWN_ADS.length);
             Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }).start();
             timersRef.current.hide = setTimeout(() => {
               Animated.timing(fadeAnim, { toValue: 0, duration: 400, useNativeDriver: true })
-                .start(() => setPhase('hidden'));
+                .start(() => safeSetPhase('hidden'));
             }, AUTO_HIDE);
           }, SHOW_DELAY);
         }, COOLDOWN);

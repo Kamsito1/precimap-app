@@ -89,8 +89,8 @@ export default function PriceChangeModal({ visible, onClose, place, product = nu
           <View style={{ flex: 1 }}>
             <Text style={ss.product} numberOfLines={1}>{c.product}</Text>
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 3 }}>
-              {c.old_price != null && <Text style={ss.oldPrice}>{c.old_price?.toFixed(2)}€ antes</Text>}
-              <Text style={ss.newPrice}>→ {c.new_price?.toFixed(2)}€</Text>
+              {c.old_price != null && <Text style={ss.oldPrice}>{c.old_price.toFixed(2)}€ antes</Text>}
+              <Text style={ss.newPrice}>→ {c.new_price != null ? c.new_price.toFixed(2) : '—'}€</Text>
             </View>
             {c.reason && <Text style={ss.reason} numberOfLines={2}>{c.reason}</Text>}
           </View>
