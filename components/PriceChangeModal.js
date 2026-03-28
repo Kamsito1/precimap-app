@@ -174,7 +174,7 @@ export default function PriceChangeModal({ visible, onClose, place, product = nu
                 placeholder="ej. Lo compré hoy y el precio ha bajado" multiline
                 placeholderTextColor={COLORS.text3} />
               <View style={ss.infoBox}>
-                <Text style={ss.infoTxt}>⚡ Tu propuesta necesita 5 votos positivos para ser aceptada automáticamente. Si recibe 3 votos negativos, se descarta.</Text>
+                <Text style={ss.infoTxt}>⚡ Tu precio se guarda directamente en la BD. La comunidad puede votar para verificarlo y dar puntos al reportador.</Text>
               </View>
               <TouchableOpacity style={[ss.submitBtn, submitting && { opacity: 0.6 }]} onPress={propose} disabled={submitting}>
                 {submitting ? <ActivityIndicator color="#fff" /> : <Text style={ss.submitTxt}>Enviar propuesta</Text>}
