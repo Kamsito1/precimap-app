@@ -8,6 +8,7 @@ import { COLORS, apiPost, API_BASE } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import * as AppleAuthentication from 'expo-apple-authentication';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -70,6 +71,55 @@ export default function AuthModal({ visible, onClose }) {
     } catch (e) {
       setError(`Error Google: ${e.message}`);
       setGoogleLoading(false);
+    }
+  }
+
+  // ── Apple Sign-In ─────────────────────────────────────────────────────────
+  const [appleLoading, setAppleLoading] = useState(false);
+  const [appleAvailable, setAppleAvailable] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => setAppleAvailable(false));
+    }
+  }, []);
+
+  async function handleAppleAuth() {
+    setAppleLoading(true);
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      // Apple solo devuelve email y nombre en el PRIMER login. Después son null.
+      const email = credential.email;
+      const firstName = credential.fullName?.givenName || '';
+      const lastName  = credential.fullName?.familyName || '';
+      const name = [firstName, lastName].filter(Boolean).join(' ') || 'Usuario Apple';
+      const appleId = credential.user; // identificador único estable
+
+      if (!email && !appleId) { setError('No se pudo obtener información de Apple'); setAppleLoading(false); return; }
+
+      const res = await apiPost('/api/auth/apple', {
+        apple_id: appleId,
+        email: email || null,
+        name,
+        identity_token: credential.identityToken,
+      });
+      if (res.error) { setError(res.error); setAppleLoading(false); return; }
+      if (!res.token) { setError('Error al iniciar sesión con Apple'); setAppleLoading(false); return; }
+      await login(res.token, res.user);
+      setAppleLoading(false);
+      onClose(); reset();
+    } catch (e) {
+      if (e.code === 'ERR_REQUEST_CANCELED') {
+        // El usuario canceló — no mostrar error
+      } else {
+        setError(`Error Apple: ${e.message}`);
+      }
+      setAppleLoading(false);
     }
   }
 
@@ -177,6 +227,23 @@ export default function AuthModal({ visible, onClose }) {
             {/* GOOGLE SIGN-IN — Principal, arriba del form */}
             {(mode === MODES.login || mode === MODES.register) && (
               <View style={{marginBottom:16}}>
+                {/* APPLE SIGN-IN — Solo iOS, obligatorio por guideline 4.8 */}
+                {appleAvailable && (
+                  <TouchableOpacity
+                    style={[s.appleBtn, appleLoading && {opacity:0.6}]}
+                    onPress={handleAppleAuth}
+                    disabled={appleLoading}
+                    activeOpacity={0.85}>
+                    {appleLoading ? (
+                      <ActivityIndicator color="#fff" size="small"/>
+                    ) : (
+                      <>
+                        <Ionicons name="logo-apple" size={20} color="#fff"/>
+                        <Text style={s.appleBtnTxt}>Continuar con Apple</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
                   style={[s.googleBtn, (googleLoading || !request) && {opacity:0.6}]}
                   onPress={() => promptAsync()}
@@ -339,6 +406,8 @@ const s = StyleSheet.create({
   linkTxt2:{fontSize:13,color:COLORS.text3},
   googleBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10,backgroundColor:'#fff',borderRadius:14,paddingVertical:15,borderWidth:1.5,borderColor:'#DADCE0',shadowColor:'#000',shadowOffset:{width:0,height:1},shadowOpacity:0.1,shadowRadius:3,elevation:2},
   googleBtnTxt:{fontSize:15,fontWeight:'600',color:'#3C4043'},
+  appleBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10,backgroundColor:'#000',borderRadius:14,paddingVertical:15,marginBottom:10},
+  appleBtnTxt:{fontSize:15,fontWeight:'600',color:'#fff'},
   dividerRow:{flexDirection:'row',alignItems:'center',gap:12,marginTop:16},
   dividerLine:{flex:1,height:0.5,backgroundColor:COLORS.border},
   dividerTxt:{fontSize:12,color:COLORS.text3},

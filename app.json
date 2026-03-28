@@ -26,6 +26,7 @@
         "NSPhotoLibraryUsageDescription": "PreciMap necesita tu galería para subir fotos de chollos y tu avatar.",
         "NSPhotoLibraryAddUsageDescription": "PreciMap guarda fotos de precios en tu galería.",
         "ITSAppUsesNonExemptEncryption": false,
+        "NSUserTrackingUsageDescription": "PreciMap puede usar identificadores de publicidad para mostrarte anuncios más relevantes.",
         "LSApplicationQueriesSchemes": [
           "com.amazon.mobile.shopping.web",
           "amazon-spain",
@@ -68,7 +69,8 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-apple-authentication"
     ],
     "extra": {
       "eas": {
