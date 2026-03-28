@@ -267,17 +267,16 @@ export default function DealsScreen() {
           ))}
         </View>
 
-        {/* Category pills */}
-        <FlatList
-          horizontal data={CATS} keyExtractor={c=>c.key} showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{paddingHorizontal:12,gap:6,paddingBottom:10}}
-          renderItem={({item:c}) => (
-            <TouchableOpacity style={[s.catBtn, cat===c.key && s.catBtnOn]} onPress={()=>setCat(c.key)}>
+        {/* Category pills — ScrollView en lugar de FlatList (evita VirtualizedList nested crash) */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{paddingHorizontal:12,gap:6,paddingBottom:10}}>
+          {CATS.map(c => (
+            <TouchableOpacity key={c.key} style={[s.catBtn, cat===c.key && s.catBtnOn]} onPress={()=>setCat(c.key)}>
               <Text style={s.catEmoji}>{c.emoji}</Text>
               <Text style={[s.catTxt, cat===c.key && {color:'#fff',fontWeight:'600'}]}>{c.label}</Text>
             </TouchableOpacity>
-          )}
-        />
+          ))}
+        </ScrollView>
       </View>
 
       {!isLoggedIn && (
@@ -308,7 +307,7 @@ export default function DealsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.danger}/>}
           onEndReached={onEndReached}
           onEndReachedThreshold={0.3}
-          ListHeaderComponent={trending.length > 0 && sort === 'hot' && cat === 'all' ? (
+          ListHeaderComponent={(trending.length > 0 && sort === 'hot' && cat === 'all') ? (
             <View style={{marginBottom:8}}>
               <Text style={{fontSize:11,fontWeight:'700',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>🔥 TENDENCIAS HOY</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}
