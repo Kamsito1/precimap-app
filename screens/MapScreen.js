@@ -91,7 +91,8 @@ export default function MapScreen() {
   const [activeCatKey, setActiveCatKey] = useState('gasolinera');
   const [userLoc, setUserLoc]       = useState(null);
   const [viewMode, setViewMode]     = useState('map');
-  const [sort, setSort]             = useState('proximity');
+  // Gasolina: proximity (más cercana). Resto: price (más barata primero)
+  const [sort, setSort] = useState('price');
   const [radius, setRadius]         = useState(25);
   const [product, setProduct]       = useState('');
   const [gasSearch, setGasSearch]   = useState('');
@@ -528,7 +529,12 @@ export default function MapScreen() {
                   setActiveCat(c.key);
                   setActiveCatKey(ck);
                   setProduct(c.product||'');
-                  if (c.key === 'gasolinera') setActiveFuel(null);
+                  if (c.key === 'gasolinera') {
+                    setActiveFuel(null);
+                    setSort('proximity');
+                  } else {
+                    setSort('price'); // más barato primero para cafés, cervezas, menús, etc.
+                  }
                 }}>
                 <Text style={s.catEmoji}>{c.emoji}</Text>
                 <Text style={[s.catTxt,isOn&&{color:'#fff',fontWeight:'700'}]}>{c.label}</Text>
