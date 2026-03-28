@@ -176,7 +176,7 @@ export default function DealsScreen() {
                     const discs = deals.filter(d => d.discount_percent != null && d.discount_percent > 0).map(d => Number(d.discount_percent));
                     const filterTxt = minDiscount > 0 ? ` · filtro -${minDiscount}%+` : '';
                     const searchTxt = search.trim() ? ` · "${search.trim()}"` : '';
-                    const bestDisc = discs.length > 0 ? Math.round(Math.max(...discs)) : 0;
+                    const bestDisc = discs.length > 0 ? Math.round(Math.max(...discs) || 0) : 0;
                     return `${deals.length} ofertas${bestDisc > 0 ? ' · mejor -' + bestDisc + '%' : ''}${filterTxt}${searchTxt}`;
                   })()
                 : loading ? '⏳ Cargando chollos...' : deals.length > 0 ? `${deals.length} chollos · desliza para ver más` : 'Sin chollos con ese filtro'
@@ -296,7 +296,7 @@ export default function DealsScreen() {
                     <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
                       <Text style={{fontSize:14,fontWeight:'800',color:COLORS.primary}}>{t.deal_price != null ? t.deal_price.toFixed(2)+'€' : '—'}</Text>
                       {t.discount_percent != null && t.discount_percent > 0 && <View style={{backgroundColor:'#FEE2E2',borderRadius:4,paddingHorizontal:4}}>
-                        <Text style={{fontSize:10,fontWeight:'700',color:COLORS.danger}}>-{Math.round(t.discount_percent)}%</Text>
+                        <Text style={{fontSize:10,fontWeight:'700',color:COLORS.danger}}>-{Math.round(Number(t.discount_percent)||0)}%</Text>
                       </View>}
                     </View>
                     {t.store && <Text style={{fontSize:9,color:COLORS.text3}}>{t.store}</Text>}
@@ -392,13 +392,13 @@ export default function DealsScreen() {
                   <View style={s.priceRow}>
                     <Text style={s.dealPrice}>{formatPrice(deal.deal_price)}</Text>
                     {deal.original_price && <Text style={s.origPrice}>{formatPrice(deal.original_price)}</Text>}
-                    {deal.discount_percent && deal.discount_percent >= 5 && (
+                    {deal.discount_percent != null && deal.discount_percent >= 5 && (
                       <View style={[s.discBadge,
                         deal.discount_percent >= 50 ? {backgroundColor:'#7C3AED'} :
                         deal.discount_percent >= 30 ? {backgroundColor:'#DC2626'} :
                         {backgroundColor:'#FEE2E2'}
                       ]}>
-                        <Text style={[s.discTxt, deal.discount_percent >= 30 && {color:'#fff'}]}>-{Math.round(deal.discount_percent)}%</Text>
+                        <Text style={[s.discTxt, deal.discount_percent >= 30 && {color:'#fff'}]}>-{Math.round(Number(deal.discount_percent)||0)}%</Text>
                       </View>
                     )}
                     {deal.original_price && deal.deal_price && (
@@ -463,7 +463,7 @@ export default function DealsScreen() {
 
                   {/* Compartir */}
                   <TouchableOpacity style={s.iconBtn} onPress={async () => {
-                    const text = `🔥 ${deal.title}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent?` (-${Math.round(deal.discount_percent)}%)`:''}${deal.url?'\n🔗 '+applyAffiliateTag(deal.url):''}\n\nVía PreciMap`;
+                    const text = `🔥 ${deal.title||''}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent != null && deal.discount_percent > 0 ?` (-${Math.round(Number(deal.discount_percent)||0)}%)`:''}${deal.url?'\n🔗 '+applyAffiliateTag(deal.url):''}\n\nVía PreciMap`;
                     try {
                       if (typeof navigator !== 'undefined' && navigator.share) {
                         await navigator.share({ title: deal.title, text, url: deal.url || '' });
