@@ -255,24 +255,18 @@ export default function MapScreen() {
   }
 
   async function loadPlaces() {
-    // No cargar lugares para gasolinera (se gestionan aparte con loadAllGasolineras)
     if (activeCat === 'gasolinera') return;
     setLoading(true);
     try {
       const lat = userLoc?.lat || 40.4168;
       const lng = userLoc?.lng || -3.7038;
-      let url = `/api/places?sort=${sort}&lat=${lat}&lng=${lng}`;
+      const effectiveSort = (!city && !userLoc) ? 'price' : sort;
+      let url = `/api/places?sort=${effectiveSort}&lat=${lat}&lng=${lng}&cat=${activeCat}`;
       if (city) {
         url += `&city=${encodeURIComponent(city)}`;
       } else if (userLoc) {
-        // Tenemos GPS: usar radio
         url += `&radius=${radius < 100 ? radius : 25}`;
-      } else {
-        // Sin ciudad ni GPS: usar sort=price para mostrar los mejores de España
-        // El servidor limitará a 200 resultados
-        url += `&sort=price`;
       }
-      url += `&cat=${activeCat}`;
       if (product) url += `&product=${encodeURIComponent(product)}`;
       setPlaces(await apiGet(url) || []);
       setServerError(false);
