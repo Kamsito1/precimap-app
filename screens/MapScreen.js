@@ -1803,9 +1803,9 @@ function AddPlaceModal({ visible, onClose, userLoc, onSuccess }) {
               </View>
             </ScrollView>
             <TextInput style={{backgroundColor:COLORS.bg3,borderRadius:12,padding:12,fontSize:14,color:COLORS.text,borderWidth:1.5,borderColor:COLORS.border}}
-              value={address} onChangeText={setAddr} placeholder="Dirección (opcional)" placeholderTextColor={COLORS.text3}/>
+              value={address} onChangeText={setAddr} placeholder="Dirección *" placeholderTextColor={COLORS.text3}/>
             <TextInput style={{backgroundColor:COLORS.bg3,borderRadius:12,padding:12,fontSize:14,color:COLORS.text,borderWidth:1.5,borderColor:COLORS.border}}
-              value={city} onChangeText={setCity} placeholder="Ciudad (opcional)" placeholderTextColor={COLORS.text3}/>
+              value={city} onChangeText={setCity} placeholder="Ciudad *" placeholderTextColor={COLORS.text3}/>
             <Text style={{fontSize:11,color:COLORS.text3}}>📍 Se guardará con tu ubicación actual. Añade la dirección exacta para que sea más fácil encontrarlo.</Text>
             <TouchableOpacity
               style={{backgroundColor:COLORS.primary,borderRadius:12,padding:14,alignItems:'center',opacity:loading?0.7:1}}
