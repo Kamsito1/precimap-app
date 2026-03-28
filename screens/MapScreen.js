@@ -617,11 +617,13 @@ export default function MapScreen() {
         {/* Expanded filter panel */}
         {showFilters && (
           <View style={s.filtersPanel}>
-            {/* Info about viewport loading */}
-            <View style={{backgroundColor:COLORS.primaryLight,borderRadius:10,padding:10,marginBottom:10,flexDirection:'row',gap:8}}>
-              <Text style={{fontSize:14}}>💡</Text>
-              <Text style={{flex:1,fontSize:12,color:COLORS.primary}}>El mapa carga gasolineras según lo que tienes en pantalla. Haz zoom o desplázate para ver más.</Text>
-            </View>
+            {/* Info solo para gasolineras — viewport loading */}
+            {activeCat === 'gasolinera' && (
+              <View style={{backgroundColor:COLORS.primaryLight,borderRadius:10,padding:10,marginBottom:10,flexDirection:'row',gap:8}}>
+                <Text style={{fontSize:14}}>💡</Text>
+                <Text style={{flex:1,fontSize:12,color:COLORS.primary}}>El mapa carga gasolineras según lo que tienes en pantalla. Haz zoom o desplázate para ver más.</Text>
+              </View>
+            )}
             {/* Sort */}
             <Text style={s.filterLabel}>Ordenar por</Text>
             <View style={s.radRow}>
