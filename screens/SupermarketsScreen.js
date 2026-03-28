@@ -562,7 +562,8 @@ export default function SupermarketsScreen({ embedded = false }) {
             {(() => {
               const pts = priceHistory[selectedProd.name];
               if (!pts || pts.length < 2) return <Text style={{color:COLORS.text3}}>Sin suficientes datos</Text>;
-              const prices = pts.map(p=>p.price);
+              const prices = pts.map(p=>p.price).filter(v => v != null && !isNaN(v));
+              if (prices.length < 2) return <Text style={{color:COLORS.text3}}>Sin suficientes datos</Text>;
               const minP = Math.min(...prices), maxP = Math.max(...prices);
               const range = maxP - minP || 0.01;
               const W = 300, H = 80;
@@ -570,7 +571,8 @@ export default function SupermarketsScreen({ embedded = false }) {
                 <View>
                   <View style={{flexDirection:'row',height:H,alignItems:'flex-end',gap:3,paddingBottom:4}}>
                     {pts.map((p,i) => {
-                      const h = Math.max(8, ((p.price-minP)/range)*H*0.9+8);
+                      const pv = p.price != null ? p.price : minP;
+                      const h = Math.max(8, ((pv-minP)/range)*H*0.9+8);
                       const isLast = i===pts.length-1;
                       return (
                         <View key={i} style={{flex:1,height:h,backgroundColor:isLast?COLORS.primary:COLORS.border,borderRadius:2}}/>
