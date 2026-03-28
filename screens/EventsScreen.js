@@ -564,7 +564,7 @@ function AddEventModal({ visible, onClose, onSuccess }) {
           <TextInput style={am.input} value={url} onChangeText={setUrl} placeholder="https://..." keyboardType="url" autoCapitalize="none" placeholderTextColor={COLORS.text3}/>
 
           <Text style={am.label}>Descripción breve</Text>
-          <TextInput style={[am.input,{height:70,textAlignVertical:'top'}]} value={desc} onChangeText={setDesc} placeholder="Descripción del evento..." multiline placeholderTextColor={COLORS.text3}/>
+          <TextInput style={[am.input,{height:70,textAlignVertical:'top'}]} value={desc} onChangeText={v=>setDesc(v.slice(0,300))} placeholder="Descripción del evento..." multiline placeholderTextColor={COLORS.text3} maxLength={300}/>
 
           {error ? <View style={am.errBox}><Text style={am.errTxt}>{error}</Text></View> : null}
 

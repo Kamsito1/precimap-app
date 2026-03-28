@@ -170,8 +170,8 @@ export default function PriceChangeModal({ visible, onClose, place, product = nu
               <TextInput style={ss.input} value={newPrice} onChangeText={setNewPrice}
                 placeholder="ej. 1.89" keyboardType="decimal-pad" placeholderTextColor={COLORS.text3} />
               <Text style={ss.label}>Motivo (opcional)</Text>
-              <TextInput style={[ss.input, { height: 70 }]} value={reason} onChangeText={setReason}
-                placeholder="ej. Lo compré hoy y el precio ha bajado" multiline
+              <TextInput style={[ss.input, { height: 70 }]} value={reason} onChangeText={v=>setReason(v.slice(0,200))}
+                placeholder="ej. Lo compré hoy y el precio ha bajado" multiline maxLength={200}
                 placeholderTextColor={COLORS.text3} />
               <View style={ss.infoBox}>
                 <Text style={ss.infoTxt}>⚡ Tu precio se guarda directamente en la BD. La comunidad puede votar para verificarlo y dar puntos al reportador.</Text>
