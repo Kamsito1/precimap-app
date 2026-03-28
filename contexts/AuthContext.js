@@ -13,6 +13,11 @@ export function AuthProvider({ children }) {
       setUser(Auth.user);
       setLoggedIn(Auth.isLoggedIn);
       setLoading(false);
+    }).catch(() => {
+      // AsyncStorage error — treat as logged out
+      setUser(null);
+      setLoggedIn(false);
+      setLoading(false);
     });
     // Auto-logout cuando el servidor devuelve 401 (token expirado)
     setUnauthorizedHandler(() => {
