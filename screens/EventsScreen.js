@@ -468,7 +468,7 @@ function AddEventModal({ visible, onClose, onSuccess }) {
         title: title.trim(), category: cat, date: isoDate, time,
         venue: venue.trim(), address: address.trim(), city: city.trim(),
         lat: gpsCoords?.lat || null, lng: gpsCoords?.lng || null,
-        price_from: price && !isFree ? parseFloat(price) : null,
+        price_from: price && !isFree ? (parseFloat(price)||null) : null,
         is_free: isFree ? 1 : 0,
         url: url.trim(), description: desc.trim(),
       });
