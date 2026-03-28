@@ -1583,8 +1583,8 @@ function PlaceModal({ place, catKey, onClose, onNavigate, isLoggedIn, onAuthNeed
               const prev = pts[pts.length-2]?.price;
               if (last == null || prev == null) return null;
               const diff = last - prev;
-              const min = Math.min(...pts.map(p=>p.price));
-              const max = Math.max(...pts.map(p=>p.price));
+              const min = pts.reduce((m,p) => Math.min(m, p.price??Infinity), Infinity);
+              const max = pts.reduce((m,p) => Math.max(m, p.price??-Infinity), -Infinity);
               return (
                 <View key={prod} style={{flexDirection:'row',alignItems:'center',paddingVertical:8,borderBottomWidth:0.5,borderBottomColor:COLORS.border,gap:10}}>
                   <View style={{flex:1}}>
