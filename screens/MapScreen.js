@@ -102,6 +102,19 @@ const RADII = [5, 10, 25, 50, 100, 999]; // 999 = Toda España
 // Centro de España (Madrid) como región inicial — se actualiza al obtener GPS
 const SPAIN_CENTER = { latitude:40.4168, longitude:-3.7038, latitudeDelta:6.0, longitudeDelta:6.0 };
 
+// Logo de supermercado con fallback a emoji si falla la carga
+function SuperLogo({ uri, fallbackEmoji }) {
+  const [failed, setFailed] = React.useState(false);
+  if (failed) return <Text style={{fontSize:22}}>{fallbackEmoji}</Text>;
+  return (
+    <Image
+      source={{uri}}
+      style={{width:44,height:44,resizeMode:'contain'}}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export default function MapScreen() {
   const { isLoggedIn } = useAuth();
   const [places, setPlaces]         = useState([]);
@@ -1298,7 +1311,11 @@ function ListCard({ item, onPress, onNav, activeFuel, catKey, isFav }) {
               'simply':    'https://logo.clearbit.com/simply.es',
             };
             const logoUrl = Object.entries(logoMap).find(([key]) => n.includes(key))?.[1];
-            if (logoUrl) return <Image source={{uri: logoUrl}} style={{width:44,height:44,resizeMode:'contain'}}/>;
+            if (logoUrl) {
+              return (
+                <SuperLogo uri={logoUrl} fallbackEmoji={info.emoji}/>
+              );
+            }
           }
           return <Text style={{fontSize:22}}>{info.emoji}</Text>;
         })()}

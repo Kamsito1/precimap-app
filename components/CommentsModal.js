@@ -165,7 +165,7 @@ function CommentItem({ comment: c, depth, currentUser, onReply, onDelete, onVote
         {/* Avatar */}
         <View style={cs.avatarWrap}>
           {avatar
-            ? <Image source={{uri:avatar}} style={cs.avatar}/>
+            ? <Image source={{uri:avatar}} style={cs.avatar} onError={()=>{}} />
             : <View style={cs.avatarFallback}><Text style={cs.avatarTxt}>{(c.users?.name||'?')[0].toUpperCase()}</Text></View>
           }
         </View>

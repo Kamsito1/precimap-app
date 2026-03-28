@@ -215,7 +215,7 @@ export default function ProfileScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true, aspect: [1,1], quality: 0.75,
     });
-    if (result.canceled) return;
+    if (result.canceled || !result.assets?.length) return;
     setUploading(true);
     try {
       const res = await apiUpload('/api/users/avatar', {}, result.assets[0].uri, 'avatar');

@@ -245,7 +245,7 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
                 </View>
                 {duplicates.slice(0,2).map(d => (
                   <View key={d.id} style={s.dupItem}>
-                    {d.image_url ? <Image source={{uri:d.image_url}} style={s.dupImg}/> : <Text style={{fontSize:20}}>🏷️</Text>}
+                    {d.image_url ? <Image source={{uri:d.image_url}} style={s.dupImg} onError={()=>{}}/> : <Text style={{fontSize:20}}>🏷️</Text>}
                     <View style={{flex:1}}>
                       <Text style={{fontSize:12,fontWeight:'600',color:'#92400E'}} numberOfLines={2}>{d.title}</Text>
                       <Text style={{fontSize:11,color:'#B45309'}}>{d.deal_price}€ · {d.store || 'Sin tienda'}</Text>
