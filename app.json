@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "MapaTacaño",
+    "name": "MapaTacano",
     "slug": "precimap",
     "scheme": "com.kamsito.precimap",
     "version": "2.0.0",
@@ -21,6 +21,7 @@
       "buildNumber": "83",
       "requireFullScreen": true,
       "infoPlist": {
+        "CFBundleDisplayName": "MapaTacaño",
         "NSLocationWhenInUseUsageDescription": "MapaTacaño usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",
         "NSCameraUsageDescription": "MapaTacaño necesita la cámara para fotografiar precios y chollos.",
         "NSPhotoLibraryUsageDescription": "MapaTacaño necesita tu galería para subir fotos de chollos y tu avatar.",
