@@ -3,6 +3,7 @@ import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   Image, ActivityIndicator, RefreshControl, Linking, Alert, TextInput, Modal, Share, ScrollView, Dimensions,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, apiGet, apiPost, apiDelete, timeAgo, applyAffiliateTag, formatPrice, API_BASE, openURL } from '../utils';
@@ -485,8 +486,8 @@ export default function DealsScreen() {
                   {/* Discount code badge */}
                   {deal.discount_code && (
                     <TouchableOpacity style={{flexDirection:'row',alignItems:'center',gap:6,backgroundColor:'#EFF6FF',borderRadius:8,paddingHorizontal:10,paddingVertical:6,marginBottom:6,borderWidth:1,borderColor:'#BFDBFE'}}
-                      onPress={() => {
-                        if (typeof navigator !== 'undefined' && navigator.clipboard) { navigator.clipboard.writeText(deal.discount_code); }
+                      onPress={async () => {
+                        await Clipboard.setStringAsync(deal.discount_code);
                         Alert.alert('📋 Código copiado', deal.discount_code);
                       }}>
                       <Ionicons name="pricetag-outline" size={14} color={COLORS.primary}/>
@@ -773,7 +774,7 @@ export default function DealsScreen() {
                   {/* Discount code */}
                   {d.discount_code && (
                     <TouchableOpacity style={{flexDirection:'row',alignItems:'center',gap:8,backgroundColor:'#EFF6FF',borderRadius:12,padding:12,borderWidth:1.5,borderColor:'#BFDBFE'}}
-                      onPress={() => Alert.alert('📋 Código copiado', d.discount_code)}>
+                      onPress={async () => { await Clipboard.setStringAsync(d.discount_code); Alert.alert('📋 Código copiado', d.discount_code); }}>
                       <Ionicons name="pricetag" size={18} color={COLORS.primary}/>
                       <Text style={{fontSize:18,fontWeight:'800',color:COLORS.primary,letterSpacing:2}}>{d.discount_code}</Text>
                       <Text style={{fontSize:12,color:COLORS.text3}}>Toca para copiar</Text>
