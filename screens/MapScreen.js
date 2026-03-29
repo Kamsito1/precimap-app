@@ -614,11 +614,11 @@ export default function MapScreen() {
           <View style={s.rightRow}>
             {/* View toggle */}
             <View style={s.toggle}>
-              <TouchableOpacity style={[s.togBtn, viewMode==='map'&&s.togBtnOn]} onPress={()=>setViewMode('map')}>
+              <TouchableOpacity style={[s.togBtn, viewMode==='map'&&s.togBtnOn]} onPress={()=>{setViewMode('map');setShowSettingsMenu(false);}}>
                 <Ionicons name="map-outline" size={14} color={viewMode==='map'?COLORS.primary:COLORS.text3}/>
                 <Text style={[s.togTxt,viewMode==='map'&&{color:COLORS.primary}]}>Mapa</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[s.togBtn, viewMode==='list'&&s.togBtnOn]} onPress={()=>setViewMode('list')}>
+              <TouchableOpacity style={[s.togBtn, viewMode==='list'&&s.togBtnOn]} onPress={()=>{setViewMode('list');setShowSettingsMenu(false);}}>
                 <Ionicons name="list-outline" size={14} color={viewMode==='list'?COLORS.primary:COLORS.text3}/>
                 <Text style={[s.togTxt,viewMode==='list'&&{color:COLORS.primary}]}>Lista</Text>
               </TouchableOpacity>

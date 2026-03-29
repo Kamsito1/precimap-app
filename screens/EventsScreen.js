@@ -139,48 +139,41 @@ export default function EventsScreen() {
           );
         })()}
 
-        {/* Source pills — Todos / Comunidad / Ayuntamiento */}
-        <View style={s.sourceRow}>
-          {SOURCES.map(src => (
-            <TouchableOpacity key={src.key} style={[s.sourceBtn, source===src.key && s.sourceBtnOn]} onPress={() => setSource(src.key)}>
-              <Text style={s.sourceEmoji}>{src.emoji}</Text>
-              <Text style={[s.sourceTxt, source===src.key && {color:'#fff'}]}>{src.label}</Text>
-            </TouchableOpacity>
-          ))}
-          {ayuntamientoCount > 0 && source !== 'ayuntamiento' && (
-            <View style={s.officialBadge}>
-              <Text style={s.officialBadgeTxt}>🏛️ {ayuntamientoCount} oficiales</Text>
-            </View>
-          )}
-          {/* Price filter pills */}
-          {[['all','Todos'],['free','🆓 Gratis'],['paid','💰 De pago']].map(([key,label]) => (
-            <TouchableOpacity key={key}
-              style={[s.sourceBtn, priceFilter===key && s.sourceBtnOn]}
-              onPress={() => setPriceFilter(key)}>
-              <Text style={[s.sourceTxt, priceFilter===key && {color:'#fff'}]}>{label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Category pills */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{paddingHorizontal:12,gap:6,paddingBottom:8}}>
-          {CATS.map(c => {
-            const count = c.key === 'all' ? events.length : events.filter(e => e.category === c.key).length;
-            if (c.key !== 'all' && count === 0) return null;
-            return (
-              <TouchableOpacity key={c.key} style={[s.catBtn, cat===c.key && s.catBtnOn]} onPress={() => setCat(c.key)}>
-                <Text style={s.catEmoji}>{c.emoji}</Text>
-                <Text style={[s.catTxt, cat===c.key && {color:'#fff'}]}>{c.label}</Text>
-                {count > 0 && c.key !== 'all' && <Text style={{fontSize:9,color:cat===c.key?'rgba(255,255,255,0.8)':COLORS.text3,fontWeight:'700'}}>{count}</Text>}
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {/* Filter panel */}
+        {/* All filters inside settings panel */}
         {showFilters && (
           <View style={s.filtersPanel}>
+            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+              <Text style={{fontSize:14,fontWeight:'700',color:COLORS.text}}>Filtros</Text>
+              <TouchableOpacity onPress={() => setShowFilters(false)} style={{width:26,height:26,borderRadius:13,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+                <Ionicons name="close" size={14} color={COLORS.text2}/>
+              </TouchableOpacity>
+            </View>
+            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>FUENTE</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6,marginBottom:10}}>
+              {SOURCES.map(src => (
+                <TouchableOpacity key={src.key} style={[s.sourceBtn, source===src.key && s.sourceBtnOn]} onPress={() => setSource(src.key)}>
+                  <Text style={s.sourceEmoji}>{src.emoji}</Text>
+                  <Text style={[s.sourceTxt, source===src.key && {color:'#fff'}]}>{src.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>PRECIO</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6,marginBottom:10}}>
+              {[['all','Todos'],['free','🆓 Gratis'],['paid','💰 De pago']].map(([key,label]) => (
+                <TouchableOpacity key={key} style={[s.sourceBtn, priceFilter===key && s.sourceBtnOn]} onPress={() => setPriceFilter(key)}>
+                  <Text style={[s.sourceTxt, priceFilter===key && {color:'#fff'}]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>CATEGORÍA</Text>
+            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6,marginBottom:10}}>
+              {CATS.map(c => (
+                <TouchableOpacity key={c.key} style={[s.catBtn, cat===c.key && s.catBtnOn]} onPress={() => setCat(c.key)}>
+                  <Text style={s.catEmoji}>{c.emoji}</Text>
+                  <Text style={[s.catTxt, cat===c.key && {color:'#fff'}]}>{c.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
             {/* Search box */}
             <View style={{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg3,borderRadius:10,paddingHorizontal:10,marginBottom:10,borderWidth:1,borderColor:COLORS.border}}>
               <Ionicons name="search-outline" size={16} color={COLORS.text3}/>
