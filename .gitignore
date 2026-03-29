@@ -13,3 +13,9 @@ web-build/
 *.env
 google-service-account.json
 GoogleService-Info.plist
+
+# Build artifacts
+*.ipa
+*.xcarchive/
+ios/Pods/
+ios/Podfile.lock

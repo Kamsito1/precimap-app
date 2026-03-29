@@ -27,6 +27,11 @@ const TIPS = [
   '💡 La tarifa nocturna de luz puede ahorrar un 30%',
   '💡 Too Good To Go: comida de restaurante desde 2€',
   '💡 Los gimnasios de bajo coste cuestan 20-30€/mes',
+  '💡 Repostar lunes o martes suele ser un 3-5% más barato',
+  '💡 Las marcas blancas ahorran hasta un 40% sin perder calidad',
+  '💡 Cashback con iGraal: recupera un 3-8% en compras online',
+  '💡 Compara seguros en Rastreator: puedes ahorrar 200€/año',
+  '💡 Cocinar en batch el domingo ahorra 150€/mes en comidas fuera',
 ];
 
 export default function AhorroScreen() {
