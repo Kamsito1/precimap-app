@@ -365,7 +365,7 @@ export default function DealsScreen() {
                     </View>
                     <Text style={{fontSize:12,fontWeight:'700',color:COLORS.text}} numberOfLines={2}>{t.title}</Text>
                     <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
-                      <Text style={{fontSize:14,fontWeight:'800',color:COLORS.primary}}>{t.deal_price != null ? (t.deal_price === 0 ? '¡GRATIS!' : t.deal_price.toFixed(2)+'€') : '—'}</Text>
+                      <Text style={{fontSize:14,fontWeight:'800',color:COLORS.primary}}>{t.deal_price != null ? (t.deal_price === 0 ? (t.discount_code ? `🏷️ -${Math.round(t.discount_percent||0)}%` : '¡GRATIS!') : t.deal_price.toFixed(2)+'€') : '—'}</Text>
                       {t.discount_percent != null && t.discount_percent > 0 && <View style={{backgroundColor:'#FEE2E2',borderRadius:4,paddingHorizontal:4}}>
                         <Text style={{fontSize:10,fontWeight:'700',color:COLORS.danger}}>-{Math.round(Number(t.discount_percent)||0)}%</Text>
                       </View>}
