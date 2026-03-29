@@ -391,7 +391,8 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
         </TouchableOpacity>
         <TouchableOpacity style={ec.voteBtn} onPress={async () => {
           const price = ev?.is_free ? '🆓 Gratis' : ev?.price_from ? `desde ${ev.price_from}€` : '';
-          const msg = `🎭 ${ev?.title||''}\n📍 ${ev?.city||''} · ${ev?.date||''}\n${price ? price+'\n' : ''}Via MapaTacaño 💰`;
+          const shareUrl = `https://web-production-a8023.up.railway.app/evento/${ev?.id}`;
+          const msg = `🎭 ${ev?.title||''}\n📍 ${ev?.city||''} · ${ev?.date||''}\n${price ? price+'\n' : ''}\n${shareUrl}`;
           try {
             if (typeof navigator !== 'undefined' && navigator.share) {
               await navigator.share({ title: ev?.title||'', text: msg, url: ev?.url||'' });
