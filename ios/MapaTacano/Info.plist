@@ -35,7 +35,9 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>88</string>
+	<string>89</string>
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-4854549477350471~3682160177</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationQueriesSchemes</key>
@@ -73,6 +75,13 @@
 	<string>MapaTacaño puede usar identificadores de publicidad para mostrarte anuncios más relevantes.</string>
 	<key>RCTNewArchEnabled</key>
 	<false/>
+	<key>SKAdNetworkItems</key>
+	<array>
+		<dict>
+			<key>SKAdNetworkIdentifier</key>
+			<string>cstr6suwn9.skadnetwork</string>
+		</dict>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>
