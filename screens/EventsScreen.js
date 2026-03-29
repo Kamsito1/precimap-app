@@ -344,6 +344,10 @@ function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
 
   return (
     <View style={ec.card}>
+      {/* Event photo */}
+      {Array.isArray(ev?.photos) && ev.photos.length > 0 && (
+        <Image source={{uri: ev.photos[0]}} style={{width:'100%',height:140,borderTopLeftRadius:14,borderTopRightRadius:14}} resizeMode="cover"/>
+      )}
       {isOfficial && (
         <View style={ec.officialStripe}>
           <Ionicons name="shield-checkmark" size={11} color="#fff"/>
@@ -519,14 +523,14 @@ function AddEventModal({ visible, onClose, onSuccess }) {
     }
     setLoading(true); setError('');
     try {
-      const res = await apiPost('/api/events', {
+      const res = await apiUpload('/api/events', {
         title: title.trim(), category: cat, date: isoDate, time,
         venue: venue.trim(), address: address.trim(), city: city.trim(),
         lat: gpsCoords?.lat || null, lng: gpsCoords?.lng || null,
         price_from: price && !isFree ? (parseFloat(price)||null) : null,
         is_free: isFree ? 1 : 0,
         url: url.trim(), description: desc.trim(),
-      });
+      }, eventImage?.uri || null, 'image');
       if (res.error) { setError(res.error); return; }
       onSuccess?.();
       // Reset
