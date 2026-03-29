@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "MapaTacaño",
-    "slug": "mapatacano",
+    "slug": "precimap",
     "scheme": "com.kamsito.precimap",
     "version": "2.0.0",
     "orientation": "portrait",
@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "80",
+      "buildNumber": "82",
       "requireFullScreen": true,
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "MapaTacaño usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",

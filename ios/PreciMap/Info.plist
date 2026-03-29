@@ -35,7 +35,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>80</string>
+    <string>82</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSApplicationQueriesSchemes</key>
@@ -73,23 +73,6 @@
     <string>MapaTacaño puede usar identificadores de publicidad para mostrarte anuncios más relevantes.</string>
     <key>RCTNewArchEnabled</key>
     <false/>
-    <key>UIApplicationSceneManifest</key>
-    <dict>
-      <key>UIApplicationSupportsMultipleScenes</key>
-      <true/>
-      <key>UISceneConfigurations</key>
-      <dict>
-        <key>CPTemplateApplicationSceneSessionRoleApplication</key>
-        <array>
-          <dict>
-            <key>UISceneConfigurationName</key>
-            <string>CarPlay</string>
-            <key>UISceneDelegateClassName</key>
-            <string>$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate</string>
-          </dict>
-        </array>
-      </dict>
-    </dict>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>
