@@ -47,10 +47,13 @@ function AppNavigator() {
   const [showOnboarding, setShowOnboarding] = useState(null); // null=checking, true/false
   const insets = useSafeAreaInsets();
 
-  // Check if onboarding has been shown
+  // Check if onboarding has been shown — skip for existing users upgrading
   useEffect(() => {
-    AsyncStorage.getItem('onboarding_done').then(v => {
-      setShowOnboarding(!v);
+    Promise.all([
+      AsyncStorage.getItem('onboarding_done'),
+      AsyncStorage.getItem('precimap_token'), // existing user = skip onboarding
+    ]).then(([done, token]) => {
+      setShowOnboarding(!done && !token);
     }).catch(() => setShowOnboarding(false));
   }, []);
 

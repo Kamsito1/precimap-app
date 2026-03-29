@@ -147,6 +147,16 @@ export default function AddDealModal({ visible, onClose, onSuccess }) {
         cover_index: coverIndex,
       }, images[coverIndex]?.uri || images[0]?.uri || null, 'image');
       if (res.error) return setError(res.error);
+      // Upload additional images (if more than 1)
+      const dealId = res.id || res.deal?.id;
+      if (dealId && images.length > 1) {
+        for (let i = 0; i < images.length; i++) {
+          if (i === coverIndex) continue; // skip cover, already uploaded
+          try {
+            await apiUpload(`/api/deals/${dealId}/images`, {}, images[i].uri, 'image');
+          } catch(_) { /* non-critical — deal already created */ }
+        }
+      }
       reset(); onSuccess?.();
     } catch(e) { setError(`Error: ${e.message || 'Sin conexión'}`); }
     finally { setLoading(false); }
