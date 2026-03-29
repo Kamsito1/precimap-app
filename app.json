@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "89",
+      "buildNumber": "90",
       "requireFullScreen": true,
       "infoPlist": {
         "CFBundleDisplayName": "MapaTacaño",
