@@ -47,10 +47,6 @@ MapaTacaño es tu compañero de ahorro en España. Compara precios de gasolina e
 • Gana puntos al reportar precios, publicar chollos y votar
 • Desbloquea insignias y sube en el ranking
 
-🚗 CARPLAY
-• Encuentra la gasolinera más barata mientras conduces
-• Interfaz super sencilla para el coche
-
 ## Keywords (100 caracteres máx)
 gasolina,supermercado,precios,ahorro,chollos,farmacia,ofertas,España,comparar,barato
 
@@ -81,4 +77,3 @@ mailto:sitoexpositorodriguez@gmail.com
 • Selectores de ciudad sin escribir — elige tu CCAA y ciudad con botones
 • Botón "Reportar timo" para chollos falsos
 • Toggle de notificaciones en perfil
-• Compatible con CarPlay
