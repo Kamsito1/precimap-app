@@ -588,6 +588,13 @@ export default function MapScreen() {
       <View style={s.header}>
         <View style={s.headerRow}>
           <Text style={s.logo}>💰 MapaTacaño</Text>
+          {/* Active category badge — shows what filter is on */}
+          {activeCat !== 'gasolinera' && (
+            <View style={{flexDirection:'row',alignItems:'center',gap:4,backgroundColor:COLORS.bg3,borderRadius:99,paddingHorizontal:8,paddingVertical:4}}>
+              <Text style={{fontSize:12}}>{CATS.find(c=>(c.key2||c.key)===activeCatKey)?.emoji || '📍'}</Text>
+              <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text2}}>{CATS.find(c=>(c.key2||c.key)===activeCatKey)?.label || activeCat}</Text>
+            </View>
+          )}
           {/* Badge carburante — solo cuando estamos en gasolinera */}
           {activeCat === 'gasolinera' && activeFuel && activeFuel !== 'all' && (
             <TouchableOpacity
@@ -630,7 +637,10 @@ export default function MapScreen() {
 
         {/* Settings menu dropdown — replaces old category pills */}
         {showSettingsMenu && (
-          <View style={{position:'absolute',top:52,right:12,zIndex:999,backgroundColor:COLORS.bg2,borderRadius:16,padding:14,shadowColor:'#000',shadowOpacity:0.15,shadowRadius:20,shadowOffset:{width:0,height:4},elevation:10,borderWidth:1,borderColor:COLORS.border,width:280}}>
+          <>
+          <TouchableOpacity style={{position:'absolute',top:0,left:0,right:0,bottom:-2000,zIndex:998}} activeOpacity={1} onPress={() => setShowSettingsMenu(false)}/>
+          <View style={{position:'absolute',top:52,right:12,zIndex:999,backgroundColor:COLORS.bg2,borderRadius:16,padding:14,shadowColor:'#000',shadowOpacity:0.15,shadowRadius:20,shadowOffset:{width:0,height:4},elevation:10,borderWidth:1,borderColor:COLORS.border,width:280,maxHeight:500}}>
+          <ScrollView showsVerticalScrollIndicator={false}>
             {/* Close button */}
             <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
               <Text style={{fontSize:15,fontWeight:'700',color:COLORS.text}}>Filtros</Text>
@@ -726,7 +736,9 @@ export default function MapScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+          </ScrollView>
           </View>
+          </>
         )}
 
         {/* Barra de búsqueda de producto — solo para farmacia y gimnasio (supermercado usa Ahorro) */}
