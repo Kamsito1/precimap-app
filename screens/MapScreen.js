@@ -599,7 +599,7 @@ export default function MapScreen() {
           {activeCat === 'gasolinera' && activeFuel && activeFuel !== 'all' && (
             <TouchableOpacity
               style={[s.fuelActiveBadge, {backgroundColor:(FUELS.find(f=>f.key===activeFuel)||{}).color+'22', borderColor:(FUELS.find(f=>f.key===activeFuel)||{}).color}]}
-              onPress={()=>setActiveFuel(null)}>
+              onPress={()=>setShowSettingsMenu(true)}>
               <Text style={[s.fuelActiveTxt, {color:(FUELS.find(f=>f.key===activeFuel)||{color:COLORS.text}).color}]}>
                 ⛽ {FUELS.find(f=>f.key===activeFuel)?.label}
               </Text>

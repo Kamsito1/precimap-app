@@ -195,7 +195,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
     let section = CPListSection(items: [item])
     let template = CPListTemplate(title: "Error", sections: [section])
     
-    if let topTemplate = interfaceController?.topTemplate {
+    if interfaceController?.topTemplate != nil {
       interfaceController?.popTemplate(animated: false, completion: nil)
     }
     interfaceController?.pushTemplate(template, animated: true, completion: nil)

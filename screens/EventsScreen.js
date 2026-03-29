@@ -529,7 +529,7 @@ function AddEventModal({ visible, onClose, onSuccess }) {
       // Reset
       setTitle(''); setDate(''); setTime(''); setVenue(''); setAddress('');
       setCity(''); setPrice(''); setIsFree(false); setUrl(''); setDesc('');
-      setGpsCoords(null); setUseGPS(false);
+      setGpsCoords(null); setUseGPS(false); setEventImage(null);
     } catch(_) { setError('Error de conexión'); }
     finally { setLoading(false); }
   }
