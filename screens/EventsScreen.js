@@ -2,16 +2,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   Linking, ActivityIndicator, RefreshControl, Modal,
-  ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, Share,
+  ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, Share, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 // expo-location cargado de forma diferida — import estático crashea en iOS/Hermes
 const getLocation = () => require('expo-location');
-import { COLORS, apiGet, apiPost, timeAgo, MONTHS_ES, openURL } from '../utils';
+import { COLORS, apiGet, apiPost, apiUpload, timeAgo, MONTHS_ES, openURL } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
-import CityPicker from '../components/CityPicker';
 import AdBanner from '../components/AdBanner';
 
 const CATS = [
@@ -481,6 +480,7 @@ function AddEventModal({ visible, onClose, onSuccess }) {
   const [desc, setDesc] = useState('');
   const [useGPS, setUseGPS] = useState(false);
   const [gpsCoords, setGpsCoords] = useState(null);
+  const [eventImage, setEventImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -493,6 +493,19 @@ function AddEventModal({ visible, onClose, onSuccess }) {
       setGpsCoords({ lat: loc.coords.latitude, lng: loc.coords.longitude });
       setUseGPS(true);
     } catch(_) { Alert.alert('Error', 'No se pudo obtener la ubicación'); }
+  }
+
+  async function pickEventImage() {
+    try {
+      const ImagePicker = require('expo-image-picker');
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') return Alert.alert('Permiso necesario', 'Necesitamos acceso a tu galería.');
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets?.[0]) setEventImage(result.assets[0]);
+    } catch(_) {}
   }
 
   async function submit() {
@@ -604,6 +617,25 @@ function AddEventModal({ visible, onClose, onSuccess }) {
 
           <Text style={am.label}>URL (entradas / más info)</Text>
           <TextInput style={am.input} value={url} onChangeText={setUrl} placeholder="https://..." keyboardType="url" autoCapitalize="none" placeholderTextColor={COLORS.text3}/>
+
+          {/* Event photo */}
+          <Text style={am.label}>📷 Foto del evento</Text>
+          <TouchableOpacity style={{borderWidth:2,borderColor:eventImage?COLORS.success:COLORS.border,borderStyle:'dashed',borderRadius:14,padding:eventImage?0:20,alignItems:'center',justifyContent:'center',height:eventImage?140:80,overflow:'hidden',backgroundColor:COLORS.bg3}}
+            onPress={pickEventImage}>
+            {eventImage ? (
+              <>
+                <Image source={{uri:eventImage.uri}} style={{width:'100%',height:'100%'}} resizeMode="cover"/>
+                <View style={{position:'absolute',bottom:6,right:6,backgroundColor:'rgba(0,0,0,0.6)',borderRadius:8,paddingHorizontal:8,paddingVertical:4}}>
+                  <Text style={{fontSize:10,color:'#fff',fontWeight:'600'}}>Cambiar</Text>
+                </View>
+              </>
+            ) : (
+              <>
+                <Ionicons name="camera-outline" size={24} color={COLORS.text3}/>
+                <Text style={{fontSize:12,color:COLORS.text3,marginTop:4}}>Añadir foto (opcional)</Text>
+              </>
+            )}
+          </TouchableOpacity>
 
           <Text style={am.label}>Descripción breve</Text>
           <TextInput style={[am.input,{height:70,textAlignVertical:'top'}]} value={desc} onChangeText={v=>setDesc(v.slice(0,300))} placeholder="Descripción del evento..." multiline placeholderTextColor={COLORS.text3} maxLength={300}/>
