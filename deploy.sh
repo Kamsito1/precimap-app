@@ -50,7 +50,7 @@ cd ios
 xcodebuild -workspace MapaTacano.xcworkspace -scheme MapaTacano \
   -configuration Release -destination 'generic/platform=iOS' \
   -archivePath ~/Desktop/MapaTacano-$BUILD_NUM.xcarchive archive \
-  DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic 2>&1 | grep "ARCHIVE"
+  DEVELOPMENT_TEAM=$TEAM_ID CODE_SIGN_STYLE=Automatic 2>&1 | tail -1
 cd ..
 
 # 5. Export IPA
@@ -82,9 +82,15 @@ echo ""
 echo "6️⃣  Submitting to TestFlight..."
 eas submit --platform ios \
   --path ~/Desktop/MapaTacano-IPA-$BUILD_NUM/MapaTacano.ipa \
-  --non-interactive 2>&1 | grep -E "✔|Submitted|error"
+  --non-interactive 2>&1 | grep -E "✔|Submitted|error|Error"
 
-# 7. Git commit
+# 7. Cleanup old builds
+echo ""
+echo "7️⃣  Cleanup..."
+rm -rf ~/Desktop/MapaTacano-$((BUILD_NUM-1)).xcarchive ~/Desktop/MapaTacano-IPA-$((BUILD_NUM-1)) 2>/dev/null
+echo "   Cleaned build $((BUILD_NUM-1)) artifacts"
+
+# 8. Git commit
 echo ""
 echo "7️⃣  Git commit & push..."
 git add -A
