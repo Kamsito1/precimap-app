@@ -565,7 +565,8 @@ export default function DealsScreen() {
 
                   {/* Compartir */}
                   <TouchableOpacity style={s.iconBtn} onPress={async () => {
-                    const text = `🔥 ${deal.title||''}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent != null && deal.discount_percent > 0 ?` (-${Math.round(Number(deal.discount_percent)||0)}%)`:''}${deal.url?'\n🔗 '+applyAffiliateTag(deal.url):''}\n\nVía MapaTacaño`;
+                    const shareUrl = `https://web-production-a8023.up.railway.app/chollo/${deal.id}`;
+                    const text = `🔥 ${deal.title||''}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent != null && deal.discount_percent > 0 ?` (-${Math.round(Number(deal.discount_percent)||0)}%)`:''}${deal.discount_code?'\n🏷️ Código: '+deal.discount_code:''}\n\n${shareUrl}`;
                     try {
                       if (typeof navigator !== 'undefined' && navigator.share) {
                         await navigator.share({ title: deal.title||'', text, url: deal.url || '' });
@@ -737,7 +738,7 @@ export default function DealsScreen() {
                 </TouchableOpacity>
                 <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text,flex:1,marginHorizontal:12}} numberOfLines={1}>{d.title}</Text>
                 <TouchableOpacity onPress={async () => {
-                  const text = `🔥 ${d.title}\n💰 ${formatPrice(d.deal_price)}${d.url?'\n🔗 '+applyAffiliateTag(d.url):''}\n\nVía MapaTacaño`;
+                  const text = `🔥 ${d.title}\n💰 ${formatPrice(d.deal_price)}${d.discount_code?'\n🏷️ Código: '+d.discount_code:''}\n\nhttps://web-production-a8023.up.railway.app/chollo/${d.id}`;
                   try { await Share.share({ message: text }); } catch(_) {}
                 }}>
                   <Ionicons name="share-outline" size={20} color={COLORS.text2}/>
