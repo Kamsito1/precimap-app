@@ -83,17 +83,17 @@ function AppNavigator() {
 
   if (showOnboarding === null || authLoading) return (
     <View style={{ flex: 1, backgroundColor: '#2563EB', alignItems: 'center', justifyContent: 'center', gap: 14 }}>
-      <Text style={{ fontSize: 52 }}>💰</Text>
-      <Text style={{ fontSize: 26, fontWeight: '800', color: '#fff', letterSpacing: -0.5 }}>MapaTacaño</Text>
+      <Ionicons name="wallet" size={52} color="rgba(255,255,255,0.95)"/>
+      <Text style={{ fontSize: 26, fontWeight: '800', color: '#fff', letterSpacing: -0.5 }}>Mapa Tacaño</Text>
       <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>La app de ahorro de España</Text>
       <ActivityIndicator color="rgba(255,255,255,0.8)" style={{ marginTop: 16 }} />
       <View style={{ position: 'absolute', bottom: 40, alignItems: 'center', gap: 4 }}>
         <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
           {splashG95
-            ? `⛽ G95 desde ${splashG95}€/L · 🔥 ${splashStats?.deals||50} chollos · 🎭 ${splashStats?.events||30} eventos`
-            : '💰 Gasolineras · Chollos · Supermercados · Bancos'}
+            ? `G95 desde ${splashG95}€/L · ${splashStats?.deals||50} chollos · ${splashStats?.events||30} eventos`
+            : 'Gasolineras · Chollos · Supermercados · Bancos'}
         </Text>
-        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v{APP_VERSION} · MapaTacaño</Text>
+        <Text style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>v{APP_VERSION} · Mapa Tacaño</Text>
       </View>
     </View>
   );
@@ -142,6 +142,17 @@ function AppNavigator() {
 }
 
 export default function App() {
+  // Initialize CarPlay — only on iOS production builds
+  useEffect(() => {
+    if (Platform.OS !== 'ios') return;
+    try {
+      const Constants = require('expo-constants').default;
+      const isExpoGo = Constants.executionEnvironment === 'storeClient';
+      if (isExpoGo) return;
+      const { initCarPlay } = require('./carplay/CarPlaySetup');
+      initCarPlay();
+    } catch(_) { /* CarPlay not available */ }
+  }, []);
   const scheme = useColorScheme();
   return (
     <AuthProvider>

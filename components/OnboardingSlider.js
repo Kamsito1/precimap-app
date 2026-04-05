@@ -3,31 +3,32 @@ import {
   View, Text, TouchableOpacity, Dimensions, FlatList, StyleSheet,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../utils';
 
 const { width, height } = Dimensions.get('window');
 
 const SLIDES = [
   {
-    emoji: '🔍',
+    icon: 'search-outline',
     title: 'Encuentra lo más barato',
     desc: 'Compara precios de gasolineras, supermercados, cafeterías, farmacias y más cerca de ti.',
     bg: '#2563EB',
   },
   {
-    emoji: '🔥',
+    icon: 'flame-outline',
     title: 'Chollos y ofertas exclusivas',
     desc: 'Descubre las mejores ofertas de internet. Comparte tus chollos con enlace de referido y gana dinero.',
     bg: '#DC2626',
   },
   {
-    emoji: '🎭',
+    icon: 'calendar-outline',
     title: 'Eventos cerca de ti',
     desc: 'Conciertos, ferias, exposiciones, deporte... Encuentra qué hacer en tu ciudad y provincia.',
     bg: '#7C3AED',
   },
   {
-    emoji: '💰',
+    icon: 'wallet-outline',
     title: 'Ahorra +100€ al mes',
     desc: 'Gasolina, supermercados, gimnasios, bancos... Todo comparado para que pagues menos cada mes.',
     bg: '#16A34A',
@@ -58,7 +59,7 @@ export default function OnboardingSlider({ onFinish }) {
 
   const renderSlide = ({ item }) => (
     <View style={[s.slide, { backgroundColor: item.bg }]}>  
-      <Text style={s.emoji}>{item.emoji}</Text>
+      <Ionicons name={item.icon} size={80} color="rgba(255,255,255,0.9)"/>
       <Text style={s.title}>{item.title}</Text>
       <Text style={s.desc}>{item.desc}</Text>
     </View>

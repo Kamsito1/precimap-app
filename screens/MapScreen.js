@@ -5,13 +5,12 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import MapView, { Marker } from 'react-native-maps';
-// expo-location cargado de forma diferida — import estático crashea en iOS/Hermes
 const getLocation = () => require('expo-location');
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import {
   COLORS, CATEGORY_INFO, FUEL_LABELS, gasPriceColor,
-  stationMinPrice, apiGet, apiPost, apiDelete, distanceKm, timeAgo, openURL,
+  stationMinPrice, apiGet, apiPost, apiDelete, distanceKm, timeAgo, openURL, fmtP,
 } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
@@ -28,48 +27,35 @@ const FUELS = [
   { key:'gnc',         label:'Gas Natural',  emoji:'⚪', color:'#06B6D4', bg:'#ECFEFF' },
 ];
 
-// ─── PRECIO MEDIO SEMANAL POR CADENA DE SUPERMERCADO ────────────────────────
-// Basado en una cesta semanal de ~30 productos básicos (fuente: OCU 2024 + PRODUCTOS)
-// Se usa para mostrar en los marcadores del mapa cuánto cuesta de media una semana
 const WEEKLY_COST_BY_CHAIN = {
-  'aldi':       72.50,  'Aldi':       72.50,
-  'lidl':       76.80,  'Lidl':       76.80,
-  'alcampo':    82.40,  'Alcampo':    82.40,
-  'dia':        83.90,  'Dia':        83.90,  'Día':        83.90,
-  'mercadona':  88.50,  'Mercadona':  88.50,
-  'carrefour':  95.20,  'Carrefour':  95.20,
-  'consum':     96.80,  'Consum':     96.80,
-  'eroski':     97.50,  'Eroski':     97.50,
-  'coviran':    85.00,  'Coviran':    85.00,
-  'spar':       86.50,  'Spar':       86.50,
-  'ahorramas':  92.00,  'Ahorramas':  92.00,
-  'condis':     93.50,  'Condis':     93.50,
-  'bonpreu':    96.00,  'Bonpreu':    96.00,
-  'gadis':      94.80,  'Gadis':      94.80,
-  'hiperdino':  91.00,  'Hiperdino':  91.00,
-  'supercor':  102.00,  'Supercor':  102.00,
-  'el corte':  110.00,  'El Corte Inglés': 110.00,
+  'aldi':72.50,'Aldi':72.50,'lidl':76.80,'Lidl':76.80,'alcampo':82.40,'Alcampo':82.40,
+  'dia':83.90,'Dia':83.90,'Día':83.90,'mercadona':88.50,'Mercadona':88.50,
+  'carrefour':95.20,'Carrefour':95.20,'consum':96.80,'Consum':96.80,
+  'eroski':97.50,'Eroski':97.50,'coviran':85.00,'Coviran':85.00,
+  'spar':86.50,'Spar':86.50,'ahorramas':92.00,'Ahorramas':92.00,
+  'condis':93.50,'Condis':93.50,'bonpreu':96.00,'Bonpreu':96.00,
+  'gadis':94.80,'Gadis':94.80,'hiperdino':91.00,'Hiperdino':91.00,
+  'supercor':102.00,'Supercor':102.00,'el corte':110.00,'El Corte Inglés':110.00,
 };
-const AVG_WEEKLY_COST = 88.50; // media nacional (Mercadona como referencia)
+const AVG_WEEKLY_COST = 88.50;
 
-// Coordenadas de ciudades españolas para centrar el mapa y filtrar gasolineras por radio
 const CITY_COORDS = {
-  'Madrid': {lat:40.4168,lng:-3.7038}, 'Barcelona': {lat:41.3851,lng:2.1734},
-  'Sevilla': {lat:37.3886,lng:-5.9823}, 'Valencia': {lat:39.4699,lng:-0.3763},
-  'Bilbao': {lat:43.2630,lng:-2.9350}, 'Málaga': {lat:36.7213,lng:-4.4213},
-  'Zaragoza': {lat:41.6488,lng:-0.8891}, 'Murcia': {lat:37.9838,lng:-1.1332},
-  'Palma': {lat:39.5696,lng:2.6502}, 'Granada': {lat:37.1773,lng:-3.5986},
-  'Córdoba': {lat:37.8882,lng:-4.7794}, 'Alicante': {lat:38.3452,lng:-0.4810},
-  'Valladolid': {lat:41.6523,lng:-4.7245}, 'Vigo': {lat:42.2314,lng:-8.7124},
-  'Gijón': {lat:43.5453,lng:-5.6615}, 'Pamplona': {lat:42.8125,lng:-1.6458},
-  'Jerez de la Frontera': {lat:36.6869,lng:-6.1372},
-  'Salamanca': {lat:40.9701,lng:-5.6635}, 'Toledo': {lat:39.8628,lng:-4.0273},
-  'San Sebastián': {lat:43.3183,lng:-1.9812}, 'Santander': {lat:43.4623,lng:-3.8099},
-  'Almería': {lat:36.8340,lng:-2.4637}, 'Huelva': {lat:37.2614,lng:-6.9447},
-  'Badajoz': {lat:38.8794,lng:-6.9706}, 'Cáceres': {lat:39.4752,lng:-6.3724},
-  'Logroño': {lat:42.4627,lng:-2.4449}, 'Burgos': {lat:42.3440,lng:-3.6970},
-  'León': {lat:42.5987,lng:-5.5671}, 'Oviedo': {lat:43.3614,lng:-5.8593},
-  'Villafranca de Córdoba': {lat:37.9641,lng:-4.5301},
+  'Madrid':{lat:40.4168,lng:-3.7038},'Barcelona':{lat:41.3851,lng:2.1734},
+  'Sevilla':{lat:37.3886,lng:-5.9823},'Valencia':{lat:39.4699,lng:-0.3763},
+  'Bilbao':{lat:43.2630,lng:-2.9350},'Málaga':{lat:36.7213,lng:-4.4213},
+  'Zaragoza':{lat:41.6488,lng:-0.8891},'Murcia':{lat:37.9838,lng:-1.1332},
+  'Palma':{lat:39.5696,lng:2.6502},'Granada':{lat:37.1773,lng:-3.5986},
+  'Córdoba':{lat:37.8882,lng:-4.7794},'Alicante':{lat:38.3452,lng:-0.4810},
+  'Valladolid':{lat:41.6523,lng:-4.7245},'Vigo':{lat:42.2314,lng:-8.7124},
+  'Gijón':{lat:43.5453,lng:-5.6615},'Pamplona':{lat:42.8125,lng:-1.6458},
+  'Jerez de la Frontera':{lat:36.6869,lng:-6.1372},
+  'Salamanca':{lat:40.9701,lng:-5.6635},'Toledo':{lat:39.8628,lng:-4.0273},
+  'San Sebastián':{lat:43.3183,lng:-1.9812},'Santander':{lat:43.4623,lng:-3.8099},
+  'Almería':{lat:36.8340,lng:-2.4637},'Huelva':{lat:37.2614,lng:-6.9447},
+  'Badajoz':{lat:38.8794,lng:-6.9706},'Cáceres':{lat:39.4752,lng:-6.3724},
+  'Logroño':{lat:42.4627,lng:-2.4449},'Burgos':{lat:42.3440,lng:-3.6970},
+  'León':{lat:42.5987,lng:-5.5671},'Oviedo':{lat:43.3614,lng:-5.8593},
+  'Villafranca de Córdoba':{lat:37.9641,lng:-4.5301},
 };
 
 function getWeeklyCost(placeName) {
@@ -82,127 +68,105 @@ function getWeeklyCost(placeName) {
 }
 
 const CATS = [
-  { key:'gasolinera',   label:'Gasolina',    emoji:'⛽', group:'gasolina' },
-  { key:'restaurante',  label:'Cafés',       emoji:'☕', product:'Café con leche',  key2:'cafe',   group:'restaurantes' },
-  { key:'restaurante',  label:'Cervezas',    emoji:'🍺', product:'Caña de cerveza', key2:'cerveza', group:'restaurantes' },
-  { key:'restaurante',  label:'Restaurantes',emoji:'🍽️', product:'Menú del día',    key2:'restaurante_menu', group:'restaurantes' },
-  { key:'supermercado', label:'Súper',       emoji:'🛒', group:'servicios' },
-  { key:'farmacia',     label:'Farmacia',    emoji:'💊', group:'servicios' },
-  { key:'gimnasio',     label:'Gimnasios',   emoji:'💪', group:'servicios' },
-  { key:'peluqueria',   label:'Peluquerías', emoji:'💇', group:'servicios' },
-  { key:'peluqueria_canina', label:'Peluq. Canina', emoji:'🐕', group:'servicios' },
-  { key:'veterinario',  label:'Veterinarios',emoji:'🏥', group:'servicios' },
+  { key:'gasolinera',   label:'Gasolina',    emoji:'⛽', icon:'speedometer-outline', group:'gasolina' },
+  { key:'restaurante',  label:'Cafés',       emoji:'☕', icon:'cafe-outline',        product:'Café con leche',  key2:'cafe',   group:'restaurantes' },
+  { key:'restaurante',  label:'Cervezas',    emoji:'🍺', icon:'beer-outline',        product:'Caña de cerveza', key2:'cerveza', group:'restaurantes' },
+  { key:'restaurante',  label:'Restaurantes',emoji:'🍽️', icon:'restaurant-outline',  product:'Menú del día',    key2:'restaurante_menu', group:'restaurantes' },
+  { key:'supermercado', label:'Súper',       emoji:'🛒', icon:'cart-outline',         group:'servicios' },
+  { key:'farmacia',     label:'Farmacia',    emoji:'💊', icon:'medkit-outline',       group:'servicios' },
+  { key:'gimnasio',     label:'Gimnasios',   emoji:'💪', icon:'barbell-outline',      group:'servicios' },
+  { key:'peluqueria',   label:'Peluquerías', emoji:'💇', icon:'cut-outline',          group:'servicios' },
+  { key:'peluqueria_canina', label:'Peluq. Canina', emoji:'🐕', icon:'paw-outline',  group:'servicios' },
+  { key:'veterinario',  label:'Veterinarios',emoji:'🏥', icon:'medical-outline',      group:'servicios' },
+  { key:'carniceria',   label:'Carnicerías', emoji:'🥩', icon:'flame-outline',         group:'servicios' },
+  { key:'fruteria',     label:'Fruterías',   emoji:'🍎', icon:'leaf-outline',           group:'servicios' },
+  { key:'panaderia',    label:'Panaderías',  emoji:'🥖', icon:'nutrition-outline',      group:'servicios' },
+  { key:'pescaderia',   label:'Pescaderías', emoji:'🐟', icon:'fish-outline',           group:'servicios' },
+  { key:'estanco',      label:'Estancos',    emoji:'🚬', icon:'cube-outline',           group:'servicios' },
+  { key:'ferreteria',   label:'Ferreterías', emoji:'🔧', icon:'hammer-outline',         group:'servicios' },
+  { key:'lavanderia',   label:'Lavanderías', emoji:'👕', icon:'water-outline',          group:'servicios' },
 ];
 
 const FILTER_GROUPS = [
-  { key:'gasolina',     label:'⛽ Gasolina',     desc:'Estaciones de servicio' },
-  { key:'restaurantes', label:'🍽️ Restaurantes', desc:'Cafés, bares y restaurantes' },
-  { key:'servicios',    label:'🏪 Servicios',    desc:'Farmacias, gimnasios, peluquerías...' },
+  { key:'gasolina',     label:'Gasolina',     icon:'speedometer-outline', desc:'Estaciones de servicio', color:'#3B82F6' },
+  { key:'restaurantes', label:'Restaurantes', icon:'restaurant-outline', desc:'Cafés, bares y restaurantes', color:'#DC2626' },
+  { key:'servicios',    label:'Servicios',    icon:'storefront-outline', desc:'Farmacias, gimnasios, peluquerías...', color:'#7C3AED' },
 ];
 
 const SORT_OPTS = [
-  { key:'proximity',       label:'📍 Más cercano' },
-  { key:'price',           label:'💰 Más barato' },
-  { key:'price_proximity', label:'⚡ Precio + cercanía' },
+  { key:'proximity',       label:'Más cercano', icon:'location' },
+  { key:'price',           label:'Más barato', icon:'wallet' },
+  { key:'price_proximity', label:'Precio + cercanía', icon:'flash' },
 ];
 
-const RADII = [5, 10, 25, 50, 100, 999]; // 999 = Toda España
-
-// Centro de España (Madrid) como región inicial — se actualiza al obtener GPS
+const RADII = [5, 10, 25, 50, 100, 999];
 const SPAIN_CENTER = { latitude:40.4168, longitude:-3.7038, latitudeDelta:6.0, longitudeDelta:6.0 };
 
-// Logo de supermercado con fallback a emoji si falla la carga
 function SuperLogo({ uri, fallbackEmoji }) {
   const [failed, setFailed] = React.useState(false);
   if (failed) return <Text style={{fontSize:22}}>{fallbackEmoji}</Text>;
-  return (
-    <Image
-      source={{uri}}
-      style={{width:44,height:44,resizeMode:'contain'}}
-      onError={() => setFailed(true)}
-    />
-  );
+  return <Image source={{uri}} style={{width:44,height:44,resizeMode:'contain'}} onError={() => setFailed(true)}/>;
 }
 
 export default function MapScreen() {
   const { isLoggedIn } = useAuth();
-  const [places, setPlaces]         = useState([]);
+  const [places, setPlaces] = useState([]);
   const [gasolineras, setGasolineras] = useState([]);
-  const [showHint, setShowHint] = useState(false); // first-time hint
-  const [activeCat, setActiveCat]   = useState('gasolinera'); // Gasolina es el caso de uso principal
+  const [activeCat, setActiveCat] = useState('gasolinera');
   const [activeCatKey, setActiveCatKey] = useState('gasolinera');
-  const [userLoc, setUserLoc]       = useState(null);
-  const [viewMode, setViewMode]     = useState('map');
-  // Gasolina: proximity (más cercana). Resto: price (más barata primero)
+  const [userLoc, setUserLoc] = useState(null);
+  const [viewMode, setViewMode] = useState('map');
   const [sort, setSort] = useState('price');
-  const [radius, setRadius]         = useState(25);
-  const [product, setProduct]       = useState('');
-  const [gasSearch, setGasSearch]   = useState('');
-  const [city, setCity]             = useState('');
-  const [activeFuel, setActiveFuel]   = useState('g95'); // por defecto G95 para gasolineras
-  const [loading, setLoading]         = useState(false);
-  const [gasLoading, setGasLoading]   = useState(false);
-  const [loadProgress, setLoadProgress] = useState(0); // 0-100 fake progress for UX
+  const [radius, setRadius] = useState(25);
+  const [product, setProduct] = useState('');
+  const [gasSearch, setGasSearch] = useState('');
+  const [city, setCity] = useState('');
+  const [activeFuel, setActiveFuel] = useState('g95');
+  const [loading, setLoading] = useState(false);
+  const [gasLoading, setGasLoading] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
   const [serverError, setServerError] = useState(false);
-  const [selectedPlace, setSelectedPlace]     = useState(null);
+  const [selectedPlace, setSelectedPlace] = useState(null);
   const [selectedStation, setSelectedStation] = useState(null);
-  const [showAuth, setShowAuth]     = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [showAddGas, setShowAddGas] = useState(false);
   const [priceChangePlace, setPriceChangePlace] = useState(null);
-  const [mapRegion, setMapRegion]   = useState(null); // current visible region
-  const [allGas, setAllGas]         = useState([]);
-  const [nearbyGasLoaded, setNearbyGasLoaded] = useState(false); // carga progresiva
-  const [mapEvents, setMapEvents]   = useState([]); // eventos en el mapa
+  const [mapRegion, setMapRegion] = useState(null);
+  const [allGas, setAllGas] = useState([]);
+  const [nearbyGasLoaded, setNearbyGasLoaded] = useState(false);
   const [serverFuelStats, setServerFuelStats] = useState(null);
-  const [favStations, setFavStations] = useState([]); // from AsyncStorage
+  const [favStations, setFavStations] = useState([]);
   const [showFavsOnly, setShowFavsOnly] = useState(false);
-  const [cityStats, setCityStats] = useState(null); // resumen de precios de la ciudad
-  const [recentPrices, setRecentPrices] = useState([]); // feed actividad comunidad
-  const [priceRange, setPriceRange] = useState(null); // null | 1 | 2 | 3 | 4 (€/€€/€€€/€€€€)
-  const [showLocationPrompt, setShowLocationPrompt] = useState(false); // pre-permission screen
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false); // new settings dropdown
-  const [activeGroup, setActiveGroup] = useState('gasolina'); // gasolina | restaurantes | servicios
+  const [cityStats, setCityStats] = useState(null);
+  const [recentPrices, setRecentPrices] = useState([]);
+  const [priceRange, setPriceRange] = useState(null);
+  const [showLocationPrompt, setShowLocationPrompt] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [activeGroup, setActiveGroup] = useState('gasolina');
+  // NEW: Initial filter picker — shown on first launch EVERY time
+  const [showInitialPicker, setShowInitialPicker] = useState(true);
+  const [initialPickerStep, setInitialPickerStep] = useState(0); // 0=group, 1=subfilter
   const mapRef = useRef(null);
 
   useEffect(() => {
-    // Mostrar pantalla de contexto antes de pedir permisos de localización (Apple guideline 5.1.1)
     AsyncStorage.getItem('location_permission_asked').then(asked => {
       if (asked) {
-        // Ya explicado antes — pedir directamente
         initLocation(); loadFuelStats(); loadFavs(); loadEvents();
       } else {
-        // Primera vez — mostrar contexto primero
         setShowLocationPrompt(true);
         loadFuelStats(); loadFavs(); loadEvents();
       }
-    }).catch(() => {
-      initLocation(); loadFuelStats(); loadFavs(); loadEvents();
-    });
+    }).catch(() => { initLocation(); loadFuelStats(); loadFavs(); loadEvents(); });
   }, []);
 
-  // Re-load favs when login state changes (e.g. user logs in after app opened)
   useEffect(() => { loadFavs(); }, [isLoggedIn]);
-
-  // Show first-time hint after 3 seconds
-  useEffect(() => {
-    let t;
-    AsyncStorage.getItem('map_hint_shown').then(v => {
-      if (!v) {
-        t = setTimeout(() => setShowHint(true), 3000);
-        AsyncStorage.setItem('map_hint_shown', '1');
-      }
-    }).catch(() => {});
-    return () => clearTimeout(t);
-  }, []);
 
   async function loadFavs() {
     try {
-      // Try server first (persistent), fallback to local
       if (isLoggedIn) {
         const serverFavs = await apiGet('/api/users/me/favorites').catch(() => null);
         if (serverFavs && Array.isArray(serverFavs)) {
           setFavStations(serverFavs.map(f => ({ id: f.station_id, name: f.station_name, city: f.station_city, lat: f.lat, lng: f.lng })));
-          // Sync to local cache
           await AsyncStorage.setItem('fav_stations', JSON.stringify(serverFavs.map(f => ({ id: f.station_id, name: f.station_name, city: f.station_city, lat: f.lat, lng: f.lng }))));
           return;
         }
@@ -211,16 +175,15 @@ export default function MapScreen() {
       setFavStations(raw ? JSON.parse(raw) : []);
     } catch(_) {}
   }
+
   useEffect(() => { loadPlaces(); }, [activeCat, sort, radius, product, city, userLoc]);
 
-  // Cargar precios recientes para el feed de comunidad (solo al montar)
   useEffect(() => {
     apiGet('/api/prices/recent?limit=8')
       .then(d => setRecentPrices(Array.isArray(d) ? d : []))
       .catch(() => {});
   }, []);
 
-  // Cargar stats de precios de la ciudad cuando cambia
   useEffect(() => {
     if (!city) { setCityStats(null); return; }
     apiGet(`/api/places/stats?city=${encodeURIComponent(city)}`)
@@ -228,63 +191,35 @@ export default function MapScreen() {
       .catch(() => setCityStats(null));
   }, [city]);
 
-  // Load ALL gasolineras once into client cache (server already has them cached at 5ms)
   async function loadFuelStats() {
     try {
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 12000);
       const data = await apiGet('/api/gasolineras/stats');
-      clearTimeout(timeout);
       if (data?.stats) setServerFuelStats(data.stats);
     } catch(_) { setServerError(true); }
   }
 
   async function loadAllGasolineras(userCoords) {
-    setGasLoading(true);
-    setLoadProgress(5);
+    setGasLoading(true); setLoadProgress(5);
     const prog = setInterval(() => setLoadProgress(p => {
-      if (p < 30) return p + 8;
-      if (p < 60) return p + 4;
-      if (p < 85) return p + 1;
-      return p;
+      if (p < 30) return p + 8; if (p < 60) return p + 4; if (p < 85) return p + 1; return p;
     }), 500);
     try {
-      // CARGA PROGRESIVA: primero las cercanas si tenemos ubicación
       if (userCoords) {
         const { lat, lng } = userCoords;
         const nearbyData = await apiGet(`/api/gasolineras?lat=${lat}&lng=${lng}&radius=30`) || [];
-        if (nearbyData.length > 0) {
-          setAllGas(nearbyData);
-          setNearbyGasLoaded(true);
-          setLoadProgress(40);
-        }
+        if (nearbyData.length > 0) { setAllGas(nearbyData); setNearbyGasLoaded(true); setLoadProgress(40); }
       }
-      // Luego carga completa en background
       const data = await apiGet('/api/gasolineras') || [];
-      clearInterval(prog);
-      setLoadProgress(100);
-      setAllGas(data);
-      setNearbyGasLoaded(false);
-      setServerError(false);
-    } catch(_) {
-      clearInterval(prog);
-      setServerError(true);
-    }
+      clearInterval(prog); setLoadProgress(100);
+      setAllGas(data); setNearbyGasLoaded(false); setServerError(false);
+    } catch(_) { clearInterval(prog); setServerError(true); }
     finally { setGasLoading(false); }
   }
 
   async function loadEvents() {
     try {
       const data = await apiGet('/api/events?limit=50&upcoming=1') || [];
-      // Geocode events by city using city coords lookup (CITY_COORDS definido a nivel de módulo)
-      const withCoords = data
-        .map(e => {
-          const coords = CITY_COORDS[e.city];
-          if (!coords && !e.lat) return null;
-          return { ...e, lat: e.lat || coords.lat, lng: e.lng || coords.lng };
-        })
-        .filter(Boolean);
-      setMapEvents(withCoords);
+      // Events have their own tab, no map markers needed
     } catch(_) {}
   }
 
@@ -298,25 +233,16 @@ export default function MapScreen() {
         const { latitude: lat, longitude: lng } = loc.coords;
         setUserLoc({ lat, lng });
         mapRef.current?.animateToRegion({ latitude:lat, longitude:lng, latitudeDelta:0.06, longitudeDelta:0.06 }, 1000);
-        // Auto-set nearest city para categorías no-gasolina (restaurantes, farmacias, etc.)
-        // Para gasolineras NO seteamos ciudad — se muestran por GPS/viewport automáticamente
         try {
           if (activeCat !== 'gasolinera') {
             const geo = await Location.reverseGeocodeAsync({ latitude: lat, longitude: lng });
             const detectedCity = geo?.[0]?.city || geo?.[0]?.subregion || '';
-            if (detectedCity && !city) {
-              setCity(detectedCity);
-            }
+            if (detectedCity && !city) setCity(detectedCity);
           }
         } catch(_) {}
-        // Carga progresiva — primero las cercanas al usuario
         loadAllGasolineras({ lat, lng });
-      } else {
-        loadAllGasolineras(null);
-      }
-    } catch(_) {
-      loadAllGasolineras(null);
-    }
+      } else { loadAllGasolineras(null); }
+    } catch(_) { loadAllGasolineras(null); }
   }
 
   async function loadPlaces() {
@@ -325,87 +251,65 @@ export default function MapScreen() {
     try {
       const lat = userLoc?.lat || 40.4168;
       const lng = userLoc?.lng || -3.7038;
-      // Sin ciudad ni GPS → price puro (mejores de España)
-      // Con GPS sin ciudad → price_proximity (barato + cercano)
-      // Con ciudad → sort elegido por el usuario (default: price)
-      const effectiveSort = !city && !userLoc ? 'price'
-        : !city && userLoc ? 'price_proximity'
-        : sort;
+      const effectiveSort = !city && !userLoc ? 'price' : !city && userLoc ? 'price_proximity' : sort;
       let url = `/api/places?sort=${effectiveSort}&lat=${lat}&lng=${lng}&cat=${activeCat}`;
-      if (city) {
-        url += `&city=${encodeURIComponent(city)}`;
-      } else if (userLoc) {
-        url += `&radius=${radius < 100 ? radius : 25}`;
-      }
+      if (city) url += `&city=${encodeURIComponent(city)}`;
+      else if (userLoc) url += `&radius=${radius < 100 ? radius : 25}`;
       if (product) url += `&product=${encodeURIComponent(product)}`;
       setPlaces(await apiGet(url) || []);
       setServerError(false);
     } catch(_) { setServerError(true); } finally { setLoading(false); }
   }
 
-  // Filter allGas client-side based on viewport/city/fuel — no extra API calls
+  // Filter allGas client-side
   useEffect(() => {
     let filtered = allGas;
     if (city) {
-      // Filtrar por ciudad exacta del Ministerio (normalize para acentos)
       const nc = city.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
       filtered = filtered.filter(s => {
         const sc = (s.city||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-        // Coincidencia exacta de ciudad (no por provincia)
         return sc === nc || sc.startsWith(nc + ' ') || nc.startsWith(sc + ' ');
       });
     } else if (mapRegion && radius < 999) {
       const { latitude: cLat, longitude: cLng, latitudeDelta, longitudeDelta } = mapRegion;
-      const latPad = latitudeDelta * 0.6;
-      const lngPad = longitudeDelta * 0.6;
-      filtered = filtered.filter(s =>
-        s.lat >= cLat - latPad && s.lat <= cLat + latPad &&
-        s.lng >= cLng - lngPad && s.lng <= cLng + lngPad
-      );
+      const latPad = latitudeDelta * 0.6, lngPad = longitudeDelta * 0.6;
+      filtered = filtered.filter(s => s.lat >= cLat - latPad && s.lat <= cLat + latPad && s.lng >= cLng - lngPad && s.lng <= cLng + lngPad);
     }
     if (activeFuel !== 'all') filtered = filtered.filter(s => s.prices?.[activeFuel] > 0);
     setGasolineras(filtered);
   }, [allGas, city, mapRegion, activeFuel, radius]);
 
-  // visiblePlaces ya viene filtrado del servidor (loadPlaces pasa &cat=activeCat)
-  // Aplicar filtro de rango de precio para restaurantes y farmacias
   const visiblePlaces = (() => {
-    const base = activeCat === 'gasolinera' ? [] : places;
+    const base = activeCat === 'gasolinera' ? [] : places.filter(p => {
+      // Filter restaurants by subtype: only show places with the relevant price
+      if (activeCat === 'restaurante' && activeCatKey === 'cafe') return p.price_cafe > 0;
+      if (activeCat === 'restaurante' && activeCatKey === 'cerveza') return p.price_cerveza > 0;
+      if (activeCat === 'restaurante' && activeCatKey === 'restaurante_menu') return p.price_menu > 0;
+      return true;
+    });
     if (!priceRange || !['restaurante','farmacia'].includes(activeCat)) return base;
-    // Rangos: 1=€, 2=€€, 3=€€€, 4=€€€€
     const RANGES = {
       restaurante: [{min:0,max:10},{min:10,max:15},{min:15,max:25},{min:25,max:Infinity}],
       farmacia:    [{min:0,max:3}, {min:3,max:8},  {min:8,max:20}, {min:20,max:Infinity}],
     };
     const range = RANGES[activeCat]?.[priceRange-1];
     if (!range) return base;
-    return base.filter(p => {
-      const price = p.repPrice;
-      if (!price || price <= 0) return false; // sin precio no se muestra al filtrar
-      return price >= range.min && price < range.max;
-    });
+    return base.filter(p => { const price = p.repPrice; if (!price || price <= 0) return false; return price >= range.min && price < range.max; });
   })();
-  // For gas stations in list: use G95 or Diesel price, never GLP
-  // favIds: comparar como string porque el servidor guarda station_id como String
+
   const favIds = new Set(favStations.map(f => String(f.id)));
   const visibleGas = activeCat === 'gasolinera' ? gasolineras
     .filter(s => activeFuel === 'all' || (s.prices?.[activeFuel] > 0))
     .filter(s => !showFavsOnly || favIds.has(String(s.id)))
     .map(s => {
-      const fuelKey = activeFuel !== 'all' ? activeFuel
-        : s.prices?.g95 ? 'g95'
-        : s.prices?.diesel ? 'diesel'
-        : null;
+      const fuelKey = activeFuel !== 'all' ? activeFuel : s.prices?.g95 ? 'g95' : s.prices?.diesel ? 'diesel' : null;
       return { ...s, _mainFuel: fuelKey, minPrice: fuelKey ? s.prices[fuelKey] : null };
     }) : [];
 
-  // Limit markers to prevent lag on low-end devices (React Native Maps lags >150)
   const MAX_MAP_MARKERS = 150;
-  const mapGas    = visibleGas.slice(0, MAX_MAP_MARKERS);
+  const mapGas = visibleGas.slice(0, MAX_MAP_MARKERS);
   const mapPlaces = visiblePlaces.slice(0, 50);
-  const tooManyMarkers = visibleGas.length > MAX_MAP_MARKERS;
 
-  // Price stats per fuel — use server stats if available (faster), fallback to local calc
   const fuelStats = React.useMemo(() => {
     if (serverFuelStats) return serverFuelStats;
     if (!allGas.length) return {};
@@ -414,131 +318,14 @@ export default function MapScreen() {
       const prices = allGas.map(s => s.prices?.[key]).filter(p => p > 0 && !isNaN(p));
       if (!prices.length) return;
       prices.sort((a,b) => a-b);
-      stats[key] = {
-        min: prices[0], max: prices[prices.length-1],
-        avg: prices.reduce((a,b)=>a+b,0)/prices.length,
-        count: prices.length,
-      };
+      stats[key] = { min: prices[0], max: prices[prices.length-1], avg: prices.reduce((a,b)=>a+b,0)/prices.length, count: prices.length };
     });
     return stats;
   }, [allGas, serverFuelStats]);
 
-  // ── Fuel selector screen (shown when gas category is active and no fuel chosen) ─────────────────
-  // FIX: Solo bloquear con selector si el usuario está en categoría gasolinera
-  // El mapa debe abrir directamente sin forzar selección de carburante
-  if (activeFuel === null && activeCat === 'gasolinera') {
-    return (
-      <SafeAreaView style={s.safe} edges={['top']}>
-        <View style={{flex:1,backgroundColor:COLORS.bg}}>
-          <View style={{backgroundColor:COLORS.primary,paddingHorizontal:20,paddingTop:20,paddingBottom:24}}>
-            <Text style={{fontSize:22,fontWeight:'800',color:'#fff',marginBottom:6}}>⛽ Elige tu carburante</Text>
-            {fuelStats?.g95 && (
-              <Text style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginBottom:2}}>
-                G95 ahora desde {fuelStats?.g95?.min?.toFixed(3)}€/L · media {fuelStats?.g95?.avg?.toFixed(3)}€/L
-              </Text>
-            )}
-            <Text style={{fontSize:14,color:'rgba(255,255,255,0.8)',lineHeight:20}}>
-              El mapa mostrará el precio de cada estación para el carburante que elijas
-            </Text>
-          </View>
-          {!Object.keys(fuelStats).length ? (
-            <View style={{flex:1,alignItems:'center',justifyContent:'center',gap:16,paddingHorizontal:40}}>
-              <Text style={{fontSize:48}}>⛽</Text>
-              <Text style={{fontSize:17,fontWeight:'700',color:COLORS.text}}>Cargando precios...</Text>
-              <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center'}}>
-                Conectando con el servidor de gasolineras del Ministerio
-              </Text>
-              <ActivityIndicator color={COLORS.primary} size="large" style={{marginTop:4}}/>
-              {loadProgress > 0 && loadProgress < 100 && (
-                <>
-                  <View style={{width:'100%',height:6,backgroundColor:COLORS.border,borderRadius:99,overflow:'hidden'}}>
-                    <View style={{width:`${loadProgress}%`,height:'100%',backgroundColor:COLORS.primary,borderRadius:99}}/>
-                  </View>
-                  <Text style={{fontSize:12,color:COLORS.text3}}>{loadProgress}% · cargando gasolineras...</Text>
-                </>
-              )}
-              <TouchableOpacity
-                style={{marginTop:8,paddingHorizontal:24,paddingVertical:12,backgroundColor:COLORS.primaryLight,borderRadius:12,borderWidth:1.5,borderColor:COLORS.primary}}
-                onPress={() => { setLoadProgress(0); loadFuelStats(); loadAllGasolineras(); }}>
-                <Text style={{color:COLORS.primary,fontWeight:'700',fontSize:14}}>🔄 Reintentar</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={{flex:1}}>
-            {/* 🧮 Calculadora de ahorro rápida */}
-            {fuelStats?.g95 && (() => {
-              const min = fuelStats.g95.min || 0;
-              const avg = fuelStats.g95.avg || 0;
-              const tank = 50;
-              const savedPerTank = ((avg - min) * tank).toFixed(2);
-              const savedPerMonth = ((avg - min) * tank * 2.5).toFixed(0);
-              return (
-                <View style={{backgroundColor:'#ECFDF5',borderRadius:14,padding:14,marginHorizontal:16,marginTop:12,marginBottom:4,flexDirection:'row',alignItems:'center',gap:10,borderWidth:1,borderColor:'#BBF7D0'}}>
-                  <Text style={{fontSize:24}}>⛽</Text>
-                  <View style={{flex:1}}>
-                    <Text style={{fontSize:13,fontWeight:'700',color:'#065F46'}}>
-                      Ahorra {savedPerMonth}€/mes llenando donde la G95 es más barata
-                    </Text>
-                    <Text style={{fontSize:11,color:'#047857',marginTop:2}}>
-                      {min.toFixed(3)}€/L mín vs {avg.toFixed(3)}€/L media · {savedPerTank}€ por depósito
-                    </Text>
-                  </View>
-                </View>
-              );
-            })()}
-            <ScrollView contentContainerStyle={{padding:16,gap:10,paddingBottom:60}}>
-              {FUELS.filter(f=>f.key!=='all').map(fuel => {
-                const st = fuelStats[fuel.key];
-                if (!st) return null;
-                return (
-                  <TouchableOpacity key={fuel.key}
-                    style={{backgroundColor:COLORS.bg2,borderRadius:16,padding:14,flexDirection:'row',alignItems:'center',gap:12,borderWidth:1.5,borderColor:fuel.color+'55',shadowColor:'#000',shadowOpacity:0.04,shadowRadius:6,elevation:2}}
-                    onPress={()=>setActiveFuel(fuel.key)} activeOpacity={0.8}>
-                    <View style={{width:14,height:14,borderRadius:7,backgroundColor:fuel.color}}/>
-                    <View style={{flex:1}}>
-                      <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>{fuel.label}</Text>
-                      <Text style={{fontSize:11,color:COLORS.text3,marginTop:2}}>{st.count.toLocaleString('es-ES')} estaciones disponibles</Text>
-                    </View>
-                    <View style={{alignItems:'flex-end',gap:4}}>
-                      <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-                        <Text style={{fontSize:11,color:COLORS.text3,width:32}}>🟢 min</Text>
-                        <Text style={{fontSize:13,fontWeight:'800',color:'#16A34A',minWidth:56,textAlign:'right'}}>{st.min?.toFixed(3)}€</Text>
-                      </View>
-                      <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-                        <Text style={{fontSize:11,color:COLORS.text3,width:32}}>🟡 med</Text>
-                        <Text style={{fontSize:13,fontWeight:'700',color:'#D97706',minWidth:56,textAlign:'right'}}>{st.avg?.toFixed(3)}€</Text>
-                      </View>
-                      <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-                        <Text style={{fontSize:11,color:COLORS.text3,width:32}}>🔴 max</Text>
-                        <Text style={{fontSize:13,fontWeight:'700',color:'#DC2626',minWidth:56,textAlign:'right'}}>{st.max?.toFixed(3)}€</Text>
-                      </View>
-                    </View>
-                    <Ionicons name="chevron-forward" size={16} color={COLORS.text3}/>
-                  </TouchableOpacity>
-                );
-              })}
-              <TouchableOpacity
-                style={{backgroundColor:COLORS.bg2,borderRadius:16,padding:14,flexDirection:'row',alignItems:'center',gap:12,borderWidth:1.5,borderColor:'#6B7280'}}
-                onPress={()=>setActiveFuel('all')} activeOpacity={0.8}>
-                <View style={{width:14,height:14,borderRadius:7,backgroundColor:'#6B7280'}}/>
-                <View style={{flex:1}}>
-                  <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>Ver todos</Text>
-                  <Text style={{fontSize:11,color:COLORS.text3,marginTop:2}}>Precio principal de cada estación</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={COLORS.text3}/>
-              </TouchableOpacity>
-            </ScrollView>
-            </View>
-          )}
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   function navigateTo(lat, lng, name) {
     if (!lat || !lng) return;
-    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}&destination_place_id=${encodeURIComponent(name||'')}`;
-    // Web: always Google Maps in new tab
+    const googleMapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
     if (typeof document !== 'undefined') { openURL(googleMapsUrl); return; }
     const url = Platform.OS === 'ios'
       ? `maps://maps.apple.com/?daddr=${lat},${lng}&q=${encodeURIComponent(name||'')}`
@@ -546,421 +333,343 @@ export default function MapScreen() {
     Linking.openURL(url).catch(() => openURL(googleMapsUrl));
   }
 
-  // Pre-permission screen — contexto antes del alert del sistema (Apple guideline 5.1.1)
+  // ══════════ PRE-PERMISSION LOCATION SCREEN ══════════
   if (showLocationPrompt) {
     return (
       <SafeAreaView style={{flex:1,backgroundColor:COLORS.bg,justifyContent:'center',alignItems:'center',padding:32}} edges={['top','bottom']}>
-        <Text style={{fontSize:60,marginBottom:16}}>📍</Text>
-        <Text style={{fontSize:24,fontWeight:'800',color:COLORS.text,textAlign:'center',marginBottom:12}}>
-          Activa la ubicación
-        </Text>
+        <Ionicons name="location-outline" size={24} color={COLORS.primary}/>
+        <Text style={{fontSize:24,fontWeight:'800',color:COLORS.text,textAlign:'center',marginBottom:12}}>Activa la ubicación</Text>
         <Text style={{fontSize:15,color:COLORS.text2,textAlign:'center',lineHeight:22,marginBottom:8}}>
           MapaTacaño usa tu ubicación para mostrarte las <Text style={{fontWeight:'700',color:COLORS.primary}}>gasolineras más baratas cerca de ti</Text> y los mejores precios de tu zona.
         </Text>
-        <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center',marginBottom:32}}>
-          Solo se usa mientras tienes la app abierta. Nunca en segundo plano.
-        </Text>
-        <TouchableOpacity
-          style={{backgroundColor:COLORS.primary,borderRadius:16,paddingVertical:16,paddingHorizontal:40,width:'100%',alignItems:'center',marginBottom:12}}
-          onPress={() => {
-            AsyncStorage.setItem('location_permission_asked','1').catch(()=>{});
-            setShowLocationPrompt(false);
-            initLocation();
-          }}>
+        <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center',marginBottom:32}}>Solo se usa mientras tienes la app abierta. Nunca en segundo plano.</Text>
+        <TouchableOpacity style={{backgroundColor:COLORS.primary,borderRadius:16,paddingVertical:16,paddingHorizontal:40,width:'100%',alignItems:'center',marginBottom:12}}
+          onPress={() => { AsyncStorage.setItem('location_permission_asked','1').catch(()=>{}); setShowLocationPrompt(false); initLocation(); }}>
           <Text style={{color:'#fff',fontWeight:'800',fontSize:16}}>Activar ubicación</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={{padding:12}}
-          onPress={() => {
-            AsyncStorage.setItem('location_permission_asked','1').catch(()=>{});
-            setShowLocationPrompt(false);
-            loadAllGasolineras(null);
-          }}>
-          <Text style={{color:COLORS.text3,fontSize:14}}>Continuar sin ubicación</Text>
         </TouchableOpacity>
       </SafeAreaView>
     );
   }
 
-  return (
-    <SafeAreaView style={s.safe} edges={['top']}>
-      {/* Header */}
-      <View style={s.header}>
-        <View style={s.headerRow}>
-          <Text style={s.logo}>💰 MapaTacaño</Text>
-          {/* Active category badge — shows what filter is on */}
-          {activeCat !== 'gasolinera' && (
-            <View style={{flexDirection:'row',alignItems:'center',gap:4,backgroundColor:COLORS.bg3,borderRadius:99,paddingHorizontal:8,paddingVertical:4}}>
-              <Text style={{fontSize:12}}>{CATS.find(c=>(c.key2||c.key)===activeCatKey)?.emoji || '📍'}</Text>
-              <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text2}}>{CATS.find(c=>(c.key2||c.key)===activeCatKey)?.label || activeCat}</Text>
-            </View>
-          )}
-          {/* Badge carburante — solo cuando estamos en gasolinera */}
-          {activeCat === 'gasolinera' && activeFuel && activeFuel !== 'all' && (
-            <TouchableOpacity
-              style={[s.fuelActiveBadge, {backgroundColor:(FUELS.find(f=>f.key===activeFuel)||{}).color+'22', borderColor:(FUELS.find(f=>f.key===activeFuel)||{}).color}]}
-              onPress={()=>setShowSettingsMenu(true)}>
-              <Text style={[s.fuelActiveTxt, {color:(FUELS.find(f=>f.key===activeFuel)||{color:COLORS.text}).color}]}>
-                ⛽ {FUELS.find(f=>f.key===activeFuel)?.label}
-              </Text>
-              {fuelStats[activeFuel] && (
-                <Text style={{fontSize:9,color:COLORS.text3}}>
-                  {' '}🟢{fuelStats[activeFuel].min?.toFixed(3)}€
-                </Text>
-              )}
-              <Text style={{fontSize:9,color:COLORS.text3}}> · cambiar</Text>
-            </TouchableOpacity>
-          )}
-          <View style={s.rightRow}>
-            {/* View toggle */}
-            <View style={s.toggle}>
-              <TouchableOpacity style={[s.togBtn, viewMode==='map'&&s.togBtnOn]} onPress={()=>{setViewMode('map');setShowSettingsMenu(false);}}>
-                <Ionicons name="map-outline" size={14} color={viewMode==='map'?COLORS.primary:COLORS.text3}/>
-                <Text style={[s.togTxt,viewMode==='map'&&{color:COLORS.primary}]}>Mapa</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.togBtn, viewMode==='list'&&s.togBtnOn]} onPress={()=>{setViewMode('list');setShowSettingsMenu(false);}}>
-                <Ionicons name="list-outline" size={14} color={viewMode==='list'?COLORS.primary:COLORS.text3}/>
-                <Text style={[s.togTxt,viewMode==='list'&&{color:COLORS.primary}]}>Lista</Text>
-              </TouchableOpacity>
-            </View>
-            {favStations.length > 0 && (
-              <TouchableOpacity style={[s.filterIconBtn, showFavsOnly && {backgroundColor:'#FEF2F2'}]}
-                onPress={() => setShowFavsOnly(!showFavsOnly)}>
-                <Ionicons name={showFavsOnly ? 'heart' : 'heart-outline'} size={18} color={showFavsOnly ? COLORS.danger : COLORS.text2}/>
-              </TouchableOpacity>
-            )}
-            <TouchableOpacity style={s.filterIconBtn} onPress={() => setShowSettingsMenu(!showSettingsMenu)}>
-              <Ionicons name="options-outline" size={20} color={showSettingsMenu?COLORS.primary:COLORS.text2}/>
-            </TouchableOpacity>
+  // ══════════ INITIAL FILTER PICKER — shown every app launch ══════════
+  if (showInitialPicker) {
+    const subCats = CATS.filter(c => c.group === activeGroup);
+    return (
+      <SafeAreaView style={{flex:1,backgroundColor:COLORS.bg}} edges={['top','bottom']}>
+        <ScrollView contentContainerStyle={{padding:24,paddingBottom:40}} showsVerticalScrollIndicator={false}>
+          <View style={{alignItems:'center',marginBottom:24,marginTop:20}}>
+            <Ionicons name="map" size={36} color={COLORS.primary}/>
+            <Text style={{fontSize:26,fontWeight:'800',color:COLORS.text,textAlign:'center',marginTop:8}}>Mapa Tacaño</Text>
+            <Text style={{fontSize:14,color:COLORS.text3,textAlign:'center',marginTop:4}}>¿Qué quieres buscar hoy?</Text>
           </View>
-        </View>
 
-        {/* Settings menu dropdown — replaces old category pills */}
-        {showSettingsMenu && (
-          <>
-          <TouchableOpacity style={{position:'absolute',top:0,left:0,right:0,bottom:-2000,zIndex:998}} activeOpacity={1} onPress={() => setShowSettingsMenu(false)}/>
-          <View style={{position:'absolute',top:52,right:12,zIndex:999,backgroundColor:COLORS.bg2,borderRadius:16,padding:14,shadowColor:'#000',shadowOpacity:0.15,shadowRadius:20,shadowOffset:{width:0,height:4},elevation:10,borderWidth:1,borderColor:COLORS.border,width:280,maxHeight:500}}>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            {/* Close button */}
-            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
-              <Text style={{fontSize:15,fontWeight:'700',color:COLORS.text}}>Filtros</Text>
-              <TouchableOpacity onPress={() => setShowSettingsMenu(false)} style={{width:28,height:28,borderRadius:14,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
-                <Ionicons name="close" size={16} color={COLORS.text2}/>
-              </TouchableOpacity>
-            </View>
-
-            {/* Filter groups */}
-            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>TIPO</Text>
-            {FILTER_GROUPS.map(g => (
-              <TouchableOpacity key={g.key}
-                style={{flexDirection:'row',alignItems:'center',gap:10,paddingVertical:10,paddingHorizontal:8,borderRadius:10,marginBottom:4,
-                  backgroundColor: activeGroup===g.key ? COLORS.primaryLight : 'transparent',
-                  borderWidth: activeGroup===g.key ? 1.5 : 0, borderColor: COLORS.primary}}
-                onPress={() => {
-                  setActiveGroup(g.key);
-                  // Auto-select first subcategory
-                  const firstCat = CATS.find(c => c.group === g.key);
-                  if (firstCat) {
-                    setActiveCat(firstCat.key);
-                    setActiveCatKey(firstCat.key2 || firstCat.key);
-                    setProduct(firstCat.product || '');
-                    if (g.key === 'gasolina') { setActiveFuel(activeFuel || 'g95'); setSort('proximity'); }
+          {initialPickerStep === 0 && (
+            <View style={{gap:12}}>
+              {FILTER_GROUPS.map(g => (
+                <TouchableOpacity key={g.key}
+                  style={{flexDirection:'row',alignItems:'center',gap:14,backgroundColor:COLORS.bg2,borderRadius:18,padding:18,
+                    borderWidth:2,borderColor:activeGroup===g.key?g.color:COLORS.border,
+                    shadowColor:'#000',shadowOpacity:0.06,shadowRadius:8,elevation:3}}
+                  onPress={() => {
+                    setActiveGroup(g.key);
+                    const firstCat = CATS.find(c => c.group === g.key);
+                    if (firstCat) {
+                      setActiveCat(firstCat.key);
+                      setActiveCatKey(firstCat.key2 || firstCat.key);
+                      setProduct(firstCat.product || '');
+                    }
+                    if (g.key === 'gasolina') { setSort('proximity'); }
                     else { setSort('price'); }
-                  }
-                  setPriceRange(null);
-                }}>
-                <Text style={{fontSize:15}}>{g.label.split(' ')[0]}</Text>
-                <View style={{flex:1}}>
-                  <Text style={{fontSize:14,fontWeight:'600',color: activeGroup===g.key ? COLORS.primary : COLORS.text}}>{g.label.substring(g.label.indexOf(' ')+1)}</Text>
-                  <Text style={{fontSize:11,color:COLORS.text3}}>{g.desc}</Text>
-                </View>
-                {activeGroup===g.key && <Ionicons name="checkmark-circle" size={18} color={COLORS.primary}/>}
-              </TouchableOpacity>
-            ))}
-
-            {/* Subcategories for active group */}
-            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginTop:10,marginBottom:6,letterSpacing:0.5}}>SUBFILTRO</Text>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-              {CATS.filter(c => c.group === activeGroup).map((c,i) => {
-                const ck = c.key2 || c.key;
-                const isOn = activeCatKey === ck;
-                return (
-                  <TouchableOpacity key={ck+i}
-                    style={{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:6,borderRadius:99,
-                      borderWidth:1.5, borderColor: isOn ? COLORS.primary : COLORS.border,
-                      backgroundColor: isOn ? COLORS.primary : COLORS.bg}}
-                    onPress={() => {
-                      setActiveCat(c.key);
-                      setActiveCatKey(ck);
-                      setProduct(c.product || '');
-                      setPriceRange(null);
-                      if (c.key === 'gasolinera') { setSort('proximity'); }
-                      else { setSort('price'); }
-                      setShowSettingsMenu(false);
-                    }}>
-                    <Text style={{fontSize:13}}>{c.emoji}</Text>
-                    <Text style={{fontSize:12,fontWeight:'600',color: isOn ? '#fff' : COLORS.text2}}>{c.label}</Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Fuel type selector — only for gasolina group */}
-            {activeGroup === 'gasolina' && (
-              <View style={{marginTop:10}}>
-                <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>CARBURANTE</Text>
-                <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-                  {FUELS.map(f => (
-                    <TouchableOpacity key={f.key}
-                      style={{paddingHorizontal:10,paddingVertical:6,borderRadius:99,borderWidth:1.5,
-                        borderColor: activeFuel===f.key ? f.color : COLORS.border,
-                        backgroundColor: activeFuel===f.key ? f.bg : COLORS.bg}}
-                      onPress={() => setActiveFuel(f.key)}>
-                      <Text style={{fontSize:11,fontWeight:'600',color: activeFuel===f.key ? f.color : COLORS.text2}}>{f.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            )}
-
-            {/* Sort options */}
-            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginTop:10,marginBottom:6,letterSpacing:0.5}}>ORDENAR POR</Text>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-              {SORT_OPTS.map(so => (
-                <TouchableOpacity key={so.key}
-                  style={{paddingHorizontal:10,paddingVertical:6,borderRadius:99,borderWidth:1.5,
-                    borderColor: sort===so.key ? COLORS.primary : COLORS.border,
-                    backgroundColor: sort===so.key ? COLORS.primaryLight : COLORS.bg}}
-                  onPress={() => setSort(so.key)}>
-                  <Text style={{fontSize:11,fontWeight:'600',color: sort===so.key ? COLORS.primary : COLORS.text2}}>{so.label}</Text>
+                    // If gasolina, go to fuel picker; else go to subfilter
+                    setInitialPickerStep(1);
+                  }}>
+                  <View style={{width:52,height:52,borderRadius:14,backgroundColor:g.color+'18',alignItems:'center',justifyContent:'center'}}>
+                    <Ionicons name={g.icon} size={26} color={g.color}/>
+                  </View>
+                  <View style={{flex:1}}>
+                    <Text style={{fontSize:18,fontWeight:'700',color:COLORS.text}}>{g.label}</Text>
+                    <Text style={{fontSize:13,color:COLORS.text3,marginTop:2}}>{g.desc}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={20} color={COLORS.text3}/>
                 </TouchableOpacity>
               ))}
             </View>
-          </ScrollView>
-          </View>
-          </>
-        )}
+          )}
 
-        {/* Barra de búsqueda de producto — solo para farmacia y gimnasio (supermercado usa Ahorro) */}
-        {(activeCat === 'farmacia' || activeCat === 'gimnasio') && (
-          <View style={{paddingHorizontal:12,paddingBottom:8}}>
-            <View style={{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg3,borderRadius:12,borderWidth:1.5,borderColor:product?COLORS.primary:COLORS.border,paddingHorizontal:10,gap:6}}>
-              <Text style={{fontSize:16}}>{activeCat==='farmacia'?'💊':'💪'}</Text>
-              <TextInput
-                style={{flex:1,paddingVertical:9,fontSize:14,color:COLORS.text}}
-                value={product}
-                onChangeText={setProduct}
-                placeholder={activeCat==='farmacia' ? 'Buscar medicamento... (ibuprofeno, paracetamol...)' : 'Buscar cadena... (McFit, Basic-Fit...)'}
-                placeholderTextColor={COLORS.text3}
-                returnKeyType="search"
-                onSubmitEditing={loadPlaces}
-              />
-              {product ? (
-                <TouchableOpacity onPress={()=>{setProduct('');loadPlaces();}}>
-                  <Ionicons name="close-circle" size={18} color={COLORS.text3}/>
-                </TouchableOpacity>
-              ) : null}
+          {/* STEP 1: Subfilter selection */}
+          {initialPickerStep === 1 && (
+            <View style={{gap:12}}>
+              <TouchableOpacity onPress={() => setInitialPickerStep(0)} style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8}}>
+                <Ionicons name="arrow-back" size={20} color={COLORS.primary}/>
+                <Text style={{fontSize:14,color:COLORS.primary,fontWeight:'600'}}>Volver</Text>
+              </TouchableOpacity>
+              <Text style={{fontSize:18,fontWeight:'700',color:COLORS.text,marginBottom:4}}>
+                {FILTER_GROUPS.find(g=>g.key===activeGroup)?.emoji} {FILTER_GROUPS.find(g=>g.key===activeGroup)?.label}
+              </Text>
+
+              {/* For gasolina: show fuel type picker */}
+              {activeGroup === 'gasolina' && (
+                <View style={{gap:8}}>
+                  <Text style={{fontSize:14,color:COLORS.text2,marginBottom:4}}>Elige carburante:</Text>
+                  {FUELS.map(fuel => (
+                    <TouchableOpacity key={fuel.key}
+                      style={{flexDirection:'row',alignItems:'center',gap:12,backgroundColor:COLORS.bg2,borderRadius:14,padding:14,
+                        borderWidth:1.5,borderColor:activeFuel===fuel.key?fuel.color:COLORS.border}}
+                      onPress={() => { setActiveFuel(fuel.key); setShowInitialPicker(false); }}>
+                      <View style={{width:12,height:12,borderRadius:6,backgroundColor:fuel.color}}/>
+                      <Text style={{flex:1,fontSize:15,fontWeight:'600',color:COLORS.text}}>{fuel.label}</Text>
+                      {fuelStats[fuel.key] && (
+                        <Text style={{fontSize:12,color:COLORS.text3}}>desde {fuelStats[fuel.key].min?.toFixed(3).replace(".",",")}€</Text>
+                      )}
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.text3}/>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* For restaurantes: café/cerveza/restaurante */}
+              {activeGroup === 'restaurantes' && (
+                <View style={{gap:8}}>
+                  <Text style={{fontSize:14,color:COLORS.text2,marginBottom:4}}>¿Qué buscas?</Text>
+                  {subCats.map(c => (
+                    <TouchableOpacity key={c.key2||c.key}
+                      style={{flexDirection:'row',alignItems:'center',gap:12,backgroundColor:COLORS.bg2,borderRadius:14,padding:14,
+                        borderWidth:1.5,borderColor:activeCatKey===(c.key2||c.key)?COLORS.primary:COLORS.border}}
+                      onPress={() => {
+                        setActiveCat(c.key); setActiveCatKey(c.key2||c.key); setProduct(c.product||'');
+                        setShowInitialPicker(false);
+                      }}>
+                      <Ionicons name={c.icon} size={22} color={activeCatKey===(c.key2||c.key)?COLORS.primary:COLORS.text2}/>
+                      <Text style={{flex:1,fontSize:15,fontWeight:'600',color:COLORS.text}}>{c.label}</Text>
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.text3}/>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+
+              {/* For servicios: all service subcategories */}
+              {activeGroup === 'servicios' && (
+                <View style={{gap:8}}>
+                  <Text style={{fontSize:14,color:COLORS.text2,marginBottom:4}}>Tipo de servicio:</Text>
+                  {subCats.map(c => (
+                    <TouchableOpacity key={c.key2||c.key}
+                      style={{flexDirection:'row',alignItems:'center',gap:12,backgroundColor:COLORS.bg2,borderRadius:14,padding:14,
+                        borderWidth:1.5,borderColor:activeCatKey===(c.key2||c.key)?'#7C3AED':COLORS.border}}
+                      onPress={() => {
+                        setActiveCat(c.key); setActiveCatKey(c.key2||c.key); setProduct(c.product||'');
+                        setShowInitialPicker(false);
+                      }}>
+                      <Ionicons name={c.icon} size={22} color={activeCatKey===(c.key2||c.key)?'#7C3AED':COLORS.text2}/>
+                      <Text style={{flex:1,fontSize:15,fontWeight:'600',color:COLORS.text}}>{c.label}</Text>
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.text3}/>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
-            {activeCat === 'farmacia' && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingTop:6}}>
-                {['ibuprofeno','paracetamol','amoxicilina','omeprazol','loratadina','vitamina C','colágeno','magnesio','anticonceptivos','termómetro','tensiómetro','mascarilla'].map(p=>(
-                  <TouchableOpacity key={p}
-                    style={{paddingHorizontal:10,paddingVertical:4,borderRadius:12,borderWidth:1,
-                      borderColor:product===p?COLORS.primary:COLORS.border,
-                      backgroundColor:product===p?COLORS.primaryLight:COLORS.bg}}
-                    onPress={()=>{setProduct(product===p?'':p); setTimeout(loadPlaces,100);}}>
-                    <Text style={{fontSize:12,fontWeight:'600',color:product===p?COLORS.primary:COLORS.text2}}>{p}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
-            {activeCat === 'gimnasio' && (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingTop:6}}>
-                {['mcfit','basic-fit','anytime fitness','vivagym','altafit','go fit','forus','gym directa','holmes place'].map(p=>(
-                  <TouchableOpacity key={p}
-                    style={{paddingHorizontal:10,paddingVertical:4,borderRadius:12,borderWidth:1,
-                      borderColor:product===p?'#7C3AED':COLORS.border,
-                      backgroundColor:product===p?'#EDE9FE':COLORS.bg}}
-                    onPress={()=>{setProduct(product===p?'':p); setTimeout(loadPlaces,100);}}>
-                    <Text style={{fontSize:12,fontWeight:'600',color:product===p?'#7C3AED':COLORS.text2}}>{p}</Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            )}
+          )}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  // ══════════ MAIN MAP/LIST VIEW ══════════
+  return (
+    <SafeAreaView style={s.safe} edges={['top']}>
+      {/* ── HEADER (responsive: 2 rows) ── */}
+      <View style={s.header}>
+        {/* Row 1: Logo + view toggle + settings */}
+        <View style={s.headerRow}>
+          <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+            <Ionicons name="wallet" size={20} color={COLORS.primary}/>
+            <Text style={s.logo}>Mapa Tacaño</Text>
           </View>
-        )}
-
-        {/* FIX: Eventos eliminados del mapa — tienen su propia sección en la barra de navegación */}
-
-
-        {/* City quick filter */}
-        <View style={{paddingHorizontal:12,paddingBottom:4}}>
-          <CityPicker
-            value={city}
-            onChange={setCity}
-            placeholder={!city && !userLoc && activeCat !== 'gasolinera'
-              ? "🔍 Elige tu ciudad para ver resultados"
-              : city ? city : "📍 Tu ubicación actual"}
-          />
+          <View style={s.rightRow}>
+            <View style={s.toggle}>
+              <TouchableOpacity style={[s.togBtn,viewMode==='map'&&s.togBtnOn]} onPress={()=>setViewMode('map')}>
+                <Ionicons name="map-outline" size={15} color={viewMode==='map'?COLORS.primary:COLORS.text3}/>
+                <Text style={[s.togTxt,viewMode==='map'&&{color:COLORS.primary}]}>Mapa</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[s.togBtn,viewMode==='list'&&s.togBtnOn]} onPress={()=>setViewMode('list')}>
+                <Ionicons name="list-outline" size={15} color={viewMode==='list'?COLORS.primary:COLORS.text3}/>
+                <Text style={[s.togTxt,viewMode==='list'&&{color:COLORS.primary}]}>Lista</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={s.filterIconBtn} onPress={() => setShowSettingsModal(true)}>
+              <Ionicons name="options-outline" size={22} color={COLORS.text2}/>
+            </TouchableOpacity>
+          </View>
         </View>
-        {/* Aviso si no hay ciudad ni GPS para categorías que lo necesitan */}
-        {!city && !userLoc && activeCat !== 'gasolinera' && (
-          <View style={{marginHorizontal:12,marginBottom:6,backgroundColor:'#FFF7ED',borderRadius:10,padding:8,flexDirection:'row',gap:6,alignItems:'center',borderWidth:1,borderColor:'#FED7AA'}}>
-            <Text style={{fontSize:14}}>📍</Text>
-            <Text style={{flex:1,fontSize:12,color:'#92400E',fontWeight:'600'}}>
-              {activeCat === 'supermercado'
-                ? 'Elige tu ciudad para ver supermercados cerca de ti'
-                : 'Elige una ciudad arriba para ver los precios más baratos cerca de ti'}
-            </Text>
-          </View>
-        )}
+        {/* Row 2: Current filter badge (tappable to change) */}
+        <TouchableOpacity style={s.filterBadgeRow} onPress={() => { setShowInitialPicker(true); setInitialPickerStep(0); }}>
+          <Ionicons name={activeCat==='gasolinera'?'speedometer-outline':activeCat==='restaurante'?'restaurant-outline':'storefront-outline'} size={14} color={COLORS.primary}/>
+          <Text style={{fontSize:12,fontWeight:'600',color:COLORS.primary}} numberOfLines={1}>
+            {activeCat==='gasolinera'?(FUELS.find(f=>f.key===activeFuel)?.label||'Gasolina'):(CATS.find(c=>(c.key2||c.key)===activeCatKey)?.label||activeCat)}
+          </Text>
+          <Ionicons name="chevron-down" size={12} color={COLORS.text3}/>
+          <Text style={{fontSize:10,color:COLORS.text3}}>cambiar</Text>
+        </TouchableOpacity>
 
-        {/* Banner resumen de precios de la ciudad — solo para restaurantes */}
-        {city && cityStats && activeCat === 'restaurante' && (() => {
-          const stats = cityStats.stats || {};
-          const KEY_MAP = {
-            cafe:             ['Café con leche','Café solo'],
-            cerveza:          ['Caña de cerveza','Cerveza caña'],
-            restaurante_menu: ['Menú del día','Menú del día completo'],
-          };
-          const keys = KEY_MAP[activeCatKey] || [];
-          const found = keys.map(k => stats[k]).find(v => v);
-          if (!found) return null;
-          const emoji = activeCatKey === 'cafe' ? '☕' : activeCatKey === 'cerveza' ? '🍺' : '🍽️';
-          return (
-            <View style={{marginHorizontal:12,marginBottom:6,backgroundColor:COLORS.primaryLight,borderRadius:10,padding:8,flexDirection:'row',gap:8,alignItems:'center',borderWidth:1,borderColor:COLORS.primary+'33'}}>
-              <Text style={{fontSize:16}}>{emoji}</Text>
-              <View style={{flex:1}}>
-                <Text style={{fontSize:12,fontWeight:'700',color:COLORS.primary}}>
-                  {`En ${city}: desde `}<Text style={{fontSize:14}}>{found.min.toFixed(2)}€</Text>
-                  {found.max !== found.min ? <Text>{` hasta ${found.max.toFixed(2)}€`}</Text> : null}
-                </Text>
-                <Text style={{fontSize:10,color:COLORS.text3}}>{found.count} precios reportados</Text>
-              </View>
-            </View>
-          );
-        })()}
-
-        {/* Feed actividad comunidad — visible sin ciudad ni GPS para restaurantes */}
-        {!city && !userLoc && activeCat === 'restaurante' && recentPrices.length > 0 && (() => {
-          const rest = recentPrices.filter(p => p.category === 'restaurante').slice(0, 5);
-          if (!rest.length) return null;
-          return (
-            <View style={{marginHorizontal:12,marginBottom:6}}>
-              <Text style={{fontSize:10,fontWeight:'700',color:COLORS.text3,marginBottom:4,letterSpacing:0.5}}>🔥 ACTUALIZADOS HOY</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}}>
-                {rest.map(p => (
-                  <View key={p.id} style={{backgroundColor:COLORS.bg2,borderRadius:10,padding:8,borderWidth:1,borderColor:COLORS.border,minWidth:110,maxWidth:140}}>
-                    <Text style={{fontSize:11,fontWeight:'700',color:COLORS.text}} numberOfLines={1}>{p.place_name}</Text>
-                    <Text style={{fontSize:9,color:COLORS.text3,marginBottom:2}} numberOfLines={1}>{p.city}</Text>
-                    <Text style={{fontSize:14,fontWeight:'800',color:COLORS.primary}}>{p.price?.toFixed(2)}€</Text>
-                    <Text style={{fontSize:9,color:COLORS.text3}} numberOfLines={1}>{p.product}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
-          );
-        })()}
-
+        {/* City picker */}
+        <View style={{paddingHorizontal:12,paddingBottom:4}}>
+          <CityPicker value={city} onChange={setCity}
+            placeholder={city ? city : "Tu ubicación actual"}/>
+        </View>
       </View>
 
-      {/* MAP VIEW */}
+      {/* ── SETTINGS MODAL (proper Modal, not absolute positioned) ── */}
+      <Modal visible={showSettingsModal} animationType="fade" transparent onRequestClose={() => setShowSettingsModal(false)}>
+        <TouchableOpacity style={{flex:1,backgroundColor:'rgba(0,0,0,0.4)'}} activeOpacity={1} onPress={() => setShowSettingsModal(false)}>
+          <View style={{position:'absolute',top:100,right:16,backgroundColor:COLORS.bg2,borderRadius:18,padding:16,width:290,
+            shadowColor:'#000',shadowOpacity:0.2,shadowRadius:20,elevation:10,borderWidth:1,borderColor:COLORS.border}}>
+            <TouchableOpacity activeOpacity={1} onPress={e => e.stopPropagation()}>
+              {/* Header with close */}
+              <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+                <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>Filtros</Text>
+                <TouchableOpacity onPress={() => setShowSettingsModal(false)}
+                  style={{width:30,height:30,borderRadius:15,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="close" size={18} color={COLORS.text2}/>
+                </TouchableOpacity>
+              </View>
+
+              {/* Type */}
+              <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>TIPO</Text>
+              {FILTER_GROUPS.map(g => (
+                <TouchableOpacity key={g.key}
+                  style={{flexDirection:'row',alignItems:'center',gap:8,paddingVertical:8,paddingHorizontal:8,borderRadius:10,marginBottom:4,
+                    backgroundColor:activeGroup===g.key?COLORS.primaryLight:'transparent',
+                    borderWidth:activeGroup===g.key?1.5:0,borderColor:COLORS.primary}}
+                  onPress={() => {
+                    setActiveGroup(g.key);
+                    const firstCat = CATS.find(c => c.group === g.key);
+                    if (firstCat) { setActiveCat(firstCat.key); setActiveCatKey(firstCat.key2||firstCat.key); setProduct(firstCat.product||''); }
+                    if (g.key==='gasolina') { setActiveFuel(activeFuel||'g95'); setSort('proximity'); }
+                    else { setSort('price'); }
+                    setPriceRange(null);
+                  }}>
+                  <Ionicons name={g.icon} size={16} color={activeGroup===g.key?COLORS.primary:COLORS.text2}/>
+                  <Text style={{flex:1,fontSize:13,fontWeight:'600',color:activeGroup===g.key?COLORS.primary:COLORS.text}}>{g.label}</Text>
+                  {activeGroup===g.key && <Ionicons name="checkmark-circle" size={16} color={COLORS.primary}/>}
+                </TouchableOpacity>
+              ))}
+
+              {/* Subcategories */}
+              <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginTop:10,marginBottom:6,letterSpacing:0.5}}>SUBFILTRO</Text>
+              <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+                {CATS.filter(c => c.group === activeGroup).map((c,i) => {
+                  const ck = c.key2 || c.key;
+                  const isOn = activeCatKey === ck;
+                  return (
+                    <TouchableOpacity key={ck+i}
+                      style={{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:6,borderRadius:99,
+                        borderWidth:1.5,borderColor:isOn?COLORS.primary:COLORS.border,backgroundColor:isOn?COLORS.primary:COLORS.bg}}
+                      onPress={() => {
+                        setActiveCat(c.key); setActiveCatKey(ck); setProduct(c.product||''); setPriceRange(null);
+                        if (c.key==='gasolinera') setSort('proximity'); else setSort('price');
+                        setShowSettingsModal(false);
+                      }}>
+                      <Ionicons name={c.icon} size={13} color={isOn?'#fff':COLORS.text2}/>
+                      <Text style={{fontSize:11,fontWeight:'600',color:isOn?'#fff':COLORS.text2}}>{c.label}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              {/* Fuel selector for gasolina */}
+              {activeGroup === 'gasolina' && (
+                <View style={{marginTop:10}}>
+                  <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>CARBURANTE</Text>
+                  <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+                    {FUELS.map(f => (
+                      <TouchableOpacity key={f.key}
+                        style={{paddingHorizontal:10,paddingVertical:6,borderRadius:99,borderWidth:1.5,
+                          borderColor:activeFuel===f.key?f.color:COLORS.border,backgroundColor:activeFuel===f.key?f.bg:COLORS.bg}}
+                        onPress={() => setActiveFuel(f.key)}>
+                        <Text style={{fontSize:11,fontWeight:'600',color:activeFuel===f.key?f.color:COLORS.text2}}>{f.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              )}
+
+              {/* Sort */}
+              <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginTop:10,marginBottom:6,letterSpacing:0.5}}>ORDENAR POR</Text>
+              <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+                {SORT_OPTS.map(so => (
+                  <TouchableOpacity key={so.key}
+                    style={{paddingHorizontal:10,paddingVertical:6,borderRadius:99,borderWidth:1.5,
+                      borderColor:sort===so.key?COLORS.primary:COLORS.border,backgroundColor:sort===so.key?COLORS.primaryLight:COLORS.bg}}
+                    onPress={() => setSort(so.key)}>
+                    <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
+                      <Ionicons name={so.icon+'-outline'} size={12} color={sort===so.key?COLORS.primary:COLORS.text2}/>
+                      <Text style={{fontSize:11,fontWeight:'600',color:sort===so.key?COLORS.primary:COLORS.text2}}>{so.label}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* ══════════ MAP VIEW ══════════ */}
       {viewMode === 'map' && (
         <View style={{flex:1}}>
-          <MapView
-            ref={mapRef}
-            style={{ flex: 1 }}
-            initialRegion={SPAIN_CENTER}
-            showsUserLocation
-            showsMyLocationButton
-            mapPadding={{ bottom: 64, top: 0, left: 0, right: 0 }}
-            onRegionChangeComplete={(region) => setMapRegion(region)}
-          >
-            {/* Community places — icono según subcategoría activa */}
+          <MapView ref={mapRef} style={{flex:1}} initialRegion={SPAIN_CENTER}
+            showsUserLocation showsMyLocationButton
+            mapPadding={{bottom:64,top:0,left:0,right:0}}
+            onRegionChangeComplete={(region) => setMapRegion(region)}>
+
+            {/* Community places with €/€€/€€€/€€€€ markers */}
             {mapPlaces.map(p => {
-              // Icono correcto según subcategoría (café, cerveza, restaurante, etc.)
-              const catInfoKey = p.category === 'restaurante' && activeCatKey
-                ? `restaurante_${activeCatKey === 'cafe' ? 'cafe' : activeCatKey === 'cerveza' ? 'cerveza' : 'menu'}`
-                : p.category;
+              const catInfoKey = p.category==='restaurante' && activeCatKey
+                ? `restaurante_${activeCatKey==='cafe'?'cafe':activeCatKey==='cerveza'?'cerveza':'menu'}` : p.category;
               const info = CATEGORY_INFO[catInfoKey] || CATEGORY_INFO[p.category] || CATEGORY_INFO.default;
-              // Precio representativo
-              const weeklyCost = p.category === 'supermercado' ? getWeeklyCost(p.name) : null;
+              const weeklyCost = p.category==='supermercado' ? getWeeklyCost(p.name) : null;
               const repP = weeklyCost || p.repPrice || p.minPrice;
-              // Color del borde: verde=barato, rojo=caro, amarillo=normal
-              let borderColor = info.color;
-              if (repP > 0) {
-                const AVG_CAT = {
-                  cafe: 1.4, cerveza: 2.2, restaurante_menu: 12,
-                  restaurante: 12, farmacia: 4, gimnasio: 30, supermercado: AVG_WEEKLY_COST
-                };
-                const avg = AVG_CAT[activeCatKey] || AVG_CAT[p.category] || null;
-                if (avg) {
-                  if (repP < avg * 0.85) borderColor = '#16A34A';       // barato → verde
-                  else if (repP > avg * 1.20) borderColor = '#DC2626';   // caro → rojo
-                  else borderColor = '#D97706';                           // normal → naranja
-                }
-              }
-              // Label precio — €/€€/€€€/€€€€ con color para servicios, precio fijo para gimnasio y gasolinera
-              let priceLabel = null;
-              let priceBg = null;
-              if (weeklyCost) {
-                priceLabel = `${weeklyCost.toFixed(0)}€`;
-              } else if (p.category === 'gimnasio' && repP > 0) {
-                priceLabel = `${repP.toFixed(0)}€/m`;
-              } else if (repP > 0 && !isNaN(repP)) {
-                // Show €/€€/€€€/€€€€ instead of exact price
-                const AVG_SVC = { cafe:1.4, cerveza:2.2, restaurante_menu:12, restaurante:12, farmacia:4, supermercado:AVG_WEEKLY_COST };
+              let priceLabel = null, priceBg = null;
+              if (weeklyCost) { priceLabel = `${weeklyCost?.toFixed(0)}€`; }
+              else if (p.category==='gimnasio' && repP > 0) { priceLabel = `${repP?.toFixed(0)}€/m`; priceBg = '#3B82F6'; }
+              else if (repP > 0 && !isNaN(repP)) {
+                const AVG_SVC = {cafe:1.4,cerveza:2.2,restaurante_menu:12,restaurante:12,farmacia:4,supermercado:AVG_WEEKLY_COST};
                 const avg = AVG_SVC[activeCatKey] || AVG_SVC[p.category] || 10;
-                if (repP < avg * 0.75)      { priceLabel = '€';    priceBg = '#16A34A'; }
-                else if (repP < avg)         { priceLabel = '€€';   priceBg = '#65A30D'; }
-                else if (repP < avg * 1.3)   { priceLabel = '€€€';  priceBg = '#D97706'; }
-                else                          { priceLabel = '€€€€'; priceBg = '#DC2626'; }
+                if (repP < avg*0.75)      { priceLabel='€';    priceBg='#16A34A'; }
+                else if (repP < avg)       { priceLabel='€€';   priceBg='#65A30D'; }
+                else if (repP < avg*1.3)   { priceLabel='€€€';  priceBg='#D97706'; }
+                else                        { priceLabel='€€€€'; priceBg='#DC2626'; }
               }
               if (!p.lat || !p.lng) return null;
               return (
                 <Marker key={`p${p.id}`} coordinate={{latitude:p.lat,longitude:p.lng}} onPress={()=>setSelectedPlace(p)}>
-                  <View style={[ms.marker,{backgroundColor: priceBg ? priceBg+'22' : info.bg, borderColor: priceBg || borderColor, borderWidth:2}]}>
-                    <Text style={ms.markerEmoji}>{info.emoji}</Text>
-                    {priceLabel && <Text style={[ms.markerPrice, priceBg && {color: priceBg, fontWeight:'800'}]}>{priceLabel}</Text>}
+                  <View style={[ms.marker,{backgroundColor:priceBg||info.bg,borderColor:priceBg||info.color,borderWidth:2}]}>
+                    <Ionicons name={info.icon||'location-outline'} size={14} color={priceBg?'#fff':info.color||COLORS.text2}/>
+                    {priceLabel && <Text style={[ms.markerPrice,{color:priceBg?'#fff':COLORS.text,fontWeight:'800'}]}>{priceLabel}</Text>}
                   </View>
                 </Marker>
               );
             })}
-            {/* FIX: Eventos eliminados del mapa — usan coords aproximadas de ciudad, no precisas */}
-            {/* Los eventos tienen su propia sección en la barra de navegación */}
-            {/* Gas stations — color based on G95 or Diesel ONLY (not GLP/GNC) */}
+
+            {/* Gas stations */}
             {mapGas.map(s => {
-              // Use selected fuel price if available, otherwise best available
-              const displayFuel = activeFuel !== 'all' && s.prices?.[activeFuel] > 0
-                ? activeFuel
-                : s.prices?.g95 > 0 ? 'g95'
-                : s.prices?.diesel > 0 ? 'diesel'
-                : s.prices?.g98 > 0 ? 'g98'
-                : null;
+              const displayFuel = activeFuel!=='all' && s.prices?.[activeFuel]>0 ? activeFuel
+                : s.prices?.g95>0 ? 'g95' : s.prices?.diesel>0 ? 'diesel' : s.prices?.g98>0 ? 'g98' : null;
               const displayPrice = displayFuel ? s.prices[displayFuel] : null;
-              const col = displayPrice ? gasPriceColor(displayPrice) : { bg: '#9CA3AF', text: '#fff', label: 'Sin datos' };
-              if (activeFuel && activeFuel !== 'all' && !s.prices?.[activeFuel]) return null;
+              const col = displayPrice ? gasPriceColor(displayPrice) : {bg:'#9CA3AF',text:'#fff',label:'Sin datos'};
+              if (activeFuel && activeFuel!=='all' && !s.prices?.[activeFuel]) return null;
               if (!s.lat || !s.lng) return null;
               return (
-                <Marker key={s.id} coordinate={{ latitude: s.lat, longitude: s.lng }} onPress={() => {
+                <Marker key={s.id} coordinate={{latitude:s.lat,longitude:s.lng}} onPress={() => {
                   setSelectedStation(s);
-                  // Center map on station
-                  if (mapRef.current && s.lat && s.lng) {
-                    mapRef.current.animateToRegion({
-                      latitude: s.lat, longitude: s.lng,
-                      latitudeDelta: 0.008, longitudeDelta: 0.008,
-                    }, 400);
-                  }
+                  mapRef.current?.animateToRegion({latitude:s.lat,longitude:s.lng,latitudeDelta:0.008,longitudeDelta:0.008},400);
                 }}>
-                  <View style={[ms.gasMarker, { backgroundColor: col.bg }]}>
-                    <Text style={ms.gasEmoji}>⛽</Text>
-                    {displayPrice > 0 && <Text style={ms.gasPrice}>{displayPrice.toFixed(3)}</Text>}
+                  <View style={[ms.gasMarker,{backgroundColor:col.bg}]}>
+                    <Ionicons name="speedometer" size={13} color="#fff"/>
+                    {displayPrice>0 && <Text style={ms.gasPrice}>{displayPrice?.toFixed(3).replace(".",",")}</Text>}
                     {userLoc && (() => {
-                      const d = distanceKm(userLoc.lat, userLoc.lng, s.lat, s.lng);
-                      if (d > 3) return null; // only show if <3km
-                      const label = d < 1 ? `${Math.round(d*1000)}m` : `${d.toFixed(1)}km`;
-                      // Green if <500m, yellow if <1.5km, white otherwise
-                      const distColor = d < 0.5 ? '#22C55E' : d < 1.5 ? '#FCD34D' : col.text;
+                      const d = distanceKm(userLoc.lat,userLoc.lng,s.lat,s.lng);
+                      if (d>3) return null;
+                      const label = d<1 ? `${Math.round(d*1000)}m` : `${d.toFixed(1)}km`;
+                      const distColor = d<0.5?'#22C55E':d<1.5?'#FCD34D':col.text;
                       return <Text style={{fontSize:8,color:distColor,fontWeight:'700',opacity:0.9}}>{label}</Text>;
                     })()}
                   </View>
@@ -969,42 +678,23 @@ export default function MapScreen() {
             })}
           </MapView>
 
-          {/* Favorites only banner */}
-          {showFavsOnly && favStations.length === 0 && (
-            <View style={[ms.loadBar, {backgroundColor:'#FEF2F2',borderColor:'#FECACA'}]}>
-              <Text style={{fontSize:13}}>❤️</Text>
-              <Text style={[ms.loadTxt,{color:COLORS.danger}]}>
-                No tienes gasolineras favoritas · Abre una y pulsa ❤️
-              </Text>
-              <TouchableOpacity onPress={()=>setShowFavsOnly(false)} style={{marginLeft:8}}>
-                <Text style={{fontSize:11,color:COLORS.primary,fontWeight:'700'}}>Ver todas</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
           {/* Server error banner */}
           {serverError && (
-            <View style={[ms.loadBar, {backgroundColor:'#FEF2F2',borderColor:'#FECACA'}]}>
+            <View style={[ms.loadBar,{backgroundColor:'#FEF2F2',borderColor:'#FECACA'}]}>
               <Ionicons name="wifi-outline" size={14} color={COLORS.danger}/>
-              <Text style={[ms.loadTxt, {color:COLORS.danger}]}>
-                Sin conexión al servidor · Asegúrate de estar en la misma WiFi
-              </Text>
+              <Text style={[ms.loadTxt,{color:COLORS.danger}]}>Sin conexión al servidor</Text>
               <TouchableOpacity onPress={loadPlaces} style={{marginLeft:8}}>
                 <Text style={{fontSize:11,color:COLORS.primary,fontWeight:'700'}}>Reintentar</Text>
               </TouchableOpacity>
             </View>
           )}
 
-          {/* Loading bar — initial load + progressive */}
+          {/* Loading bar */}
           {gasLoading && (
             <View style={ms.loadBar}>
               <ActivityIndicator size="small" color={COLORS.warning}/>
-              <Text style={ms.loadTxt}>
-                {nearbyGasLoaded
-                  ? `Cargando toda España... ${loadProgress}%`
-                  : `Cargando gasolineras cercanas...`}
-              </Text>
-              {loadProgress > 0 && (
+              <Text style={ms.loadTxt}>{nearbyGasLoaded ? `Cargando toda España... ${loadProgress}%` : 'Cargando gasolineras cercanas...'}</Text>
+              {loadProgress>0 && (
                 <View style={{width:60,height:4,backgroundColor:COLORS.border,borderRadius:99,marginLeft:6,overflow:'hidden'}}>
                   <View style={{width:`${loadProgress}%`,height:'100%',backgroundColor:COLORS.warning,borderRadius:99}}/>
                 </View>
@@ -1012,70 +702,17 @@ export default function MapScreen() {
             </View>
           )}
 
-          {/* All loaded indicator */}
-          {!gasLoading && allGas.length > 0 && gasolineras.length === 0 && !serverError && (
-            <View style={ms.loadBar}>
-              <Text style={ms.loadTxt}>Sin gasolineras en esta zona — desplázate o amplía el mapa</Text>
-            </View>
-          )}
-
-          {/* Legend + fuel stats panel */}
-          {activeCat==='gasolinera' && gasolineras.length > 0 && (
+          {/* Legend */}
+          {activeCat==='gasolinera' && gasolineras.length>0 && (
             <View style={ms.legend}>
-              {/* Visible count badge */}
               <View style={{backgroundColor:'rgba(15,23,42,0.7)',borderRadius:8,paddingHorizontal:8,paddingVertical:3,marginRight:4}}>
-                <Text style={{fontSize:10,color:'#fff',fontWeight:'700'}}>
-                  {showFavsOnly ? `❤️ ${gasolineras.length}` : `⛽ ${gasolineras.length > 999 ? (gasolineras.length/1000).toFixed(1)+'K' : gasolineras.length}`}
-                </Text>
+                <Text style={{fontSize:10,color:'#fff',fontWeight:'700'}}>{gasolineras.length>999?(gasolineras.length/1000).toFixed(1)+'K':gasolineras.length} est.</Text>
               </View>
-              {/* Color legend */}
               {[['#16A34A','Barato'],['#D97706','Medio'],['#DC2626','Caro']].map(([c,l])=>(
-                <View key={l} style={ms.legendItem}>
-                  <View style={[ms.legendDot,{backgroundColor:c}]}/>
-                  <Text style={ms.legendTxt}>{l}</Text>
-                </View>
+                <View key={l} style={ms.legendItem}><View style={[ms.legendDot,{backgroundColor:c}]}/><Text style={ms.legendTxt}>{l}</Text></View>
               ))}
-              {/* Live stats for selected fuel */}
-              {activeFuel && activeFuel !== 'all' && fuelStats[activeFuel] && (() => {
-                const st = fuelStats[activeFuel];
-                return (
-                  <>
-                    <View style={ms.legendSep}/>
-                    <Text style={ms.legendStat}>🟢{st.min?.toFixed(3)}</Text>
-                    <Text style={ms.legendStat}>🟡{st.avg?.toFixed(3)}</Text>
-                    <Text style={ms.legendStat}>🔴{st.max?.toFixed(3)}</Text>
-                  </>
-                );
-              })()}
-              <Text style={ms.legendCount}>
-                {showFavsOnly
-                  ? `❤️ ${gasolineras.length} favoritas`
-                  : `${gasolineras.length.toLocaleString()} est.${city ? ' · '+city : ''}`
-                }
-              </Text>
             </View>
           )}
-
-          {/* First-time hint */}
-          {showHint && (
-            <View style={{position:'absolute',top:16,left:16,right:16,backgroundColor:'rgba(15,23,42,0.88)',borderRadius:14,padding:14,flexDirection:'row',gap:10,alignItems:'center'}}>
-              <Text style={{fontSize:20}}>💡</Text>
-              <View style={{flex:1}}>
-                <Text style={{fontSize:13,fontWeight:'700',color:'#fff'}}>Encuentra los precios más baratos</Text>
-                <Text style={{fontSize:12,color:'rgba(255,255,255,0.7)',marginTop:2}}>⛽ Gasolina · ☕ Cafés · 🍺 Cervezas · 🍽️ Menús · 🛒 Súper cerca de ti</Text>
-              </View>
-              <TouchableOpacity onPress={()=>setShowHint(false)} style={{padding:4}}>
-                <Text style={{fontSize:16,color:'rgba(255,255,255,0.6)'}}>✕</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Search FAB — tap to switch to list and search */}
-          <TouchableOpacity
-            style={[ms.fab, { bottom: 90, backgroundColor: COLORS.bg2, borderWidth: 1.5, borderColor: COLORS.border }]}
-            onPress={() => setViewMode('list')}>
-            <Ionicons name="search" size={22} color={COLORS.text2}/>
-          </TouchableOpacity>
 
           {/* Add FAB */}
           <TouchableOpacity style={ms.fab} onPress={() => {
@@ -1087,120 +724,49 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* LIST VIEW */}
+      {/* ══════════ LIST VIEW (no brand search bar) ══════════ */}
       {viewMode === 'list' && (
         <View style={{flex:1}}>
-          {/* Search bar for list mode */}
-          <View style={{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg2,borderBottomWidth:0.5,borderBottomColor:COLORS.border,paddingHorizontal:12,paddingVertical:8,gap:8}}>
-            <Ionicons name="search-outline" size={16} color={COLORS.text3}/>
-            <TextInput
-              style={{flex:1,fontSize:14,color:COLORS.text,height:32}}
-              placeholder={activeCat==='gasolinera' ? 'Buscar gasolinera o marca...' : 'Buscar lugar...'}
-              placeholderTextColor={COLORS.text3}
-              value={gasSearch}
-              onChangeText={setGasSearch}
-            />
-            {gasSearch ? <TouchableOpacity onPress={()=>setGasSearch('')}><Ionicons name="close-circle" size={16} color={COLORS.text3}/></TouchableOpacity> : null}
-            <Text style={{fontSize:11,color:COLORS.text3}}>
-              {activeCat === 'gasolinera'
-                ? `${visibleGas.length.toLocaleString('es-ES')} est.`
-                : (() => {
-                    const conPrecio = visiblePlaces.filter(p => p.repPrice > 0).length;
-                    const total = visiblePlaces.length;
-                    return conPrecio > 0
-                      ? `${conPrecio} con precio · ${total} total`
-                      : `${total} resultados`;
-                  })()
-              }
-            </Text>
-          </View>
-          {/* Chips de marcas — solo para gasolinera */}
-          {activeCat === 'gasolinera' && (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{paddingHorizontal:12,paddingVertical:6,gap:6}}>
-              {['Repsol','Cepsa','BP','Galp','Shell','Plenoil','Ballenoil','Alcampo','Carrefour','Petronor'].map(marca => (
-                <TouchableOpacity key={marca}
-                  style={{paddingHorizontal:10,paddingVertical:3,borderRadius:99,borderWidth:1.5,
-                    borderColor: gasSearch===marca ? COLORS.primary : COLORS.border,
-                    backgroundColor: gasSearch===marca ? COLORS.primaryLight : COLORS.bg}}
-                  onPress={()=>setGasSearch(gasSearch===marca ? '' : marca)}>
-                  <Text style={{fontSize:12,fontWeight:'600',color:gasSearch===marca ? COLORS.primary : COLORS.text2}}>{marca}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
           {loading ? <ActivityIndicator color={COLORS.primary} style={{marginTop:40}}/> : (() => {
-            // Filter gas by name search
             const searchLow = gasSearch.toLowerCase();
             const gasFiltered = searchLow
-              ? visibleGas.filter(s =>
-                  (s.name||'').toLowerCase().includes(searchLow) ||
-                  (s.brand||'').toLowerCase().includes(searchLow) ||
-                  (s.city||'').toLowerCase().includes(searchLow)
-                )
+              ? visibleGas.filter(s => (s.name||'').toLowerCase().includes(searchLow) || (s.brand||'').toLowerCase().includes(searchLow) || (s.city||'').toLowerCase().includes(searchLow))
               : visibleGas;
             const listData = [
               ...visiblePlaces,
-              // FIX: Eventos eliminados de la lista del mapa — tienen su propia sección
               ...gasFiltered.slice(0,150).map(s=>({
                 ...s, isGas:true,
-                _dist: distanceKm(userLoc?.lat||40.4168, userLoc?.lng||(-3.7038), s.lat, s.lng),
-                minPrice: activeFuel && activeFuel!=='all' ? (s.prices?.[activeFuel]||null) : stationMinPrice(s.prices),
+                _dist:distanceKm(userLoc?.lat||40.4168,userLoc?.lng||(-3.7038),s.lat,s.lng),
+                minPrice:activeFuel&&activeFuel!=='all'?(s.prices?.[activeFuel]||null):stationMinPrice(s.prices),
               })),
-            ].sort((a,b)=>{
+            ].sort((a,b) => {
               if(sort==='price') return (a.minPrice??999)-(b.minPrice??999);
               return (a._dist??999)-(b._dist??999);
             });
+
             return (
-              <FlatList
-                data={listData}
-                keyExtractor={(it,i)=>it.isGas ? `gas_${it.id||i}` : it.isEvent ? `evt_${it.id||i}` : `pl_${it.id||i}`}
+              <FlatList data={listData}
+                keyExtractor={(it,i)=>it.isGas?`gas_${it.id||i}`:`pl_${it.id||i}`}
                 contentContainerStyle={{padding:12,gap:10,paddingBottom:100}}
                 renderItem={({item})=>(
                   <ListCard item={item}
-                    onPress={()=>{
-                      if (item.isEvent) {
-                        Alert.alert(
-                          `🎭 ${item.title}`,
-                          `📍 ${item.city||''}\n📅 ${item.date ? new Date(item.date).toLocaleDateString('es-ES') : ''}\n💶 ${item.price_from ? `Desde ${item.price_from}€` : (item.is_free ? 'Gratis' : '')}`,
-                          [
-                            item.url ? { text:'Ver evento', onPress:()=>openURL(item.url) } : null,
-                            {text:'Cerrar'},
-                          ].filter(Boolean)
-                        );
-                      } else if (item.isGas) {
-                        setSelectedStation(item);
-                      } else {
-                        setSelectedPlace(item);
-                      }
-                    }}
+                    onPress={()=>{ if (item.isGas) setSelectedStation(item); else setSelectedPlace(item); }}
                     onNav={()=>navigateTo(item.lat,item.lng,item.name||item.title)}
-                    activeFuel={activeFuel}
-                    catKey={activeCatKey}
-                    isFav={item.isGas && favIds.has(String(item.id))}
-                  />
+                    activeFuel={activeFuel} catKey={activeCatKey}
+                    isFav={item.isGas && favIds.has(String(item.id))}/>
                 )}
                 ListEmptyComponent={
                   <View style={{alignItems:'center',paddingTop:60,gap:8}}>
-                    <Text style={{fontSize:24}}>🔍</Text>
-                    <Text style={{fontSize:15,color:COLORS.text2,fontWeight:'600'}}>
-                      {gasSearch ? `Sin resultados para "${gasSearch}"` : 'Sin resultados en esta zona'}
-                    </Text>
+                    <Ionicons name="search-outline" size={24} color={COLORS.text2}/>
+                    <Text style={{fontSize:15,color:COLORS.text2,fontWeight:'600'}}>Sin resultados en esta zona</Text>
                     <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center',paddingHorizontal:30}}>
-                      {gasSearch
-                        ? 'Prueba con otro nombre o marca'
-                        : activeCat==='gasolinera'
-                          ? 'Desplázate en el mapa para ver más'
-                          : 'Elige una ciudad en el filtro de arriba para ver resultados'}
+                      {activeCat==='gasolinera' ? 'Desplázate en el mapa para ver más' : 'Elige una ciudad en el filtro de arriba'}
                     </Text>
                   </View>
-                }
-              />
+                }/>
             );
           })()}
-
-          {/* FAB en lista — añadir lugar/precio */}
-          <TouchableOpacity style={[ms.fab, {position:'absolute', bottom:20, right:16}]} onPress={() => {
+          <TouchableOpacity style={[ms.fab,{position:'absolute',bottom:20,right:16}]} onPress={() => {
             if (!isLoggedIn) { setShowAuth(true); return; }
             setShowAddGas(true);
           }}>
@@ -1209,16 +775,16 @@ export default function MapScreen() {
         </View>
       )}
 
-      {/* Modals */}
+      {/* ── MODALS ── */}
       <Modal visible={!!selectedPlace} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedPlace(null)}>
-        {selectedPlace && <PlaceModal place={selectedPlace} catKey={activeCatKey} onClose={()=>setSelectedPlace(null)} onNavigate={navigateTo} isLoggedIn={isLoggedIn} onAuthNeeded={()=>setShowAuth(true)} onProposePrice={(p, product)=>{setSelectedPlace(null); setPriceChangePlace({place:p, product});}}/>}
+        {selectedPlace && <PlaceModal place={selectedPlace} catKey={activeCatKey} onClose={()=>setSelectedPlace(null)} onNavigate={navigateTo} isLoggedIn={isLoggedIn} onAuthNeeded={()=>setShowAuth(true)} onProposePrice={(p,product)=>{setSelectedPlace(null);setPriceChangePlace({place:p,product});}}/>}
       </Modal>
       <PriceChangeModal visible={!!priceChangePlace} onClose={()=>setPriceChangePlace(null)} place={priceChangePlace?.place} initialProduct={priceChangePlace?.product}/>
       <Modal visible={!!selectedStation} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedStation(null)}>
         {selectedStation && <GasModal station={selectedStation} onClose={()=>setSelectedStation(null)} onNavigate={navigateTo} onFavChange={loadFavs}/>}
       </Modal>
       <AddGasStationModal visible={showAddGas} onClose={()=>setShowAddGas(false)} activeCat={activeCat}
-        onSuccess={()=>{ setShowAddGas(false); loadPlaces(); Alert.alert('✅ Lugar añadido','¡Aparecerá con badge "NUEVO". La comunidad votará para verificar.'); }}/>
+        onSuccess={()=>{setShowAddGas(false);loadPlaces();Alert.alert('✅ Lugar añadido','¡Aparecerá con badge "NUEVO". La comunidad votará para verificar.');}}/>
       <AuthModal visible={showAuth} onClose={()=>setShowAuth(false)}/>
     </SafeAreaView>
   );
@@ -1226,196 +792,105 @@ export default function MapScreen() {
 
 // === LIST CARD ===
 function ListCard({ item, onPress, onNav, activeFuel, catKey, isFav }) {
-  // Events get special treatment
-  if (item.isEvent) {
-    const dist = item._dist != null && item._dist < 999 ? (item._dist < 1 ? `${Math.round(item._dist*1000)}m` : `${item._dist.toFixed(1)}km`) : null;
-    return (
-      <TouchableOpacity style={lcs.card} onPress={onPress} activeOpacity={0.75}>
-        <View style={[lcs.icon, {backgroundColor:'#EDE9FE'}]}>
-          <Text style={{fontSize:22}}>🎭</Text>
-        </View>
-        <View style={lcs.info}>
-          <Text style={lcs.name} numberOfLines={1}>{item.title||'Evento'}</Text>
-          <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:1}}>
-            <View style={{backgroundColor:'#EDE9FE',borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>
-              <Text style={{fontSize:10,fontWeight:'700',color:'#7C3AED'}}>🎭 Evento</Text>
-            </View>
-            {item.city && <Text style={lcs.sub}>📍 {item.city}</Text>}
-            {item.date && <Text style={lcs.sub}>📅 {new Date(item.date).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})}</Text>}
-          </View>
-          {item.price_from != null && (
-            <View style={[lcs.pricePill,{backgroundColor:'#F5F3FF'}]}>
-              <Text style={[lcs.pricePillTxt,{color:'#7C3AED'}]}>{item.is_free ? '🆓 Gratis' : `desde ${item.price_from}€`}</Text>
-            </View>
-          )}
-        </View>
-        <View style={lcs.right}>
-          {dist && <Text style={lcs.dist}>📍 {dist}</Text>}
-          <TouchableOpacity style={lcs.navBtn} onPress={onNav}>
-            <Text style={lcs.navTxt}>Ir</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    );
-  }
-
-  // Para restaurantes: usar icono y label según subcategoría activa (café, cerveza, menú)
-  const catInfoKey = item.category === 'restaurante' && catKey
-    ? `restaurante_${catKey === 'cafe' ? 'cafe' : catKey === 'cerveza' ? 'cerveza' : 'menu'}`
-    : item.category;
-  const info = item.isGas
-    ? {emoji:'⛽', bg:'#FEF3C7', label:'Gasolinera', color:'#F59E0B'}
-    : (CATEGORY_INFO[catInfoKey] || CATEGORY_INFO[item.category] || CATEGORY_INFO.default);
-  const fuelLabel = activeFuel && activeFuel !== 'all' ? FUEL_LABELS[activeFuel] : 'G95';
+  const catInfoKey = item.category==='restaurante'&&catKey
+    ? `restaurante_${catKey==='cafe'?'cafe':catKey==='cerveza'?'cerveza':'menu'}` : item.category;
+  const info = item.isGas ? {emoji:'⛽',icon:'speedometer-outline',bg:'#FEF3C7',label:'Gasolinera',color:'#F59E0B'}
+    : (CATEGORY_INFO[catInfoKey]||CATEGORY_INFO[item.category]||CATEGORY_INFO.default);
   const col = item.isGas && item.minPrice ? gasPriceColor(item.minPrice) : null;
-  const dist = !item._dist || item._dist===999 ? null : item._dist<1 ? `${Math.round(item._dist*1000)}m` : `${item._dist.toFixed(1)}km`;
+  const dist = !item._dist||item._dist===999 ? null : item._dist<1 ? `${Math.round(item._dist*1000)}m` : `${item._dist.toFixed(1)}km`;
 
-  // Price label — específico por subcategoría para restaurantes
   function priceLabel() {
-    if (item.category === 'supermercado') {
-      const wc = getWeeklyCost(item.name);
-      const price = wc || item.repPrice;
+    if (item.category==='supermercado') {
+      const wc = getWeeklyCost(item.name); const price = wc||item.repPrice;
       if (!price) return null;
-      const diff = ((price - AVG_WEEKLY_COST) / AVG_WEEKLY_COST * 100).toFixed(0);
-      const tag = price < AVG_WEEKLY_COST * 0.92 ? '🟢' : price > AVG_WEEKLY_COST * 1.08 ? '🔴' : '🟡';
-      return `${tag} ~${price.toFixed(0)}€/sem · ${Number(diff)>0?'+':''}${diff}%`;
+      const diff = ((price-AVG_WEEKLY_COST)/AVG_WEEKLY_COST*100)?.toFixed(0);
+      const tag = price<AVG_WEEKLY_COST*0.92?'🟢':price>AVG_WEEKLY_COST*1.08?'🔴':'🟡';
+      return `${tag} ~${price?.toFixed(0)}€/sem · ${Number(diff)>0?'+':''}${diff}%`;
     }
-    const p = item.repPrice || item.minPrice;
-    if (!p || isNaN(p)) return null;
+    const p = item.repPrice||item.minPrice;
+    if (!p||isNaN(p)) return null;
     if (item.isGas) {
-      // Etiqueta corta: "G95 1.539€" — sin "Gasolina" para ahorrar espacio
-      const shortLabel = {g95:'G95',g98:'G98',diesel:'Diésel',diesel_plus:'Diésel+',glp:'GLP',gnc:'GNC'}[activeFuel] || 'G95';
-      return `${shortLabel} ${p.toFixed(3)}€/L`;
+      const shortLabel = {g95:'G95',g98:'G98',diesel:'Diésel',diesel_plus:'Diésel+',glp:'GLP',gnc:'GNC'}[activeFuel]||'G95';
+      return `${shortLabel} ${p?.toFixed(3).replace(".",",")}€/L`;
     }
-    if (item.category === 'restaurante') {
-      // Mostrar qué producto es el precio según subcategoría
-      const labels = { cafe:'☕ Café', cerveza:'🍺 Caña', restaurante_menu:'🍽️ Menú' };
-      const productLabel = labels[catKey] || '🍽️';
-      // Para menú del día, añadir indicador €/€€/€€€/€€€€
-      if (catKey === 'restaurante_menu') {
-        const euros = p < 10 ? '€' : p < 15 ? '€€' : p < 25 ? '€€€' : '€€€€';
-        return `${productLabel} ${p.toFixed(2)}€  ${euros}`;
-      }
-      return `${productLabel} ${p.toFixed(2)}€`;
+    if (item.category==='restaurante') {
+      const labels = {cafe:'☕ Café',cerveza:'🍺 Caña',restaurante_menu:'🍽️ Menú'};
+      return `${labels[catKey]||'🍽️'} ${p?.toFixed(2).replace(".",",")}€`;
     }
-    if (item.category === 'farmacia') {
-      // Indicador de precio relativo para farmacias
-      const euros = p < 3 ? '€' : p < 8 ? '€€' : p < 20 ? '€€€' : '€€€€';
-      return `💊 ~${p.toFixed(2)}€  ${euros}`;
+    if (item.category==='gimnasio') return `💪 desde ${p?.toFixed(0)}€/mes`;
+    if (item.category==='farmacia') {
+      const euros = p<3?'€':p<8?'€€':p<20?'€€€':'€€€€';
+      return `💊 ~${p?.toFixed(2).replace(".",",")}€  ${euros}`;
     }
-    if (item.category === 'gimnasio')  return `💪 desde ${p.toFixed(0)}€/mes`;
-    return `~${p.toFixed(2)}€`;
+    return `~${p?.toFixed(2).replace(".",",")}€`;
   }
-  const pLabel = priceLabel();
 
-  // Color del precio para restaurantes (verde=barato, rojo=caro)
   function priceColor() {
     if (item.isGas) return col;
-    if (item.category === 'restaurante') {
-      const p = item.repPrice;
-      if (!p) return null;
-      const AVG = { cafe:1.4, cerveza:2.2, restaurante_menu:12 };
-      const avg = AVG[catKey] || 12;
-      if (p < avg * 0.85) return { bg: '#DCFCE7', text: '#15803D' }; // barato
-      if (p > avg * 1.20) return { bg: '#FEE2E2', text: '#DC2626' }; // caro
-      return { bg: '#FEF9C3', text: '#92400E' }; // normal
+    if (item.category==='restaurante') {
+      const p=item.repPrice; if(!p) return null;
+      const AVG={cafe:1.4,cerveza:2.2,restaurante_menu:12}; const avg=AVG[catKey]||12;
+      if(p<avg*0.85) return {bg:'#DCFCE7',text:'#15803D'};
+      if(p>avg*1.20) return {bg:'#FEE2E2',text:'#DC2626'};
+      return {bg:'#FEF9C3',text:'#92400E'};
     }
-    if (item.category === 'supermercado') {
-      const price = getWeeklyCost(item.name) || item.repPrice;
-      if (!price) return null;
-      if (price < AVG_WEEKLY_COST * 0.92) return { bg: '#DCFCE7', text: '#15803D' }; // barato
-      if (price > AVG_WEEKLY_COST * 1.08) return { bg: '#FEE2E2', text: '#DC2626' }; // caro
-      return { bg: '#FEF9C3', text: '#92400E' }; // normal
-    }
-    if (item.category === 'farmacia') {
-      const p = item.repPrice;
-      if (!p) return null;
-      const AVG_FARM = 5;
-      if (p < AVG_FARM * 0.70) return { bg: '#DCFCE7', text: '#15803D' };
-      if (p > AVG_FARM * 1.40) return { bg: '#FEE2E2', text: '#DC2626' };
-      return { bg: '#FEF9C3', text: '#92400E' };
+    if (item.category==='supermercado') {
+      const price=getWeeklyCost(item.name)||item.repPrice; if(!price) return null;
+      if(price<AVG_WEEKLY_COST*0.92) return {bg:'#DCFCE7',text:'#15803D'};
+      if(price>AVG_WEEKLY_COST*1.08) return {bg:'#FEE2E2',text:'#DC2626'};
+      return {bg:'#FEF9C3',text:'#92400E'};
     }
     return null;
   }
-  const pColor = priceColor();
+  const pLabel=priceLabel(), pColor=priceColor();
 
   return (
     <TouchableOpacity style={lcs.card} onPress={onPress} activeOpacity={0.75}>
-      <View style={[lcs.icon,{backgroundColor:info.bg, overflow:'hidden'}]}>
+      <View style={[lcs.icon,{backgroundColor:info.bg,overflow:'hidden'}]}>
         {(() => {
-          if (item.category === 'supermercado' && item.name) {
-            const n = item.name.toLowerCase();
-            const logoMap = {
-              'mercadona': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Mercadona_logo.svg/240px-Mercadona_logo.svg.png',
-              'lidl':      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Lidl-Logo.svg/240px-Lidl-Logo.svg.png',
-              'aldi':      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Aldi_Nord_Logo.svg/240px-Aldi_Nord_Logo.svg.png',
-              'carrefour': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/240px-Carrefour_logo.svg.png',
-              'dia':       'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Logo_Dia.svg/240px-Logo_Dia.svg.png',
-              'alcampo':   'https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Alcampo_logo.svg/240px-Alcampo_logo.svg.png',
-              'hipercor':  'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/El_Corte_Ingl%C3%A9s_logo.svg/240px-El_Corte_Ingl%C3%A9s_logo.svg.png',
-              'el corte':  'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/El_Corte_Ingl%C3%A9s_logo.svg/240px-El_Corte_Ingl%C3%A9s_logo.svg.png',
-              'consum':    'https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Logo_Consum.svg/240px-Logo_Consum.svg.png',
-              'eroski':    'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Eroski_logo.svg/240px-Eroski_logo.svg.png',
-              'supersol':  'https://logo.clearbit.com/supersol.es',
-              'spar':      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/SPAR_logo.svg/240px-SPAR_logo.svg.png',
-              'froiz':     'https://logo.clearbit.com/froiz.es',
-              'ahorramas': 'https://logo.clearbit.com/ahorramas.com',
-              'simply':    'https://logo.clearbit.com/simply.es',
-            };
-            const logoUrl = Object.entries(logoMap).find(([key]) => n.includes(key))?.[1];
-            if (logoUrl) {
-              return (
-                <SuperLogo uri={logoUrl} fallbackEmoji={info.emoji}/>
-              );
-            }
+          if (item.category==='supermercado'&&item.name) {
+            const n=item.name.toLowerCase();
+            const logoMap={'mercadona':'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Mercadona_logo.svg/240px-Mercadona_logo.svg.png',
+              'lidl':'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Lidl-Logo.svg/240px-Lidl-Logo.svg.png',
+              'aldi':'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Aldi_Nord_Logo.svg/240px-Aldi_Nord_Logo.svg.png',
+              'carrefour':'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Carrefour_logo.svg/240px-Carrefour_logo.svg.png',
+              'dia':'https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Logo_Dia.svg/240px-Logo_Dia.svg.png'};
+            const logoUrl=Object.entries(logoMap).find(([key])=>n.includes(key))?.[1];
+            if (logoUrl) return <SuperLogo uri={logoUrl} fallbackEmoji={info.emoji}/>;
           }
-          return <Text style={{fontSize:22}}>{info.emoji}</Text>;
+          return <Ionicons name={info.icon||'location-outline'} size={22} color={info.color||COLORS.text2}/>;
         })()}
-        {isFav ? <View style={{position:'absolute',top:-4,right:-4}}><Text style={{fontSize:12}}>❤️</Text></View> : null}
+        {isFav?<View style={{position:'absolute',top:-4,right:-4}}><Ionicons name="heart" size={12} color={COLORS.danger}/></View>:null}
       </View>
       <View style={lcs.info}>
         <Text style={lcs.name} numberOfLines={1}>{
-          // Gasolineras vienen en MAYÚSCULAS del Ministerio — capitalizar para legibilidad
-          item.isGas && item.name && item.name === item.name.toUpperCase()
-            ? item.name.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
-            : item.name || item.address
-        }</Text>
+          item.isGas&&item.name&&item.name===item.name.toUpperCase()
+            ? item.name.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()) : item.name||item.address}</Text>
         <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:1}}>
-          <View style={{backgroundColor:info.bg||COLORS.bg3,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>
-            <Text style={{fontSize:10,fontWeight:'700',color:info.text||COLORS.text2}}>{info.emoji} {info.label}</Text>
-          </View>
-          {item.city && <Text style={lcs.sub} numberOfLines={1}>📍 {item.city}</Text>}
+            <View style={{flexDirection:'row',alignItems:'center',gap:3,backgroundColor:info.bg||COLORS.bg3,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}>
+              <Ionicons name={info.icon||'location-outline'} size={10} color={info.text||COLORS.text2}/>
+              <Text style={{fontSize:10,fontWeight:'700',color:info.text||COLORS.text2}}>{info.label}</Text>
+            </View>
+          {item.city&&<View style={{flexDirection:'row',alignItems:'center',gap:2}}><Ionicons name="location-outline" size={10} color={COLORS.text3}/><Text style={lcs.sub} numberOfLines={1}>{item.city}</Text></View>}
         </View>
-        {item.bestFor ? <Text style={lcs.bestFor}>{item.bestFor}</Text> : null}
         {pLabel && (
-          <View style={[lcs.pricePill,{
-            backgroundColor: pColor ? pColor.bg
-              : col ? col.bg  // gasolina: fondo sólido con color verde/rojo/naranja
-              : COLORS.warningLight
-          }]}>
-            <Text style={[lcs.pricePillTxt,{
-              color: pColor ? pColor.text
-                : col ? col.text
-                : COLORS.warning
-            }]}>{pLabel}</Text>
+          <View style={[lcs.pricePill,{backgroundColor:pColor?pColor.bg:col?col.bg:COLORS.warningLight}]}>
+            <Text style={[lcs.pricePillTxt,{color:pColor?pColor.text:col?col.text:COLORS.warning}]}>{pLabel}</Text>
           </View>
         )}
       </View>
       <View style={lcs.right}>
-        {dist && <Text style={lcs.dist}>📍 {dist}</Text>}
-        <TouchableOpacity style={lcs.navBtn} onPress={onNav}>
-          <Text style={lcs.navTxt}>Ir</Text>
-        </TouchableOpacity>
+        {dist&&<View style={{flexDirection:'row',alignItems:'center',gap:2}}><Ionicons name="location-outline" size={11} color={COLORS.text3}/><Text style={lcs.dist}>{dist}</Text></View>}
+        <TouchableOpacity style={lcs.navBtn} onPress={onNav}><Text style={lcs.navTxt}>Ir</Text></TouchableOpacity>
       </View>
     </TouchableOpacity>
   );
 }
 
-// === GAS MODAL (all fuels, color coded) ===
+// === GAS MODAL ===
 function GasModal({ station, onClose, onNavigate, onFavChange }) {
   const [isFav, setIsFav] = React.useState(false);
   const FAV_KEY = 'fav_stations';
-
   React.useEffect(() => {
     AsyncStorage.getItem(FAV_KEY).then(raw => {
       const favs = raw ? JSON.parse(raw) : [];
@@ -1429,72 +904,64 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
       let favs = raw ? JSON.parse(raw) : [];
       if (isFav) {
         favs = favs.filter(f => f.id !== station.id);
-        // Remove from server too
         apiDelete(`/api/users/me/favorites/${station.id}`).catch(() => {});
       } else {
         const newFav = { id: station.id, name: station.name, city: station.city, lat: station.lat, lng: station.lng };
         favs.push(newFav);
-        if (favs.length > 20) favs = favs.slice(-20); // keep last 20
-        // Save to server for persistence across devices
+        if (favs.length > 20) favs = favs.slice(-20);
         apiPost('/api/users/me/favorites', {
           station_id: String(station.id), station_name: station.name,
           station_city: station.city, lat: station.lat, lng: station.lng,
         }).catch(() => {});
       }
       await AsyncStorage.setItem(FAV_KEY, JSON.stringify(favs));
-      setIsFav(!isFav);
-      onFavChange?.(); // reload favStations in parent MapScreen
+      setIsFav(!isFav); onFavChange?.();
     } catch(_) {}
   }
-  const fuels = Object.entries(station.prices||{}).filter(([,v])=>v&&v>0);
 
-  // Main fuel = G95 first, then Diesel — NOT minimum price
-  const mainFuelKey = station.prices?.g95 ? 'g95'
-    : station.prices?.diesel ? 'diesel'
-    : station.prices?.g98 ? 'g98'
-    : fuels[0]?.[0] || null;
+  const fuels = Object.entries(station.prices||{}).filter(([,v])=>v&&v>0);
+  const mainFuelKey = station.prices?.g95?'g95':station.prices?.diesel?'diesel':station.prices?.g98?'g98':fuels[0]?.[0]||null;
   const mainPrice = mainFuelKey ? station.prices[mainFuelKey] : null;
   const mainCol = mainPrice ? gasPriceColor(mainPrice) : {bg:'#6B7280',text:'#fff',label:'Sin datos'};
+
   return (
     <View style={gcs.wrap}>
       <View style={gcs.handle}/>
       <View style={gcs.header}>
-        <View style={[gcs.iconBg,{backgroundColor:'#FEF3C7'}]}><Text style={{fontSize:28}}>⛽</Text></View>
+        <View style={[gcs.iconBg,{backgroundColor:'#FEF3C7'}]}><Ionicons name="speedometer-outline" size={28} color="#F59E0B"/></View>
         <View style={{flex:1}}>
           <Text style={gcs.title} numberOfLines={2}>{
-            station.name && station.name === station.name.toUpperCase()
-              ? station.name.toLowerCase().replace(/\b\w/g, c => c.toUpperCase())
-              : station.name||'Gasolinera'
+            station.name&&station.name===station.name.toUpperCase()
+              ? station.name.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase()) : station.name||'Gasolinera'
           }</Text>
           <Text style={gcs.sub} numberOfLines={1}>{station.address}</Text>
-          {station.schedule&&<Text style={gcs.hours}>🕐 {station.schedule}</Text>}
+          {station.schedule&&<View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:1}}><Ionicons name="time-outline" size={11} color={COLORS.text3}/><Text style={gcs.hours}>{station.schedule}</Text></View>}
         </View>
-        <TouchableOpacity onPress={toggleFav} style={[gcs.closeBtn, { backgroundColor: isFav ? '#FEF2F2' : COLORS.bg3, marginRight: 6 }]}>
-          <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={20} color={isFav ? COLORS.danger : COLORS.text2}/>
+        <TouchableOpacity onPress={toggleFav} style={[gcs.closeBtn,{backgroundColor:isFav?'#FEF2F2':COLORS.bg3,marginRight:6}]}>
+          <Ionicons name={isFav?'heart':'heart-outline'} size={20} color={isFav?COLORS.danger:COLORS.text2}/>
         </TouchableOpacity>
         <TouchableOpacity onPress={onClose} style={gcs.closeBtn}><Ionicons name="close" size={20} color={COLORS.text2}/></TouchableOpacity>
       </View>
+
       <ScrollView contentContainerStyle={{padding:16,paddingBottom:40}}>
-        {/* Hero price — always G95 or Diesel, never GLP */}
-        {mainPrice > 0 && !isNaN(mainPrice) && (
+        {mainPrice>0&&!isNaN(mainPrice)&&(
           <View style={[gcs.hero,{backgroundColor:mainCol.bg}]}>
             <Text style={[gcs.heroLbl,{color:mainCol.text}]}>{FUEL_LABELS[mainFuelKey]||mainFuelKey}</Text>
-            <Text style={[gcs.heroPrice,{color:mainCol.text}]}>{mainPrice > 0 && !isNaN(mainPrice) ? mainPrice.toFixed(3)+"€/L" : "N/D"}</Text>
+            <Text style={[gcs.heroPrice,{color:mainCol.text}]}>{mainPrice?.toFixed(3).replace(".",",")}€/L</Text>
             <Text style={[gcs.heroTag,{color:mainCol.text}]}>{mainCol.label}</Text>
           </View>
         )}
-        {/* All fuels grid */}
         <Text style={gcs.sectionTitle}>Todos los carburantes</Text>
-        <Text style={gcs.sectionNote}>Fuente: Ministerio de Energía de España · Actualización diaria</Text>
+        <Text style={gcs.sectionNote}>Fuente: Ministerio de Energía · Actualización diaria</Text>
         <View style={gcs.grid}>
           {fuels.map(([key,price])=>{
-            const col = gasPriceColor(price);
+            const col=gasPriceColor(price);
             return (
               <View key={key} style={gcs.fuelCard}>
                 <View style={[gcs.fuelBar,{backgroundColor:col.bg}]}/>
                 <View style={{padding:10}}>
                   <Text style={gcs.fuelName}>{FUEL_LABELS[key]||key}</Text>
-                  <Text style={[gcs.fuelPrice,{color:col.bg}]}>{price > 0 && !isNaN(price) ? price.toFixed(3)+"€" : "N/D"}</Text>
+                  <Text style={[gcs.fuelPrice,{color:col.bg}]}>{price?.toFixed(3).replace(".",",")}€</Text>
                   <Text style={gcs.fuelUnit}>por litro</Text>
                   <View style={[gcs.fuelBadge,{backgroundColor:col.bg+'25'}]}>
                     <Text style={[gcs.fuelBadgeTxt,{color:col.bg}]}>{col.label}</Text>
@@ -1503,25 +970,17 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
               </View>
             );
           })}
-          {fuels.length===0&&<Text style={{color:COLORS.text3,fontSize:13}}>Sin datos de precios disponibles</Text>}
+          {fuels.length===0&&<Text style={{color:COLORS.text3,fontSize:13}}>Sin datos de precios</Text>}
         </View>
+
         <TouchableOpacity style={gcs.navBtn} onPress={()=>{onClose();onNavigate(station.lat,station.lng,station.name);}}>
           <Ionicons name="navigate" size={18} color="#fff"/>
           <Text style={gcs.navBtnTxt}>Cómo llegar</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={[gcs.navBtn,{backgroundColor:COLORS.bg3,marginTop:8}]}
-          onPress={async ()=>{
-            const msg = `⛽ ${station.name}\nG95: ${station.prices?.g95?.toFixed(3)||'N/D'}€ | Diesel: ${station.prices?.diesel?.toFixed(3)||'N/D'}€\nVía MapaTacaño 💰`;
-            try {
-              if (typeof navigator !== 'undefined' && navigator.share) {
-                await navigator.share({ title: station.name, text: msg });
-              } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                await navigator.clipboard.writeText(msg);
-              } else {
-                Share.share({ message: msg }).catch(()=>{});
-              }
-            } catch(_) {}
+        <TouchableOpacity style={[gcs.navBtn,{backgroundColor:COLORS.bg3,marginTop:8}]}
+          onPress={async()=>{
+            const msg=`${station.name}\nG95: ${station.prices?.g95?.toFixed(3).replace(".",",")||'N/D'}€ | Diesel: ${station.prices?.diesel?.toFixed(3).replace(".",",")||'N/D'}€\nVía Mapa Tacaño`;
+            try { Share.share({message:msg}).catch(()=>{}); } catch(_) {}
           }}>
           <Ionicons name="share-outline" size={18} color={COLORS.text2}/>
           <Text style={[gcs.navBtnTxt,{color:COLORS.text2}]}>Compartir precio</Text>
@@ -1531,37 +990,34 @@ function GasModal({ station, onClose, onNavigate, onFavChange }) {
   );
 }
 
-// === PLACE MODAL (bars, supermarkets, etc.) ===
+// === PLACE MODAL ===
 function PlaceModal({ place, catKey, onClose, onNavigate, isLoggedIn, onAuthNeeded, onProposePrice }) {
-  const catInfoKey = place.category === 'restaurante' && catKey
-    ? `restaurante_${catKey === 'cafe' ? 'cafe' : catKey === 'cerveza' ? 'cerveza' : 'menu'}`
-    : place.category;
-  const info = CATEGORY_INFO[catInfoKey] || CATEGORY_INFO[place.category] || CATEGORY_INFO.default;
+  const catInfoKey = place.category==='restaurante'&&catKey
+    ? `restaurante_${catKey==='cafe'?'cafe':catKey==='cerveza'?'cerveza':'menu'}` : place.category;
+  const info = CATEGORY_INFO[catInfoKey]||CATEGORY_INFO[place.category]||CATEGORY_INFO.default;
   const prices = place.prices||[];
   const [history, setHistory] = React.useState({});
-
   React.useEffect(() => {
-    apiGet(`/api/places/${place.id}/price-history`).then(d => {
-      if (d?.history) setHistory(d.history);
-    }).catch(() => {});
+    apiGet(`/api/places/${place.id}/price-history`).then(d=>{if(d?.history)setHistory(d.history);}).catch(()=>{});
   }, [place.id]);
+
   return (
     <View style={pcs.wrap}>
       <View style={pcs.handle}/>
       <View style={pcs.header}>
-        <View style={[pcs.iconBg,{backgroundColor:info.bg}]}><Text style={{fontSize:26}}>{info.emoji}</Text></View>
+        <View style={[pcs.iconBg,{backgroundColor:info.bg}]}><Ionicons name={info.icon||'location-outline'} size={26} color={info.color||COLORS.text2}/></View>
         <View style={{flex:1}}>
           <Text style={pcs.title} numberOfLines={2}>{place.name}</Text>
           <Text style={pcs.sub}>{info.label}{place.address?` · ${place.address}`:''}</Text>
-          {place.bestFor&&<Text style={pcs.bestFor}>{place.bestFor}</Text>}
         </View>
         <TouchableOpacity onPress={onClose} style={pcs.closeBtn}><Ionicons name="close" size={20} color={COLORS.text2}/></TouchableOpacity>
       </View>
+
       <ScrollView contentContainerStyle={{padding:16,paddingBottom:40}}>
         <View style={pcs.actions}>
-          <TouchableOpacity style={pcs.actionBtn} onPress={() => place && onProposePrice(place)}>
+          <TouchableOpacity style={pcs.actionBtn} onPress={()=>place&&onProposePrice(place)}>
             <Ionicons name="pricetag-outline" size={18} color={COLORS.primary}/>
-            <Text style={pcs.actionTxt}>💰 Ver precios y cambios</Text>
+            <Text style={pcs.actionTxt}>Ver precios</Text>
           </TouchableOpacity>
           <TouchableOpacity style={pcs.actionBtnNav} onPress={()=>{onClose();onNavigate(place.lat,place.lng,place.name);}}>
             <Ionicons name="navigate" size={18} color="#fff"/>
@@ -1570,76 +1026,50 @@ function PlaceModal({ place, catKey, onClose, onNavigate, isLoggedIn, onAuthNeed
         </View>
 
         {/* Representative price banner */}
-        {place.repPrice != null && prices.length > 0 && (() => {
-          const cat = place.category;
-          // Label específico por subcategoría de restaurante
-          const restLabel = { cafe:'precio café', cerveza:'precio caña', restaurante_menu:'precio menú del día' };
-          const label = cat==='restaurante' ? (restLabel[catKey] || 'precio medio plato')
-            : cat==='farmacia' ? 'precio medio medicamento'
-            : cat==='supermercado' ? 'cesta semanal estimada'
-            : cat==='gimnasio' ? 'cuota mensual desde'
-            : 'precio medio';
-          const detail = place.repContext ||
-            (cat==='restaurante'
-            ? `Media de ${prices.filter(p=>p.price>=3).length || prices.length} platos · media España ~12€`
-            : cat==='farmacia'
-            ? `Media de ${prices.filter(p=>p.price>=1).length || prices.length} medicamentos · media España ~4-8€`
-            : cat==='supermercado'
-            ? `Estimado sobre ${prices.length} productos reportados · media España ~100€/semana`
-            : cat==='gimnasio'
-            ? `${prices.length} tarifas reportadas · media España ~25-40€/mes`
-            : `${prices.length} productos reportados por la comunidad`);
-          // Color refs per category
-          // Referencia de precio por subcategoría
-          const REST_REF = { cafe:1.4, cerveza:2.2, restaurante_menu:12 };
-          const REF = {restaurante: REST_REF[catKey] || 12, farmacia:5, supermercado:100, gimnasio:30};
-          const ref = REF[cat];
-          const priceColor = !ref ? COLORS.primary
-            : place.repPrice < ref*0.85 ? '#16A34A'
-            : place.repPrice > ref*1.15 ? '#DC2626'
-            : '#D97706';
-          const priceTag = !ref ? null
-            : place.repPrice < ref*0.85 ? '🟢 Barato'
-            : place.repPrice > ref*1.15 ? '🔴 Caro'
-            : '🟡 Precio medio';
+        {place.repPrice!=null&&prices.length>0&&(()=>{
+          const cat=place.category;
+          const restLabel={cafe:'precio café',cerveza:'precio caña',restaurante_menu:'precio menú del día'};
+          const label=cat==='restaurante'?(restLabel[catKey]||'precio medio'):cat==='farmacia'?'precio medio medicamento':cat==='gimnasio'?'cuota mensual desde':'precio medio';
+          const REST_REF={cafe:1.4,cerveza:2.2,restaurante_menu:12};
+          const REF={restaurante:REST_REF[catKey]||12,farmacia:5,supermercado:100,gimnasio:30};
+          const ref=REF[cat];
+          const priceColor=!ref?COLORS.primary:place.repPrice<ref*0.85?'#16A34A':place.repPrice>ref*1.15?'#DC2626':'#D97706';
+          const priceTag=!ref?null:place.repPrice<ref*0.85?'🟢 Barato':place.repPrice>ref*1.15?'🔴 Caro':'🟡 Precio medio';
           return (
             <View style={{backgroundColor:priceColor+'15',borderRadius:12,padding:12,marginBottom:14,flexDirection:'row',alignItems:'center',gap:10,borderWidth:1,borderColor:priceColor+'44'}}>
-              <Text style={{fontSize:28}}>💰</Text>
+              <Ionicons name="wallet-outline" size={24} color={COLORS.primary}/>
               <View style={{flex:1}}>
                 <View style={{flexDirection:'row',alignItems:'center',gap:8,flexWrap:'wrap'}}>
-                  <Text style={{fontSize:20,fontWeight:'800',color:priceColor}}>{(place.repPrice||0).toFixed(2)}€</Text>
+                  <Text style={{fontSize:20,fontWeight:'800',color:priceColor}}>{(place.repPrice||0)?.toFixed(2).replace(".",",")}€</Text>
                   <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text2}}>{label}</Text>
-                  {priceTag && <View style={{backgroundColor:priceColor+'22',borderRadius:99,paddingHorizontal:8,paddingVertical:2,borderWidth:1,borderColor:priceColor+'44'}}>
+                  {priceTag&&<View style={{backgroundColor:priceColor+'22',borderRadius:99,paddingHorizontal:8,paddingVertical:2}}>
                     <Text style={{fontSize:10,fontWeight:'700',color:priceColor}}>{priceTag}</Text>
                   </View>}
                 </View>
-                <Text style={{fontSize:11,color:COLORS.text3,marginTop:2}}>{detail}</Text>
               </View>
             </View>
           );
         })()}
-        {/* Price history panel */}
-        {Object.keys(history).length > 0 && (
+
+        {/* Price history */}
+        {Object.keys(history).length>0&&(
           <View style={{marginBottom:16}}>
-            <Text style={pcs.sectionTitle}>📈 TENDENCIA DE PRECIOS</Text>
-            {Object.entries(history).slice(0,4).map(([prod, pts]) => {
-              if (!pts || pts.length < 2) return null;
-              const last = pts[pts.length-1]?.price;
-              const prev = pts[pts.length-2]?.price;
-              if (last == null || prev == null) return null;
-              const diff = last - prev;
-              const min = pts.reduce((m,p) => Math.min(m, p.price??Infinity), Infinity);
-              const max = pts.reduce((m,p) => Math.max(m, p.price??-Infinity), -Infinity);
+            <View style={{flexDirection:'row',alignItems:'center',gap:4,marginBottom:12}}><Ionicons name="trending-up-outline" size={14} color={COLORS.success}/><Text style={pcs.sectionTitle}>TENDENCIA DE PRECIOS</Text></View>
+            {Object.entries(history).slice(0,4).map(([prod,pts])=>{
+              if(!pts||pts.length<2) return null;
+              const last=pts[pts.length-1]?.price, prev=pts[pts.length-2]?.price;
+              if(last==null||prev==null) return null;
+              const diff=last-prev;
               return (
                 <View key={prod} style={{flexDirection:'row',alignItems:'center',paddingVertical:8,borderBottomWidth:0.5,borderBottomColor:COLORS.border,gap:10}}>
                   <View style={{flex:1}}>
                     <Text style={{fontSize:13,fontWeight:'600',color:COLORS.text}} numberOfLines={1}>{prod}</Text>
-                    <Text style={{fontSize:10,color:COLORS.text3,marginTop:1}}>min {(min||0).toFixed(2)}€ · max {(max||0).toFixed(2)}€ · {pts.length} reportes</Text>
+                    <Text style={{fontSize:10,color:COLORS.text3,marginTop:1}}>{pts.length} reportes</Text>
                   </View>
                   <View style={{alignItems:'flex-end'}}>
-                    <Text style={{fontSize:16,fontWeight:'800',color:COLORS.text}}>{(last||0).toFixed(2)}€</Text>
-                    <Text style={{fontSize:11,fontWeight:'700',color: Math.abs(diff)<0.01 ? COLORS.text3 : diff>0 ? COLORS.danger : COLORS.success}}>
-                      {Math.abs(diff)<0.01 ? '—' : diff>0 ? `↑${(diff||0).toFixed(2)}€` : `↓${Math.abs(diff||0).toFixed(2)}€`}
+                    <Text style={{fontSize:16,fontWeight:'800',color:COLORS.text}}>{(last||0)?.toFixed(2).replace(".",",")}€</Text>
+                    <Text style={{fontSize:11,fontWeight:'700',color:Math.abs(diff)<0.01?COLORS.text3:diff>0?COLORS.danger:COLORS.success}}>
+                      {Math.abs(diff)<0.01?'—':diff>0?`↑${diff?.toFixed(2).replace(".",",")}€`:`↓${Math.abs(diff)?.toFixed(2).replace(".",",")}€`}
                     </Text>
                   </View>
                 </View>
@@ -1652,81 +1082,72 @@ function PlaceModal({ place, catKey, onClose, onNavigate, isLoggedIn, onAuthNeed
         {prices.length===0
           ? <View style={pcs.emptyBox}><Text style={pcs.emptyTxt}>Sin precios aún{'\n'}¡Sé el primero en reportar!</Text></View>
           : prices.map(p=>(
-            <TouchableOpacity key={p.id} style={pcs.priceRow} onPress={() => onProposePrice(place, p.product)} activeOpacity={0.7}>
+            <TouchableOpacity key={p.id} style={pcs.priceRow} onPress={()=>onProposePrice(place,p.product)} activeOpacity={0.7}>
               <View style={{flex:1}}>
                 <Text style={pcs.product}>{p.product}</Text>
-                <Text style={pcs.reporter}>Por {p.users?.name || p.reporter_name || 'la comunidad'} · {timeAgo(p.reported_at)}</Text>
+                <Text style={pcs.reporter}>Por {p.users?.name||p.reporter_name||'la comunidad'} · {timeAgo(p.reported_at)}</Text>
                 <View style={[pcs.statusBadge,{backgroundColor:p.status==='verified'?COLORS.successLight:COLORS.warningLight}]}>
-                  <Text style={[pcs.statusTxt,{color:p.status==='verified'?COLORS.success:COLORS.warning}]}>{p.status==='verified'?'✅ Verificado':'⏳ Pendiente · toca para proponer cambio'}</Text>
+                  <View style={{flexDirection:'row',alignItems:'center',gap:3}}>
+                    <Ionicons name={p.status==='verified'?'checkmark-circle':'time-outline'} size={12} color={p.status==='verified'?COLORS.success:COLORS.warning}/>
+                    <Text style={[pcs.statusTxt,{color:p.status==='verified'?COLORS.success:COLORS.warning}]}>{p.status==='verified'?'Verificado':'Pendiente'}</Text>
+                  </View>
                 </View>
               </View>
               <View style={{alignItems:'flex-end',gap:4}}>
-                <Text style={pcs.price}>{p.price != null ? p.price.toFixed(2) : '—'}€<Text style={pcs.unit}>/{p.unit||'ud'}</Text></Text>
-                <Ionicons name="chevron-forward" size={12} color={COLORS.text3}/>
+                <Text style={pcs.price}>{p.price!=null?p.price?.toFixed(2).replace(".",","):'—'}€<Text style={pcs.unit}>/{p.unit||'ud'}</Text></Text>
               </View>
             </TouchableOpacity>
           ))
         }
-        <TouchableOpacity style={pcs.addPriceBtn} onPress={() => onProposePrice(place, null)}>
+        <TouchableOpacity style={pcs.addPriceBtn} onPress={()=>onProposePrice(place,null)}>
           <Ionicons name="add-circle-outline" size={18} color={COLORS.primary}/>
           <Text style={{fontSize:13,color:COLORS.primary,fontWeight:'700'}}>Añadir nuevo precio</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,paddingVertical:12,marginTop:8}}
+          onPress={()=>{
+            if(!isLoggedIn){onAuthNeeded();return;}
+            Alert.alert('Reportar sitio','¿Qué problema tiene este sitio?',[
+              {text:'Cancelar'},
+              {text:'Ubicación incorrecta',onPress:()=>apiPost('/api/reports',{type:'place',target_id:place.id,reason:'Ubicación incorrecta'}).then(()=>Alert.alert('Reportado','Gracias. Un admin lo revisará.'))},
+              {text:'No existe / Cerrado',style:'destructive',onPress:()=>apiPost('/api/reports',{type:'place',target_id:place.id,reason:'No existe o ha cerrado'}).then(()=>Alert.alert('Reportado','Gracias. Un admin lo revisará.'))},
+            ]);
+          }}>
+          <Ionicons name="flag-outline" size={14} color={COLORS.text3}/>
+          <Text style={{fontSize:12,color:COLORS.text3,fontWeight:'600'}}>Reportar sitio</Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
   );
 }
 
+// ══════════ STYLES ══════════
 const s = StyleSheet.create({
   safe:{flex:1,backgroundColor:COLORS.bg2},
-  header:{backgroundColor:COLORS.bg2,borderBottomWidth:0.5,borderBottomColor:COLORS.border},
-  headerRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:14,paddingTop:12,paddingBottom:8},
-  logo:{fontSize:17,fontWeight:'700',color:COLORS.primary},
-  rightRow:{flexDirection:'row',alignItems:'center',gap:8},
+  header:{backgroundColor:COLORS.bg2,borderBottomWidth:0.5,borderBottomColor:COLORS.border,paddingBottom:4},
+  headerRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:14,paddingTop:10,paddingBottom:6},
+  logo:{fontSize:18,fontWeight:'800',color:COLORS.primary},
+  rightRow:{flexDirection:'row',alignItems:'center',gap:10},
   toggle:{flexDirection:'row',backgroundColor:COLORS.bg,borderRadius:99,padding:2,borderWidth:1,borderColor:COLORS.border},
-  togBtn:{flexDirection:'row',alignItems:'center',gap:3,paddingHorizontal:9,paddingVertical:5,borderRadius:99},
+  togBtn:{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:6,borderRadius:99},
   togBtnOn:{backgroundColor:COLORS.bg2,shadowColor:'#000',shadowOpacity:0.08,shadowRadius:3,elevation:2},
-  togTxt:{fontSize:12,fontWeight:'500',color:COLORS.text3},
-  filterIconBtn:{padding:4},
-  catBtn:{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:5,borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg},
-  catBtnOn:{backgroundColor:COLORS.primary,borderColor:COLORS.primary},
-  catEmoji:{fontSize:13},catTxt:{fontSize:12,fontWeight:'500',color:COLORS.text2},
-  filtersPanel:{backgroundColor:COLORS.bg,marginHorizontal:12,marginBottom:8,borderRadius:14,padding:14,borderWidth:1,borderColor:COLORS.border},
-  filterLabel:{fontSize:12,fontWeight:'700',color:COLORS.text,marginBottom:6,marginTop:8},
-  radRow:{flexDirection:'row',flexWrap:'wrap',gap:6,marginBottom:4},
-  radBtn:{paddingHorizontal:12,paddingVertical:6,borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg2},
-  radBtnOn:{backgroundColor:COLORS.primary,borderColor:COLORS.primary},
-  radTxt:{fontSize:13,fontWeight:'600',color:COLORS.text2},
-  sortBtn:{paddingHorizontal:10,paddingVertical:6,borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg2},
-  sortBtnOn:{backgroundColor:COLORS.primary,borderColor:COLORS.primary},
-  sortTxt:{fontSize:12,fontWeight:'600',color:COLORS.text2},
-  productRow:{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg2,borderRadius:10,borderWidth:1,borderColor:COLORS.border,paddingHorizontal:10,paddingVertical:8,gap:6},
-  productInput:{flex:1,fontSize:14,color:COLORS.text},
-  quickProd:{paddingHorizontal:10,paddingVertical:5,borderRadius:99,borderWidth:1,borderColor:COLORS.border,backgroundColor:COLORS.bg2},
-  quickProdOn:{backgroundColor:COLORS.primary,borderColor:COLORS.primary},
-  quickProdTxt:{fontSize:12,color:COLORS.text2},
-  fuelBtn:{paddingHorizontal:12,paddingVertical:7,borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg2},
-  fuelBtnTxt:{fontSize:12,color:COLORS.text2},
-  fuelNote:{fontSize:11,color:COLORS.text3,marginTop:6,lineHeight:16,fontStyle:'italic'},
-  fuelsGrid:{flexDirection:'row',flexWrap:'wrap',gap:8,marginBottom:6},
-  fuelCard:{flexDirection:'row',alignItems:'center',gap:6,paddingHorizontal:12,paddingVertical:8,borderRadius:10,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg2},
-  fuelCardDot:{width:8,height:8,borderRadius:4},
-  fuelCardTxt:{fontSize:13,fontWeight:'500',color:COLORS.text2},
-  fuelInfo:{flexDirection:'row',alignItems:'flex-start',gap:6,backgroundColor:COLORS.primaryLight,borderRadius:8,padding:8,marginTop:4},
-  fuelInfoTxt:{flex:1,fontSize:11,color:COLORS.primary,lineHeight:16},
+  togTxt:{fontSize:12,fontWeight:'600',color:COLORS.text3},
+  filterIconBtn:{width:36,height:36,borderRadius:18,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'},
+  filterBadgeRow:{flexDirection:'row',alignItems:'center',gap:5,marginHorizontal:14,marginBottom:6,backgroundColor:COLORS.primaryLight,borderRadius:99,paddingHorizontal:12,paddingVertical:6,alignSelf:'flex-start',borderWidth:1,borderColor:COLORS.primary+'33'},
 });
 
 const ms = StyleSheet.create({
   marker:{alignItems:'center',borderRadius:99,borderWidth:2.5,paddingHorizontal:5,paddingVertical:3,minWidth:34,shadowColor:'#000',shadowOpacity:0.2,shadowRadius:3,elevation:3},
-  markerEmoji:{fontSize:14},markerPrice:{fontSize:9,fontWeight:'700',color:COLORS.text},
+  markerEmoji:{fontSize:14},
+  markerPrice:{fontSize:9,fontWeight:'700',color:COLORS.text},
   gasMarker:{alignItems:'center',borderRadius:99,borderWidth:2,borderColor:'#fff',paddingHorizontal:5,paddingVertical:3,minWidth:40,shadowColor:'#000',shadowOpacity:0.25,shadowRadius:4,elevation:4},
-  gasEmoji:{fontSize:13},gasPrice:{fontSize:9,fontWeight:'700',color:'#fff'},
+  gasEmoji:{fontSize:13},
+  gasPrice:{fontSize:9,fontWeight:'700',color:'#fff'},
   loadBar:{position:'absolute',top:10,left:12,right:12,backgroundColor:'rgba(255,255,255,0.97)',borderRadius:10,padding:10,flexDirection:'row',alignItems:'center',gap:8,shadowColor:'#000',shadowOpacity:0.1,shadowRadius:6,elevation:4},
   loadTxt:{fontSize:12,color:COLORS.text2},
   legend:{position:'absolute',bottom:16,left:12,flexDirection:'row',alignItems:'center',gap:10,backgroundColor:'rgba(255,255,255,0.97)',borderRadius:10,paddingHorizontal:12,paddingVertical:8,shadowColor:'#000',shadowOpacity:0.1,shadowRadius:6,elevation:3},
-  legendItem:{flexDirection:'row',alignItems:'center',gap:4},legendDot:{width:10,height:10,borderRadius:5},
-  legendTxt:{fontSize:11,color:COLORS.text2,fontWeight:'500'},legendCount:{fontSize:10,color:COLORS.text3,marginLeft:2},
-  legendSep:{width:0.5,height:14,backgroundColor:COLORS.border,marginHorizontal:4},
-  legendStat:{fontSize:11,fontWeight:'700',color:COLORS.text},
+  legendItem:{flexDirection:'row',alignItems:'center',gap:4},
+  legendDot:{width:10,height:10,borderRadius:5},
+  legendTxt:{fontSize:11,color:COLORS.text2,fontWeight:'500'},
   fab:{position:'absolute',bottom:16,right:16,width:52,height:52,borderRadius:99,backgroundColor:COLORS.primary,alignItems:'center',justifyContent:'center',shadowColor:'#000',shadowOpacity:0.25,shadowRadius:8,elevation:6},
 });
 
@@ -1736,7 +1157,6 @@ const lcs = StyleSheet.create({
   info:{flex:1,gap:2},
   name:{fontSize:15,fontWeight:'600',color:COLORS.text},
   sub:{fontSize:12,color:COLORS.text3},
-  bestFor:{fontSize:12,color:COLORS.primary,fontWeight:'600',marginTop:1},
   pricePill:{alignSelf:'flex-start',borderRadius:99,paddingHorizontal:8,paddingVertical:2,marginTop:2},
   pricePillTxt:{fontSize:11,fontWeight:'700'},
   right:{alignItems:'flex-end',gap:6},
@@ -1746,29 +1166,39 @@ const lcs = StyleSheet.create({
 });
 
 const gcs = StyleSheet.create({
-  wrap:{flex:1,backgroundColor:COLORS.bg2},handle:{width:40,height:4,borderRadius:99,backgroundColor:COLORS.border,alignSelf:'center',marginTop:10},
+  wrap:{flex:1,backgroundColor:COLORS.bg2},
+  handle:{width:40,height:4,borderRadius:99,backgroundColor:COLORS.border,alignSelf:'center',marginTop:10},
   header:{flexDirection:'row',alignItems:'center',gap:12,padding:16,borderBottomWidth:0.5,borderBottomColor:COLORS.border},
   iconBg:{width:52,height:52,borderRadius:14,alignItems:'center',justifyContent:'center'},
-  title:{fontSize:17,fontWeight:'700',color:COLORS.text,lineHeight:22},sub:{fontSize:12,color:COLORS.text2,marginTop:2},
-  hours:{fontSize:11,color:COLORS.text3,marginTop:1},closeBtn:{width:32,height:32,borderRadius:99,backgroundColor:COLORS.bg,alignItems:'center',justifyContent:'center'},
+  title:{fontSize:17,fontWeight:'700',color:COLORS.text,lineHeight:22},
+  sub:{fontSize:12,color:COLORS.text2,marginTop:2},
+  hours:{fontSize:11,color:COLORS.text3,marginTop:1},
+  closeBtn:{width:32,height:32,borderRadius:99,backgroundColor:COLORS.bg,alignItems:'center',justifyContent:'center'},
   hero:{borderRadius:16,padding:18,alignItems:'center',marginBottom:18},
-  heroLbl:{fontSize:14,fontWeight:'600',opacity:0.9},heroPrice:{fontSize:40,fontWeight:'800',marginVertical:4},heroTag:{fontSize:13,fontWeight:'700'},
+  heroLbl:{fontSize:14,fontWeight:'600',opacity:0.9},
+  heroPrice:{fontSize:40,fontWeight:'800',marginVertical:4},
+  heroTag:{fontSize:13,fontWeight:'700'},
   sectionTitle:{fontSize:11,fontWeight:'700',color:COLORS.text3,letterSpacing:0.5,marginBottom:4},
   sectionNote:{fontSize:11,color:COLORS.text3,marginBottom:12},
   grid:{flexDirection:'row',flexWrap:'wrap',gap:10,marginBottom:20},
   fuelCard:{width:'47%',borderRadius:12,overflow:'hidden',backgroundColor:COLORS.bg2,borderWidth:0.5,borderColor:COLORS.border},
-  fuelBar:{height:5},fuelName:{fontSize:13,fontWeight:'700',color:COLORS.text,marginBottom:2},
-  fuelPrice:{fontSize:24,fontWeight:'800'},fuelUnit:{fontSize:11,color:COLORS.text3,marginBottom:6},
-  fuelBadge:{alignSelf:'flex-start',borderRadius:99,paddingHorizontal:8,paddingVertical:2},fuelBadgeTxt:{fontSize:11,fontWeight:'600'},
-  navBtn:{backgroundColor:COLORS.primary,borderRadius:99,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,padding:14},navBtnTxt:{color:'#fff',fontWeight:'700',fontSize:15},
+  fuelBar:{height:5},
+  fuelName:{fontSize:13,fontWeight:'700',color:COLORS.text,marginBottom:2},
+  fuelPrice:{fontSize:24,fontWeight:'800'},
+  fuelUnit:{fontSize:11,color:COLORS.text3,marginBottom:6},
+  fuelBadge:{alignSelf:'flex-start',borderRadius:99,paddingHorizontal:8,paddingVertical:2},
+  fuelBadgeTxt:{fontSize:11,fontWeight:'600'},
+  navBtn:{backgroundColor:COLORS.primary,borderRadius:99,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,padding:14},
+  navBtnTxt:{color:'#fff',fontWeight:'700',fontSize:15},
 });
 
 const pcs = StyleSheet.create({
-  wrap:{flex:1,backgroundColor:COLORS.bg2},handle:{width:40,height:4,borderRadius:99,backgroundColor:COLORS.border,alignSelf:'center',marginTop:10},
+  wrap:{flex:1,backgroundColor:COLORS.bg2},
+  handle:{width:40,height:4,borderRadius:99,backgroundColor:COLORS.border,alignSelf:'center',marginTop:10},
   header:{flexDirection:'row',alignItems:'center',gap:12,padding:16,borderBottomWidth:0.5,borderBottomColor:COLORS.border},
   iconBg:{width:48,height:48,borderRadius:12,alignItems:'center',justifyContent:'center'},
-  title:{fontSize:17,fontWeight:'700',color:COLORS.text},sub:{fontSize:12,color:COLORS.text2,marginTop:2},
-  bestFor:{fontSize:12,color:COLORS.primary,fontWeight:'600',marginTop:3},
+  title:{fontSize:17,fontWeight:'700',color:COLORS.text},
+  sub:{fontSize:12,color:COLORS.text2,marginTop:2},
   closeBtn:{width:32,height:32,borderRadius:99,backgroundColor:COLORS.bg,alignItems:'center',justifyContent:'center'},
   actions:{flexDirection:'row',gap:10,marginBottom:18},
   actionBtn:{flex:1,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,backgroundColor:COLORS.primaryLight,borderRadius:99,padding:12,borderWidth:1,borderColor:COLORS.primary},
@@ -1776,14 +1206,14 @@ const pcs = StyleSheet.create({
   actionBtnNav:{flex:1,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,backgroundColor:COLORS.primary,borderRadius:99,padding:12},
   actionTxtNav:{fontSize:13,fontWeight:'600',color:'#fff'},
   sectionTitle:{fontSize:11,fontWeight:'700',color:COLORS.text3,letterSpacing:0.5,marginBottom:12},
-  emptyBox:{alignItems:'center',padding:28},emptyTxt:{fontSize:14,color:COLORS.text3,textAlign:'center',lineHeight:22},
+  emptyBox:{alignItems:'center',padding:28},
+  emptyTxt:{fontSize:14,color:COLORS.text3,textAlign:'center',lineHeight:22},
   priceRow:{flexDirection:'row',alignItems:'flex-start',paddingVertical:12,borderBottomWidth:0.5,borderBottomColor:COLORS.border,gap:10},
-  product:{fontSize:15,fontWeight:'600',color:COLORS.text},reporter:{fontSize:12,color:COLORS.text3,marginTop:2},
-  statusBadge:{alignSelf:'flex-start',borderRadius:99,paddingHorizontal:8,paddingVertical:3,marginTop:6},statusTxt:{fontSize:11,fontWeight:'600'},
-  price:{fontSize:22,fontWeight:'800',color:COLORS.primary},unit:{fontSize:11,fontWeight:'400',color:COLORS.text3},
+  product:{fontSize:15,fontWeight:'600',color:COLORS.text},
+  reporter:{fontSize:12,color:COLORS.text3,marginTop:2},
+  statusBadge:{alignSelf:'flex-start',borderRadius:99,paddingHorizontal:8,paddingVertical:3,marginTop:6},
+  statusTxt:{fontSize:11,fontWeight:'600'},
+  price:{fontSize:22,fontWeight:'800',color:COLORS.primary},
+  unit:{fontSize:11,fontWeight:'400',color:COLORS.text3},
   addPriceBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,margin:12,padding:12,backgroundColor:COLORS.primaryLight,borderRadius:12,borderWidth:1,borderColor:COLORS.primary+'44'},
-  fuelActiveBadge:{flexDirection:'row',alignItems:'center',borderRadius:99,borderWidth:1.5,paddingHorizontal:10,paddingVertical:5},
-  fuelActiveTxt:{fontSize:12,fontWeight:'700'},
 });
-
-

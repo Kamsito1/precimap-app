@@ -1,649 +1,449 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  Linking, ActivityIndicator, RefreshControl, Modal,
-  ScrollView, TextInput, KeyboardAvoidingView, Platform, Alert, Share, Image,
+  ActivityIndicator, RefreshControl, Modal, ScrollView, TextInput,
+  KeyboardAvoidingView, Platform, Alert, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-// expo-location cargado de forma diferida — import estático crashea en iOS/Hermes
-const getLocation = () => require('expo-location');
-import { COLORS, apiGet, apiPost, apiUpload, timeAgo, MONTHS_ES, openURL } from '../utils';
+import * as ImagePicker from 'expo-image-picker';
+import { COLORS, apiGet, apiPost, timeAgo, openURL, fmtP } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from '../components/AuthModal';
-import AdBanner from '../components/AdBanner';
+import CommentsModal from '../components/CommentsModal';
 
 const CATS = [
-  { key:'all',         label:'Todos',      emoji:'🎭' },
-  { key:'musica',      label:'Música',     emoji:'🎵' },
-  { key:'deporte',     label:'Deporte',    emoji:'⚽' },
-  { key:'cultura',     label:'Cultura',    emoji:'🏛️' },
-  { key:'festival',    label:'Festival',   emoji:'🎪' },
-  { key:'expo',        label:'Expo',       emoji:'🖼️' },
-  { key:'gastronomia', label:'Gastro',     emoji:'🍷' },
-  { key:'cine',        label:'Cine',       emoji:'🎬' },
-  { key:'teatro',      label:'Teatro',     emoji:'🎭' },
-  { key:'otro',        label:'Otros',      emoji:'📌' },
+  {key:'all',label:'Todos',icon:'apps-outline'},
+  {key:'musica',label:'Música',icon:'musical-notes-outline'},
+  {key:'deporte',label:'Deporte',icon:'football-outline'},
+  {key:'cultura',label:'Cultura',icon:'library-outline'},
+  {key:'festival',label:'Festival',icon:'sparkles-outline'},
+  {key:'expo',label:'Expo',icon:'images-outline'},
+  {key:'gastronomia',label:'Gastro',icon:'wine-outline'},
+  {key:'cine',label:'Cine',icon:'film-outline'},
+  {key:'teatro',label:'Teatro',icon:'mask-outline'},  
+  {key:'otro',label:'Otros',icon:'ellipsis-horizontal-outline'},
 ];
 
-const SORTS = [
-  { key:'date', label:'📅 Próximos' },
-  { key:'price', label:'💰 Más baratos' },
-];
-
-const SOURCES = [
-  { key:'all', label:'Todos', emoji:'🌐' },
-  { key:'user', label:'Comunidad', emoji:'👥' },
-  { key:'ayuntamiento', label:'Ayuntamiento', emoji:'🏛️' },
-];
+const CCAA_CITIES = {
+  'Andalucía':['Sevilla','Málaga','Córdoba','Granada','Almería','Cádiz','Jaén','Huelva','Jerez','Villafranca de Córdoba'],
+  'Aragón':['Zaragoza','Huesca','Teruel'],
+  'Asturias':['Oviedo','Gijón','Avilés'],
+  'Baleares':['Palma','Ibiza'],
+  'Canarias':['Las Palmas','Santa Cruz de Tenerife'],
+  'Cantabria':['Santander','Torrelavega'],
+  'C. La Mancha':['Toledo','Ciudad Real','Albacete'],
+  'C. y León':['Valladolid','Burgos','Salamanca','León'],
+  'Cataluña':['Barcelona','Tarragona','Lleida','Girona'],
+  'Extremadura':['Badajoz','Cáceres','Mérida'],
+  'Galicia':['Vigo','A Coruña','Santiago'],
+  'La Rioja':['Logroño'],
+  'Madrid':['Madrid','Alcalá de Henares','Móstoles','Getafe'],
+  'Murcia':['Murcia','Cartagena'],
+  'Navarra':['Pamplona'],
+  'País Vasco':['Bilbao','San Sebastián','Vitoria'],
+  'C. Valenciana':['Valencia','Alicante','Castellón'],
+};
 
 export default function EventsScreen() {
-  const { isLoggedIn, user } = useAuth();
+  const { isLoggedIn } = useAuth();
   const [events, setEvents] = useState([]);
   const [cat, setCat] = useState('all');
   const [sort, setSort] = useState('date');
-  const [source, setSource] = useState('all');
-  const [priceFilter, setPriceFilter] = useState('all');
-  const [search, setSearch] = useState('');
   const [city, setCity] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showCityPicker, setShowCityPicker] = useState(true);
+  const [selectedCCAA, setSelectedCCAA] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [commentsEvent, setCommentsEvent] = useState(null);
 
-  useEffect(() => { loadEvents(); }, [cat, sort, source, city]);
+  useEffect(() => { if (!showCityPicker) loadEvents(); }, [cat, sort, city, showCityPicker]);
 
-  // Auto-refresh cada 5 minutos
-  useEffect(() => {
-    const interval = setInterval(() => { loadEvents(); }, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [cat, sort, source, city, search]);
-
-  // Debounced search — skip initial render
-  const searchMounted = React.useRef(false);
-  useEffect(() => {
-    if (!searchMounted.current) { searchMounted.current = true; return; }
-    const t = setTimeout(() => loadEvents(), 400);
-    return () => clearTimeout(t);
-  }, [search]);
   async function loadEvents() {
+    setLoading(true);
     try {
-      let url = `/api/events?cat=${cat}&sort=${sort}`;
-      if (source !== 'all') url += `&source=${source}`;
+      let url = `/api/events?cat=${cat}&sort=${sort}&limit=20`;
       if (city) url += `&city=${encodeURIComponent(city)}`;
-      if (search.trim()) url += `&search=${encodeURIComponent(search.trim())}`;
       setEvents(await apiGet(url) || []);
     } catch(_) {} finally { setLoading(false); setRefreshing(false); }
   }
 
-  const onRefresh = useCallback(() => { setRefreshing(true); loadEvents(); }, [cat, sort, source, city, search]);
+  const onRefresh = useCallback(()=>{setRefreshing(true);loadEvents();},[cat,sort,city]);
 
-  const ayuntamientoCount = events.filter(e => e.source === 'ayuntamiento').length;
-  const userCount = events.filter(e => e.source === 'user').length;
-  const freeCount = events.filter(e => e.is_free).length;
-  const paidCount = events.filter(e => !e.is_free).length;
+  // ── CITY PICKER (CCAA → city selectors, no typing) ──
+  if (showCityPicker) {
+    return (
+      <SafeAreaView style={s.safe} edges={['top']}>
+        <View style={{flex:1,padding:16}}>
+          <View style={{alignItems:'center',marginBottom:20}}>
+            <Ionicons name="calendar" size={36} color={COLORS.primary}/>
+            <Text style={{fontSize:24,fontWeight:'800',color:COLORS.text,marginTop:8}}>Eventos</Text>
+            <Text style={{fontSize:14,color:COLORS.text3,marginTop:4}}>¿Dónde quieres buscar?</Text>
+          </View>
+          <TouchableOpacity style={{backgroundColor:COLORS.primary,borderRadius:14,padding:14,alignItems:'center',marginBottom:12}}
+            onPress={()=>{setCity('');setShowCityPicker(false);}}>
+            <Ionicons name="globe-outline" size={20} color="#fff"/>
+            <Text style={{fontSize:15,fontWeight:'700',color:'#fff',marginTop:4}}>Toda España</Text>
+          </TouchableOpacity>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={{backgroundColor:COLORS.bg2,borderRadius:14,padding:14,borderWidth:1,borderColor:COLORS.border}}>
+              {Object.keys(CCAA_CITIES).map(ccaa=>(
+                <View key={ccaa}>
+                  <TouchableOpacity style={{paddingHorizontal:12,paddingVertical:9,borderRadius:10,marginBottom:3,
+                    backgroundColor:selectedCCAA===ccaa?COLORS.primaryLight:COLORS.bg3,borderWidth:1,
+                    borderColor:selectedCCAA===ccaa?COLORS.primary:COLORS.border,
+                    flexDirection:'row',justifyContent:'space-between',alignItems:'center'}}
+                    onPress={()=>setSelectedCCAA(selectedCCAA===ccaa?null:ccaa)}>
+                    <Text style={{fontSize:13,fontWeight:'600',color:selectedCCAA===ccaa?COLORS.primary:COLORS.text}}>{ccaa}</Text>
+                    <Ionicons name={selectedCCAA===ccaa?'chevron-up':'chevron-down'} size={14} color={COLORS.text3}/>
+                  </TouchableOpacity>
+                  {selectedCCAA===ccaa&&(
+                    <View style={{flexDirection:'row',flexWrap:'wrap',gap:5,paddingTop:4,paddingLeft:8,paddingBottom:8}}>
+                      {CCAA_CITIES[ccaa].map(c=>(
+                        <TouchableOpacity key={c} style={{paddingHorizontal:10,paddingVertical:6,borderRadius:8,backgroundColor:COLORS.bg3,borderWidth:1,borderColor:COLORS.border}}
+                          onPress={()=>{setCity(c);setShowCityPicker(false);}}>
+                          <Text style={{fontSize:12,fontWeight:'500',color:COLORS.text2}}>{c}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </View>
+          </ScrollView>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
+      {/* Header */}
       <View style={s.header}>
-        {/* Title row */}
         <View style={s.headerRow}>
-          <View>
-            <Text style={s.title}>🎭 Eventos</Text>
-            <Text style={s.sub}>
-              {events.length > 0
-                ? `${events.length} próximos · ${freeCount} gratis · ${paidCount} de pago`
-                : 'Sin eventos — sé el primero en añadir uno'}
-            </Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+            <Ionicons name="calendar" size={20} color={COLORS.primary}/>
+            <Text style={{fontSize:18,fontWeight:'800',color:COLORS.text}}>Eventos</Text>
           </View>
-          <View style={s.headerBtns}>
-            <TouchableOpacity style={s.filterIconBtn} onPress={() => setShowFilters(!showFilters)}>
-              <Ionicons name="options-outline" size={20} color={showFilters ? COLORS.purple : COLORS.text2}/>
+          <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+            <TouchableOpacity style={s.headerBtn} onPress={()=>setShowSettings(true)}>
+              <Ionicons name="options-outline" size={20} color={COLORS.text2}/>
             </TouchableOpacity>
-            <TouchableOpacity style={s.addBtn} onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}>
-              <Ionicons name="add" size={18} color="#fff"/>
-              <Text style={s.addBtnTxt}>Añadir</Text>
+            <TouchableOpacity style={s.headerBtn} onPress={()=>{if(!isLoggedIn){setShowAuth(true);return;}setShowAdd(true);}}>
+              <Ionicons name="add" size={20} color={COLORS.primary}/>
             </TouchableOpacity>
           </View>
         </View>
+        <TouchableOpacity onPress={()=>setShowCityPicker(true)} style={{flexDirection:'row',alignItems:'center',gap:5,marginHorizontal:14,marginBottom:8,
+          backgroundColor:COLORS.primaryLight,borderRadius:99,paddingHorizontal:12,paddingVertical:6,alignSelf:'flex-start',borderWidth:1,borderColor:COLORS.primary+'33'}}>
+          <Ionicons name="location-outline" size={13} color={COLORS.primary}/>
+          <Text style={{fontSize:12,fontWeight:'600',color:COLORS.primary}}>{city||'Toda España'}</Text>
+          <Ionicons name="chevron-down" size={11} color={COLORS.text3}/>
+        </TouchableOpacity>
+      </View>
 
-        {/* Next event highlight banner — shows most voted upcoming event */}
-        {events.length > 0 && (() => {
-          const upcoming = events.filter(e => e?.date && new Date(e.date) >= new Date());
-          const next = upcoming.length > 0 ? upcoming.reduce((best, e) => (e.votes_up||0) > (best.votes_up||0) ? e : best, upcoming[0]) : null;
-          if (!next?.date) return null;
-          const nextDate = new Date(next.date);
-          const daysUntil = Math.max(0, Math.ceil((nextDate - new Date()) / 86400000));
-          return (
-            <TouchableOpacity
-              style={{backgroundColor:COLORS.purple+'18',marginHorizontal:12,marginBottom:8,borderRadius:12,padding:12,borderWidth:1,borderColor:COLORS.purple+'44',flexDirection:'row',alignItems:'center',gap:10}}
-              onPress={() => {}}
-              activeOpacity={0.8}>
-              <View style={{backgroundColor:COLORS.purple,borderRadius:8,padding:8,alignItems:'center',minWidth:48}}>
-                <Text style={{fontSize:9,fontWeight:'700',color:'rgba(255,255,255,0.8)',textTransform:'uppercase'}}>
-                  {daysUntil === 0 ? 'HOY' : daysUntil === 1 ? 'MAÑANA' : `en ${daysUntil}d`}
-                </Text>
-                <Text style={{fontSize:18,color:'#fff',fontWeight:'800'}}>
-                  {nextDate.getDate()}
-                </Text>
+      {/* Settings Modal — categories + sort + filters */}
+      <Modal visible={showSettings} animationType="fade" transparent onRequestClose={()=>setShowSettings(false)}>
+        <TouchableOpacity style={{flex:1,backgroundColor:'rgba(0,0,0,0.4)'}} activeOpacity={1} onPress={()=>setShowSettings(false)}>
+          <View style={{position:'absolute',top:100,right:16,backgroundColor:COLORS.bg2,borderRadius:18,padding:16,width:280,
+            shadowColor:'#000',shadowOpacity:0.2,shadowRadius:20,elevation:10,borderWidth:1,borderColor:COLORS.border}}>
+            <TouchableOpacity activeOpacity={1} onPress={e=>e.stopPropagation()}>
+              <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+                <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>Filtros</Text>
+                <TouchableOpacity onPress={()=>setShowSettings(false)} style={{width:30,height:30,borderRadius:15,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="close" size={18} color={COLORS.text2}/>
+                </TouchableOpacity>
               </View>
-              <View style={{flex:1}}>
-                <Text style={{fontSize:13,fontWeight:'700',color:COLORS.text}} numberOfLines={1}>{next.title}</Text>
-                <Text style={{fontSize:11,color:COLORS.text3,marginTop:2}}>
-                  📍 {next.city} · {next.is_free ? '🆓 Gratis' : next.price_from ? `desde ${next.price_from}€` : 'Ver precio'}
-                </Text>
+              <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>CATEGORÍA</Text>
+              <View style={{flexDirection:'row',flexWrap:'wrap',gap:6,marginBottom:10}}>
+                {CATS.map(c=>(
+                  <TouchableOpacity key={c.key} style={{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:6,borderRadius:99,
+                    borderWidth:1.5,borderColor:cat===c.key?COLORS.primary:COLORS.border,backgroundColor:cat===c.key?COLORS.primary:COLORS.bg}}
+                    onPress={()=>{setCat(c.key);setShowSettings(false);}}>
+                    <Ionicons name={c.icon} size={12} color={cat===c.key?'#fff':COLORS.text2}/>
+                    <Text style={{fontSize:11,fontWeight:'600',color:cat===c.key?'#fff':COLORS.text2}}>{c.label}</Text>
+                  </TouchableOpacity>
+                ))}
               </View>
-              <Ionicons name="chevron-forward" size={14} color={COLORS.purple}/>
+              <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>ORDENAR POR</Text>
+              <View style={{flexDirection:'row',gap:6}}>
+                {[{key:'date',label:'Próximos',icon:'calendar-outline'},{key:'price',label:'Más baratos',icon:'wallet-outline'}].map(so=>(
+                  <TouchableOpacity key={so.key} style={{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:6,borderRadius:99,
+                    borderWidth:1.5,borderColor:sort===so.key?COLORS.primary:COLORS.border,backgroundColor:sort===so.key?COLORS.primaryLight:COLORS.bg}}
+                    onPress={()=>setSort(so.key)}>
+                    <Ionicons name={so.icon} size={12} color={sort===so.key?COLORS.primary:COLORS.text2}/>
+                    <Text style={{fontSize:11,fontWeight:'600',color:sort===so.key?COLORS.primary:COLORS.text2}}>{so.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </TouchableOpacity>
-          );
-        })()}
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
-        {/* All filters inside settings panel */}
-        {showFilters && (
-          <View style={s.filtersPanel}>
-            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-              <Text style={{fontSize:14,fontWeight:'700',color:COLORS.text}}>Filtros</Text>
-              <TouchableOpacity onPress={() => setShowFilters(false)} style={{width:26,height:26,borderRadius:13,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
-                <Ionicons name="close" size={14} color={COLORS.text2}/>
-              </TouchableOpacity>
-            </View>
-            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>FUENTE</Text>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6,marginBottom:10}}>
-              {SOURCES.map(src => (
-                <TouchableOpacity key={src.key} style={[s.sourceBtn, source===src.key && s.sourceBtnOn]} onPress={() => setSource(src.key)}>
-                  <Text style={s.sourceEmoji}>{src.emoji}</Text>
-                  <Text style={[s.sourceTxt, source===src.key && {color:'#fff'}]}>{src.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>PRECIO</Text>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6,marginBottom:10}}>
-              {[['all','Todos'],['free','🆓 Gratis'],['paid','💰 De pago']].map(([key,label]) => (
-                <TouchableOpacity key={key} style={[s.sourceBtn, priceFilter===key && s.sourceBtnOn]} onPress={() => setPriceFilter(key)}>
-                  <Text style={[s.sourceTxt, priceFilter===key && {color:'#fff'}]}>{label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>CATEGORÍA</Text>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6,marginBottom:10}}>
-              {CATS.map(c => (
-                <TouchableOpacity key={c.key} style={[s.catBtn, cat===c.key && s.catBtnOn]} onPress={() => setCat(c.key)}>
-                  <Text style={s.catEmoji}>{c.emoji}</Text>
-                  <Text style={[s.catTxt, cat===c.key && {color:'#fff'}]}>{c.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {/* Search box */}
-            <View style={{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg3,borderRadius:10,paddingHorizontal:10,marginBottom:10,borderWidth:1,borderColor:COLORS.border}}>
-              <Ionicons name="search-outline" size={16} color={COLORS.text3}/>
-              <TextInput
-                style={{flex:1,paddingVertical:8,paddingHorizontal:6,fontSize:13,color:COLORS.text}}
-                placeholder="Buscar eventos..."
-                placeholderTextColor={COLORS.text3}
-                value={search}
-                onChangeText={setSearch}
-                returnKeyType="search"
-              />
-              {search.length > 0 && (
-                <TouchableOpacity onPress={() => setSearch('')}>
-                  <Ionicons name="close-circle" size={16} color={COLORS.text3}/>
-                </TouchableOpacity>
+      {/* Event list */}
+      <FlatList data={events} keyExtractor={e=>`ev_${e.id}`}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary}/>}
+        contentContainerStyle={{padding:12,gap:10,paddingBottom:80}}
+        renderItem={({item:e})=>{
+          const d = e.date ? new Date(e.date) : null;
+          const imgUrl = e.image_url || (Array.isArray(e.images)&&e.images[0]) || null;
+          return (
+            <TouchableOpacity style={s.card} activeOpacity={0.85} onPress={()=>setSelectedEvent(e)}>
+              {imgUrl && (
+                <Image source={{uri:imgUrl.startsWith('http')?imgUrl:`https://web-production-a8023.up.railway.app${imgUrl}`}}
+                  style={{width:'100%',height:140,borderTopLeftRadius:14,borderTopRightRadius:14}} resizeMode="cover"/>
               )}
-            </View>
-            <Text style={s.filterLabel}>Ordenar por</Text>
-            <View style={s.radRow}>
-              {SORTS.map(so => (
-                <TouchableOpacity key={so.key} style={[s.sortBtn, sort===so.key && s.sortBtnOn]} onPress={() => setSort(so.key)}>
-                  <Text style={[s.sortTxt, sort===so.key && {color:'#fff'}]}>{so.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={s.filterLabel}>Filtrar por ubicación</Text>
-            {city ? (
-              <View style={{flexDirection:'row',alignItems:'center',gap:8,marginBottom:8}}>
-                <Text style={{fontSize:13,color:COLORS.text,fontWeight:'600'}}>📍 {city}</Text>
-                <TouchableOpacity onPress={() => setCity('')} style={{paddingHorizontal:8,paddingVertical:4,backgroundColor:COLORS.bg3,borderRadius:8}}>
-                  <Text style={{fontSize:11,color:COLORS.text3}}>✕ Quitar</Text>
-                </TouchableOpacity>
-              </View>
-            ) : null}
-            <ScrollView style={{maxHeight:200}} nestedScrollEnabled>
-              {Object.entries({
-                'Andalucía':['Sevilla','Málaga','Córdoba','Granada','Almería','Cádiz','Jaén','Huelva'],
-                'Madrid':['Madrid'],
-                'Cataluña':['Barcelona','Tarragona','Girona','Lleida'],
-                'C. Valenciana':['Valencia','Alicante','Castellón'],
-                'País Vasco':['Bilbao','San Sebastián','Vitoria'],
-                'Galicia':['Vigo','A Coruña','Santiago','Ourense'],
-                'Aragón':['Zaragoza','Huesca','Teruel'],
-                'Asturias':['Oviedo','Gijón'],
-                'Canarias':['Las Palmas','Santa Cruz de Tenerife'],
-                'Baleares':['Palma','Ibiza'],
-                'Murcia':['Murcia','Cartagena'],
-                'C. y León':['Valladolid','Burgos','Salamanca','León'],
-                'Extremadura':['Badajoz','Cáceres','Mérida'],
-                'Navarra':['Pamplona'],
-                'La Rioja':['Logroño'],
-                'Cantabria':['Santander'],
-              }).map(([ccaa, cities]) => (
-                <View key={ccaa} style={{marginBottom:6}}>
-                  <Text style={{fontSize:11,fontWeight:'700',color:COLORS.text3,marginBottom:4}}>{ccaa}</Text>
-                  <View style={{flexDirection:'row',flexWrap:'wrap',gap:4}}>
-                    {cities.map(c => (
-                      <TouchableOpacity key={c}
-                        style={{paddingHorizontal:8,paddingVertical:4,borderRadius:8,
-                          backgroundColor: city===c ? COLORS.purple : COLORS.bg3,
-                          borderWidth:1,borderColor: city===c ? COLORS.purple : COLORS.border}}
-                        onPress={() => setCity(city===c ? '' : c)}>
-                        <Text style={{fontSize:11,color: city===c ? '#fff' : COLORS.text2}}>{c}</Text>
-                      </TouchableOpacity>
-                    ))}
+              <View style={{padding:12,gap:4}}>
+                <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+                  {d && (
+                    <View style={{backgroundColor:COLORS.primary,borderRadius:8,paddingHorizontal:8,paddingVertical:4,alignItems:'center'}}>
+                      <Text style={{fontSize:8,fontWeight:'700',color:'rgba(255,255,255,0.8)',textTransform:'uppercase'}}>
+                        {d.toLocaleDateString('es-ES',{month:'short'})}
+                      </Text>
+                      <Text style={{fontSize:16,fontWeight:'800',color:'#fff'}}>{d.getDate()}</Text>
+                    </View>
+                  )}
+                  <View style={{flex:1}}>
+                    <Text style={{fontSize:15,fontWeight:'700',color:COLORS.text}} numberOfLines={2}>{e.title}</Text>
+                    <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:2}}>
+                      <Ionicons name="location-outline" size={12} color={COLORS.text3}/>
+                      <Text style={{fontSize:12,color:COLORS.text3}} numberOfLines={1}>{e.city||'España'}</Text>
+                    </View>
+                  </View>
+                  <View style={{alignItems:'flex-end'}}>
+                    <Text style={{fontSize:14,fontWeight:'800',color:e.is_free?COLORS.success:COLORS.primary}}>
+                      {e.is_free?'Gratis':e.price_from?`${e.price_from}€`:''}
+                    </Text>
                   </View>
                 </View>
-              ))}
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+        ListEmptyComponent={loading?<ActivityIndicator color={COLORS.primary} style={{marginTop:40}}/>:(
+          <View style={{alignItems:'center',paddingTop:50,gap:8}}>
+            <Ionicons name="calendar-outline" size={40} color={COLORS.text3}/>
+            <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>No hay eventos</Text>
+            <Text style={{fontSize:13,color:COLORS.text3}}>Pulsa + para añadir uno</Text>
+          </View>
+        )}/>
+
+      {/* Event detail */}
+      <Modal visible={!!selectedEvent} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedEvent(null)}>
+        {selectedEvent && (
+          <View style={{flex:1,backgroundColor:COLORS.bg2}}>
+            <View style={{width:40,height:4,borderRadius:99,backgroundColor:COLORS.border,alignSelf:'center',marginTop:10}}/>
+            <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:16}}>
+              <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>Detalle del evento</Text>
+              <TouchableOpacity onPress={()=>setSelectedEvent(null)} style={{width:32,height:32,borderRadius:16,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+                <Ionicons name="close" size={20} color={COLORS.text2}/>
+              </TouchableOpacity>
+            </View>
+            <ScrollView contentContainerStyle={{padding:16,paddingBottom:40}}>
+              {(selectedEvent.image_url||(Array.isArray(selectedEvent.images)&&selectedEvent.images[0]))&&(
+                <Image source={{uri:(selectedEvent.image_url||selectedEvent.images[0]).startsWith('http')?(selectedEvent.image_url||selectedEvent.images[0]):`https://web-production-a8023.up.railway.app${selectedEvent.image_url||selectedEvent.images[0]}`}}
+                  style={{width:'100%',height:200,borderRadius:14,marginBottom:16}} resizeMode="cover"/>
+              )}
+              <Text style={{fontSize:22,fontWeight:'800',color:COLORS.text,marginBottom:8}}>{selectedEvent.title}</Text>
+              <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:4}}>
+                <Ionicons name="location-outline" size={14} color={COLORS.text3}/>
+                <Text style={{fontSize:13,color:COLORS.text2}}>{selectedEvent.city||'España'}{selectedEvent.venue?` · ${selectedEvent.venue}`:''}</Text>
+              </View>
+              {selectedEvent.date&&(
+                <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:4}}>
+                  <Ionicons name="calendar-outline" size={14} color={COLORS.text3}/>
+                  <Text style={{fontSize:13,color:COLORS.text2}}>{new Date(selectedEvent.date).toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</Text>
+                </View>
+              )}
+              <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
+                <Ionicons name="wallet-outline" size={14} color={COLORS.text3}/>
+                <Text style={{fontSize:14,fontWeight:'700',color:selectedEvent.is_free?COLORS.success:COLORS.primary}}>
+                  {selectedEvent.is_free?'Gratis':selectedEvent.price_from?`Desde ${selectedEvent.price_from}€`:'Ver precio'}
+                </Text>
+              </View>
+              {selectedEvent.description&&<Text style={{fontSize:14,color:COLORS.text2,lineHeight:20,marginBottom:12}}>{selectedEvent.description}</Text>}
+              {selectedEvent.url&&(
+                <TouchableOpacity style={{backgroundColor:COLORS.primary,borderRadius:14,padding:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}
+                  onPress={()=>openURL(selectedEvent.url)}>
+                  <Ionicons name="open-outline" size={18} color="#fff"/>
+                  <Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>Ver evento</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity style={{backgroundColor:COLORS.bg3,borderRadius:14,padding:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,marginTop:8}}
+                onPress={()=>{setCommentsEvent(selectedEvent);setSelectedEvent(null);}}>
+                <Ionicons name="chatbubble-outline" size={18} color={COLORS.text2}/>
+                <Text style={{color:COLORS.text2,fontWeight:'700',fontSize:15}}>Comentarios</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,paddingVertical:12}}
+                onPress={()=>{
+                  if(!isLoggedIn){setShowAuth(true);return;}
+                  Alert.alert('Reportar evento','¿Qué problema tiene este evento?',[
+                    {text:'Cancelar'},
+                    {text:'Información incorrecta',onPress:()=>apiPost(`/api/events/${selectedEvent.id}/report`,{reason:'Información incorrecta'}).then(()=>Alert.alert('Reportado','Un admin lo revisará.'))},
+                    {text:'Evento falso',style:'destructive',onPress:()=>apiPost(`/api/events/${selectedEvent.id}/report`,{reason:'Evento falso o spam'}).then(()=>Alert.alert('Reportado','Un admin lo revisará.'))},
+                  ]);
+                }}>
+                <Ionicons name="flag-outline" size={14} color={COLORS.text3}/>
+                <Text style={{fontSize:12,color:COLORS.text3,fontWeight:'600'}}>Reportar evento</Text>
+              </TouchableOpacity>
             </ScrollView>
           </View>
         )}
-      </View>
+      </Modal>
 
-      {/* Official source banner */}
-      {source === 'ayuntamiento' && (
-        <View style={s.officialBanner}>
-          <Ionicons name="shield-checkmark-outline" size={14} color={COLORS.primary}/>
-          <Text style={s.officialBannerTxt}>Eventos extraídos automáticamente de webs oficiales de ayuntamientos. Se actualiza cada 6 horas.</Text>
-        </View>
-      )}
-
-      {!isLoggedIn && (
-        <TouchableOpacity style={s.guestBanner} onPress={() => setShowAuth(true)}>
-          <Text style={s.guestTxt}>🎭 Regístrate para añadir eventos y recibir alertas →</Text>
-        </TouchableOpacity>
-      )}
-
-      {loading ? <ActivityIndicator color={COLORS.purple} style={{marginTop:50}}/> : (
-        <FlatList
-          data={events.filter(e => {
-            if (priceFilter === 'free') return e.is_free;
-            if (priceFilter === 'paid') return !e.is_free;
-            return true;
-          })}
-          keyExtractor={e => String(e.id)}
-          contentContainerStyle={{padding:12,gap:10,paddingBottom:100}}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.purple}/>}
-          renderItem={({item}) => (
-            <EventCard event={item} onAuthNeeded={() => setShowAuth(true)} isLoggedIn={isLoggedIn} onRefresh={loadEvents} user={user}/>
-          )}
-          ListEmptyComponent={<EmptyEvents onAdd={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)} source={source}/>}
-        />
-      )}
-
-      <AddEventModal visible={showAdd} onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); loadEvents(); }}/>
-      <AuthModal visible={showAuth} onClose={() => setShowAuth(false)}/>
-
-      <AdBanner screen="events"/>
-
-      {/* FAB */}
-      <TouchableOpacity
-        style={{position:'absolute',bottom:80,right:16,backgroundColor:COLORS.purple||'#7C3AED',borderRadius:28,paddingHorizontal:18,paddingVertical:14,flexDirection:'row',alignItems:'center',gap:6,shadowColor:'#7C3AED',shadowOpacity:0.45,shadowRadius:12,shadowOffset:{width:0,height:4},elevation:8}}
-        onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}
-        activeOpacity={0.85}>
-        <Ionicons name="add" size={26} color="#fff"/>
-        <Text style={{color:'#fff',fontWeight:'800',fontSize:14}}>Evento</Text>
-      </TouchableOpacity>
-
+      {/* Add event modal */}
+      <AddEventModal visible={showAdd} onClose={()=>setShowAdd(false)} onSuccess={()=>{setShowAdd(false);loadEvents();}} defaultCity={city}/>
+      <CommentsModal visible={!!commentsEvent} eventId={commentsEvent?.id} onClose={()=>setCommentsEvent(null)}/>
+      <AuthModal visible={showAuth} onClose={()=>setShowAuth(false)}/>
     </SafeAreaView>
   );
 }
 
-// === EVENT CARD ===
-function EventCard({ event: ev, onAuthNeeded, isLoggedIn, onRefresh, user }) {
-  // Guard against null/invalid date
-  const rawDate = ev?.date || '';
-  const d = rawDate ? new Date(rawDate + 'T12:00:00') : null;
-  const isValidDate = d && !isNaN(d.getTime());
-  const day   = isValidDate ? d.getDate() : '?';
-  const month = isValidDate ? (MONTHS_ES[d.getMonth()] || '').toUpperCase() : '';
-  const todayStr    = new Date().toISOString().split('T')[0];
-  const tomorrowStr = new Date(Date.now()+86400000).toISOString().split('T')[0];
-  const isToday    = rawDate === todayStr;
-  const isTomorrow = rawDate === tomorrowStr;
-  const CAT_EMOJI = {cine:'🎬',musica:'🎵',teatro:'🎭',deporte:'⚽',gastronomia:'🍷',festival:'🎪',expo:'🖼️',otro:'📌'};
-  const emoji = CAT_EMOJI[ev?.category] || '📌';
-  const isOfficial = ev?.source === 'ayuntamiento';
-
-  async function vote() {
-    if (!isLoggedIn) { onAuthNeeded(); return; }
-    try {
-      await apiPost(`/api/events/${ev.id}/vote`, {});
-      onRefresh();
-    } catch(_) {}
-  }
-
-  function openMaps() {
-    if (ev?.lat && ev?.lng) {
-      const isWeb = typeof document !== 'undefined';
-      const googleUrl = `https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}`;
-      if (isWeb) { openURL(googleUrl); return; }
-      const url = Platform.OS === 'ios'
-        ? `maps://maps.apple.com/?daddr=${ev.lat},${ev.lng}&q=${encodeURIComponent(ev.venue||ev.title||'')}`
-        : `geo:${ev.lat},${ev.lng}?q=${encodeURIComponent(ev.venue||ev.title||'')}`;
-      Linking.openURL(url).catch(() => openURL(googleUrl));
-    } else if (ev?.venue || ev?.address) {
-      const q = encodeURIComponent(`${ev.venue||''} ${ev.address||''} ${ev.city||''}`);
-      openURL(`https://www.google.com/maps/search/?api=1&query=${q}`);
-    }
-  }
-
-  return (
-    <View style={ec.card}>
-      {/* Event photo */}
-      {Array.isArray(ev?.photos) && ev.photos.length > 0 && (
-        <Image source={{uri: ev.photos[0]}} style={{width:'100%',height:140,borderTopLeftRadius:14,borderTopRightRadius:14}} resizeMode="cover"/>
-      )}
-      {isOfficial && (
-        <View style={ec.officialStripe}>
-          <Ionicons name="shield-checkmark" size={11} color="#fff"/>
-          <Text style={ec.officialStripeTxt}>Fuente oficial · Ayuntamiento</Text>
-        </View>
-      )}
-      <View style={ec.header}>
-        <View style={ec.dateBadge}>
-          <Text style={ec.day}>{day}</Text>
-          <Text style={ec.month}>{month}</Text>
-          {isToday ? <View style={ec.todayBadge}><Text style={ec.todayTxt}>HOY</Text></View>
-          : isTomorrow ? <View style={ec.todayBadge}><Text style={ec.todayTxt}>MAÑ</Text></View>
-          : ev?.time ? <Text style={ec.time}>{String(ev.time).slice(0,5)}</Text> : null}
-        </View>
-        <View style={ec.info}>
-          <View style={ec.topRow}>
-            <View style={ec.catBadge}><Text style={ec.catBadgeTxt}>{emoji} {ev?.category || 'otro'}</Text></View>
-            {ev?.is_free
-              ? <View style={ec.freeBadge}><Text style={ec.freeTxt}>GRATIS</Text></View>
-              : ev?.price_from != null
-                ? <View style={ec.paidBadge}><Text style={ec.paidTxt}>desde {Number(ev.price_from||0).toFixed(2)}€</Text></View>
-                : ev?.price_label
-                  ? <View style={ec.paidBadge}><Text style={ec.paidTxt}>{ev.price_label}</Text></View>
-                  : null}
-          </View>
-          <Text style={ec.title} numberOfLines={2}>{ev?.title || 'Evento'}</Text>
-          {(ev?.venue || ev?.address) ? (
-            <Text style={ec.venue} numberOfLines={1}>
-              📍 {ev.venue || ev.address}{ev?.city ? ` · ${ev.city}` : ''}
-            </Text>
-          ) : null}
-          {ev?.description ? <Text style={ec.desc} numberOfLines={2}>{ev.description}</Text> : null}
-        </View>
-      </View>
-      <View style={ec.footer}>
-        <TouchableOpacity style={ec.navBtn} onPress={openMaps}>
-          <Ionicons name="navigate-outline" size={13} color="#fff"/>
-          <Text style={ec.navBtnTxt}>Cómo llegar</Text>
-        </TouchableOpacity>
-        {ev?.url ? (
-          <TouchableOpacity style={ec.ticketBtn} onPress={() => openURL(ev.url)}>
-            <Ionicons name="open-outline" size={13} color={COLORS.purple}/>
-            <Text style={ec.ticketBtnTxt}>Más info</Text>
-          </TouchableOpacity>
-        ) : null}
-        <TouchableOpacity style={ec.voteBtn} onPress={vote}>
-          <Text style={ec.voteTxt}>👍 {ev?.votes_up || 0}</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={ec.voteBtn} onPress={async () => {
-          const price = ev?.is_free ? '🆓 Gratis' : ev?.price_from ? `desde ${ev.price_from}€` : '';
-          const shareUrl = `https://web-production-a8023.up.railway.app/evento/${ev?.id}`;
-          const msg = `🎭 ${ev?.title||''}\n📍 ${ev?.city||''} · ${ev?.date||''}\n${price ? price+'\n' : ''}\n${shareUrl}`;
-          try {
-            if (typeof navigator !== 'undefined' && navigator.share) {
-              await navigator.share({ title: ev?.title||'', text: msg, url: ev?.url||'' });
-            } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
-              await navigator.clipboard.writeText(msg);
-              Alert.alert('✅ Copiado', 'Enlace copiado al portapapeles');
-            } else {
-              Share.share({ message: msg }).catch(()=>{});
-            }
-          } catch(_) {}
-        }}>
-          <Ionicons name="share-outline" size={14} color={COLORS.text3}/>
-        </TouchableOpacity>
-        {user?.is_admin && (
-          <TouchableOpacity style={[ec.voteBtn,{backgroundColor:'#FEE2E2',paddingHorizontal:8}]} onPress={() =>
-            Alert.alert('🛡️ Admin','¿Eliminar evento?',[
-              {text:'Cancelar',style:'cancel'},
-              {text:'Eliminar',style:'destructive',onPress:async()=>{
-                try { await apiPost(`/api/events/${ev.id}/deactivate`,{}); onRefresh(); } catch(_) {}
-              }},
-            ])}>
-            <Ionicons name="trash-outline" size={13} color="#DC2626"/>
-          </TouchableOpacity>
-        )}
-        <Text style={ec.source} numberOfLines={1}>{isOfficial?'🏛️':('👤 '+(ev?.reporter_name||'').split(' ')[0])}</Text>
-      </View>
-    </View>
-  );
-}
-
-function EmptyEvents({ onAdd, source }) {
-  const links = [
-    { label:'🎵 Concerts & Live Music', url:'https://www.songkick.com/es' },
-    { label:'🎭 Fever Events',           url:'https://feverup.com/es/madrid' },
-    { label:'🎪 Eventbrite España',      url:'https://www.eventbrite.es/' },
-    { label:'🏛️ Cultura en Red',        url:'https://www.culturaydeporte.gob.es/cultura/areas/museos/mc/estadisticas/portada.html' },
-  ];
-  return (
-    <View style={em.wrap}>
-      <Text style={em.icon}>{source === 'ayuntamiento' ? '🏛️' : '🎭'}</Text>
-      <Text style={em.title}>
-        {source === 'ayuntamiento' ? 'Sin eventos oficiales aún' : 'Sin eventos en esta zona'}
-      </Text>
-      <Text style={em.desc}>
-        {source === 'ayuntamiento'
-          ? 'Todavía no tenemos eventos de ayuntamientos integrados. Estamos trabajando en conectar con fuentes oficiales.'
-          : '¡Sé el primero! Añade eventos de tu ciudad y ayuda a la comunidad a descubrirlos.'}
-      </Text>
-      {source !== 'ayuntamiento' && (
-        <TouchableOpacity style={em.btn} onPress={onAdd}>
-          <Ionicons name="add-circle-outline" size={16} color="#fff"/>
-          <Text style={em.btnTxt}>Añadir evento</Text>
-        </TouchableOpacity>
-      )}
-      <View style={em.divider}>
-        <View style={em.dividerLine}/>
-        <Text style={em.dividerTxt}>mientras tanto</Text>
-        <View style={em.dividerLine}/>
-      </View>
-      <Text style={em.linksTitle}>Encuentra eventos en estas webs:</Text>
-      {links.map(l => (
-        <TouchableOpacity key={l.url} style={em.linkBtn} onPress={() => openURL(l.url)}>
-          <Text style={em.linkTxt}>{l.label}</Text>
-          <Ionicons name="open-outline" size={12} color={COLORS.primary}/>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-}
-
-// === ADD EVENT MODAL ===
-function AddEventModal({ visible, onClose, onSuccess }) {
+// ── ADD EVENT MODAL (slides) ─────────────────────────────────────────────────
+function AddEventModal({ visible, onClose, onSuccess, defaultCity }) {
+  const [step, setStep] = useState(0);
   const [title, setTitle] = useState('');
-  const [cat, setCat] = useState('cine');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [description, setDescription] = useState('');
+  const [city, setCity] = useState(defaultCity||'');
   const [venue, setVenue] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [price, setPrice] = useState('');
-  const [isFree, setIsFree] = useState(false);
+  const [date, setDate] = useState('');
   const [url, setUrl] = useState('');
-  const [desc, setDesc] = useState('');
-  const [useGPS, setUseGPS] = useState(false);
-  const [gpsCoords, setGpsCoords] = useState(null);
-  const [eventImage, setEventImage] = useState(null);
+  const [isFree, setIsFree] = useState(false);
+  const [priceFrom, setPriceFrom] = useState('');
+  const [category, setCategory] = useState('otro');
+  const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function getGPS() {
-    try {
-      const Location = getLocation();
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') return;
-      const loc = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-      setGpsCoords({ lat: loc.coords.latitude, lng: loc.coords.longitude });
-      setUseGPS(true);
-    } catch(_) { Alert.alert('Error', 'No se pudo obtener la ubicación'); }
+  function reset(){setStep(0);setTitle('');setDescription('');setCity(defaultCity||'');setVenue('');setDate('');setUrl('');setIsFree(false);setPriceFrom('');setCategory('otro');setImages([]);setError('');}
+  function handleClose(){reset();onClose();}
+
+  async function pickImage(){
+    if(images.length>=3)return;
+    try{const r=await ImagePicker.launchImageLibraryAsync({mediaTypes:ImagePicker.MediaTypeOptions.Images,allowsEditing:true,quality:0.8,base64:true});
+    if(!r.canceled&&r.assets?.[0])setImages(prev=>[...prev,{uri:r.assets[0].uri,base64:r.assets[0].base64}]);}catch(_){}
   }
 
-  async function pickEventImage() {
-    try {
-      const ImagePicker = require('expo-image-picker');
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') return Alert.alert('Permiso necesario', 'Necesitamos acceso a tu galería.');
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        quality: 0.8,
-      });
-      if (!result.canceled && result.assets?.[0]) setEventImage(result.assets[0]);
-    } catch(_) {}
+  async function submit(){
+    setError('');
+    if(!title.trim()) return setError('Título obligatorio');
+    if(!city.trim()) return setError('Ciudad obligatoria');
+    if(!date.trim()) return setError('Fecha obligatoria');
+    setLoading(true);
+    try{
+      const body={title:title.trim(),description:description.trim()||null,city:city.trim(),venue:venue.trim()||null,
+        date:date.trim(),url:url.trim()||null,is_free:isFree,price_from:priceFrom?parseFloat(String(priceFrom).replace(',','.')):null,category};
+      if(images.length>0&&images[0]?.base64) body.image_base64=images[0].base64;
+      const res=await apiPost('/api/events',body);
+      if(res?.error) return setError(res.error);
+      reset();onSuccess?.();
+    }catch(_){setError('Error al guardar');}finally{setLoading(false);}
   }
-
-  async function submit() {
-    if (!title.trim() || !cat || !date) { setError('Título, categoría y fecha son obligatorios'); return; }
-    // Convert DD/MM/YYYY → YYYY-MM-DD for the API
-    let isoDate = date;
-    if (date.includes('/')) {
-      const p = date.split('/');
-      if (p.length === 3 && p[2].length === 4) isoDate = `${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;
-      else { setError('Fecha inválida. Usa el formato DD/MM/AAAA'); return; }
-    }
-    setLoading(true); setError('');
-    try {
-      const res = await apiUpload('/api/events', {
-        title: title.trim(), category: cat, date: isoDate, time,
-        venue: venue.trim(), address: address.trim(), city: city.trim(),
-        lat: gpsCoords?.lat || null, lng: gpsCoords?.lng || null,
-        price_from: price && !isFree ? (parseFloat(price)||null) : null,
-        is_free: isFree ? 1 : 0,
-        url: url.trim(), description: desc.trim(),
-      }, eventImage?.uri || null, 'image');
-      if (res.error) { setError(res.error); return; }
-      onSuccess?.();
-      // Reset
-      setTitle(''); setDate(''); setTime(''); setVenue(''); setAddress('');
-      setCity(''); setPrice(''); setIsFree(false); setUrl(''); setDesc('');
-      setGpsCoords(null); setUseGPS(false); setEventImage(null);
-    } catch(_) { setError('Error de conexión'); }
-    finally { setLoading(false); }
-  }
-
-  const catOpts = CATS.filter(c => c.key !== 'all');
 
   return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={am.wrap} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={am.handle}/>
-        <View style={am.header}>
-          <Text style={am.title}>🎭 Añadir evento</Text>
-          <TouchableOpacity onPress={onClose} style={am.closeBtn}>
-            <Ionicons name="close" size={20} color={COLORS.text2}/>
-          </TouchableOpacity>
-        </View>
-        <ScrollView contentContainerStyle={am.form} keyboardShouldPersistTaps="handled">
-          <View style={am.infoBanner}>
-            <Ionicons name="information-circle-outline" size={14} color={COLORS.primary}/>
-            <Text style={am.infoTxt}>Solo añade eventos reales. La comunidad votará para confirmar la información. No inventes nada.</Text>
-          </View>
-
-          <Text style={am.label}>Título *</Text>
-          <TextInput style={am.input} value={title} onChangeText={setTitle}
-            placeholder="Nombre del evento" placeholderTextColor={COLORS.text3}/>
-
-          <Text style={am.label}>Categoría *</Text>
-          <View style={am.catGrid}>
-            {catOpts.map(c => (
-              <TouchableOpacity key={c.key} style={[am.catBtn, cat===c.key && am.catBtnOn]} onPress={() => setCat(c.key)}>
-                <Text style={am.catEmoji}>{c.emoji}</Text>
-                <Text style={[am.catTxt, cat===c.key && {color:'#fff'}]}>{c.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <View style={{flexDirection:'row',gap:10}}>
-            <View style={{flex:1}}>
-              <Text style={am.label}>Fecha * (DD/MM/AAAA)</Text>
-              <TextInput style={am.input} value={date} onChangeText={v => {
-                // Auto-format DD/MM/YYYY
-                const n = v.replace(/\D/g,'');
-                if (n.length <= 2) setDate(n);
-                else if (n.length <= 4) setDate(n.slice(0,2)+'/'+n.slice(2));
-                else setDate(n.slice(0,2)+'/'+n.slice(2,4)+'/'+n.slice(4,8));
-              }} placeholder="01/05/2026" placeholderTextColor={COLORS.text3} keyboardType="number-pad" maxLength={10}/>
-            </View>
-            <View style={{flex:1}}>
-              <Text style={am.label}>Hora</Text>
-              <TextInput style={am.input} value={time} onChangeText={setTime} placeholder="20:30" placeholderTextColor={COLORS.text3}/>
-            </View>
-          </View>
-
-          <Text style={am.label}>Recinto / Lugar</Text>
-          <TextInput style={am.input} value={venue} onChangeText={setVenue} placeholder="Ej: Teatro Góngora" placeholderTextColor={COLORS.text3}/>
-
-          <Text style={am.label}>Dirección</Text>
-          <TextInput style={am.input} value={address} onChangeText={setAddress} placeholder="Calle y número" placeholderTextColor={COLORS.text3}/>
-
-          <Text style={am.label}>Ciudad</Text>
-          <TextInput style={am.input} value={city} onChangeText={setCity} placeholder="Ej: Córdoba" placeholderTextColor={COLORS.text3}/>
-
-          {/* GPS for map */}
-          <TouchableOpacity style={[am.gpsBtn, gpsCoords && am.gpsBtnOn]} onPress={getGPS}>
-            <Ionicons name={gpsCoords ? "checkmark-circle" : "locate-outline"} size={16} color={gpsCoords ? COLORS.success : COLORS.primary}/>
-            <Text style={[am.gpsTxt, gpsCoords && {color:COLORS.success}]}>
-              {gpsCoords ? `📍 Ubicación GPS guardada` : 'Añadir ubicación GPS (aparece en el mapa)'}
-            </Text>
-          </TouchableOpacity>
-
-          {/* Price */}
-          <View style={{flexDirection:'row',gap:10,alignItems:'flex-end'}}>
-            <View style={{flex:1}}>
-              <Text style={am.label}>Precio desde (€)</Text>
-              <TextInput style={[am.input, isFree && {opacity:0.4}]} value={price} onChangeText={setPrice}
-                placeholder="Ej: 15" keyboardType="decimal-pad" placeholderTextColor={COLORS.text3} editable={!isFree}/>
-            </View>
-            <TouchableOpacity style={[am.freeToggle, isFree && am.freeToggleOn]} onPress={() => setIsFree(!isFree)}>
-              <Text style={[am.freeToggleTxt, isFree && {color:'#fff'}]}>{isFree ? '✅ Gratis' : '¿Gratis?'}</Text>
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
+      <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':'height'}>
+        <View style={{flex:1,backgroundColor:COLORS.bg2}}>
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:16,borderBottomWidth:0.5,borderBottomColor:COLORS.border}}>
+            <TouchableOpacity onPress={step>0?()=>setStep(step-1):handleClose} style={{width:32,height:32,borderRadius:16,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+              <Ionicons name={step>0?'arrow-back':'close'} size={20} color={COLORS.text2}/>
             </TouchableOpacity>
+            <Text style={{fontSize:18,fontWeight:'700',color:COLORS.text}}>Añadir evento</Text>
+            <Text style={{fontSize:12,color:COLORS.text3}}>Paso {step+1}/3</Text>
           </View>
+          <View style={{flexDirection:'row',paddingHorizontal:16,paddingVertical:6,gap:4}}>
+            {[0,1,2].map(i=>(<View key={i} style={{flex:1,height:3,borderRadius:2,backgroundColor:i<=step?COLORS.primary:COLORS.border}}/>))}
+          </View>
+          <ScrollView contentContainerStyle={{padding:16,paddingBottom:60}} keyboardShouldPersistTaps="handled">
 
-          <Text style={am.label}>URL (entradas / más info)</Text>
-          <TextInput style={am.input} value={url} onChangeText={setUrl} placeholder="https://..." keyboardType="url" autoCapitalize="none" placeholderTextColor={COLORS.text3}/>
+            {/* Step 0: Title + description */}
+            {step===0&&(<View style={{gap:10}}>
+              <Text style={{fontSize:20,fontWeight:'700',color:COLORS.text,textAlign:'center'}}>Información del evento</Text>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Título *</Text>
+              <TextInput style={st.input} value={title} onChangeText={setTitle} placeholder="Ej: Feria de Córdoba 2026" placeholderTextColor={COLORS.text3}/>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Descripción</Text>
+              <TextInput style={[st.input,{height:80,textAlignVertical:'top'}]} value={description} onChangeText={setDescription}
+                placeholder="Describe el evento..." placeholderTextColor={COLORS.text3} multiline/>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Enlace (web del evento)</Text>
+              <TextInput style={st.input} value={url} onChangeText={setUrl} placeholder="https://..." placeholderTextColor={COLORS.text3} autoCapitalize="none"/>
+              <TouchableOpacity style={[st.nextBtn,!title.trim()&&{opacity:0.4}]} onPress={()=>title.trim()&&setStep(1)} disabled={!title.trim()}>
+                <Text style={{color:'#fff',fontWeight:'700',fontSize:16}}>Siguiente</Text>
+              </TouchableOpacity>
+            </View>)}
 
-          {/* Event photo */}
-          <Text style={am.label}>📷 Foto del evento</Text>
-          <TouchableOpacity style={{borderWidth:2,borderColor:eventImage?COLORS.success:COLORS.border,borderStyle:'dashed',borderRadius:14,padding:eventImage?0:20,alignItems:'center',justifyContent:'center',height:eventImage?140:80,overflow:'hidden',backgroundColor:COLORS.bg3}}
-            onPress={pickEventImage}>
-            {eventImage ? (
-              <>
-                <Image source={{uri:eventImage.uri}} style={{width:'100%',height:'100%'}} resizeMode="cover"/>
-                <View style={{position:'absolute',bottom:6,right:6,backgroundColor:'rgba(0,0,0,0.6)',borderRadius:8,paddingHorizontal:8,paddingVertical:4}}>
-                  <Text style={{fontSize:10,color:'#fff',fontWeight:'600'}}>Cambiar</Text>
-                </View>
-              </>
-            ) : (
-              <>
-                <Ionicons name="camera-outline" size={24} color={COLORS.text3}/>
-                <Text style={{fontSize:12,color:COLORS.text3,marginTop:4}}>Añadir foto (opcional)</Text>
-              </>
-            )}
-          </TouchableOpacity>
+            {/* Step 1: Location + date + price */}
+            {step===1&&(<View style={{gap:10}}>
+              <Text style={{fontSize:20,fontWeight:'700',color:COLORS.text,textAlign:'center'}}>Lugar y fecha</Text>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Ciudad *</Text>
+              <TextInput style={st.input} value={city} onChangeText={setCity} placeholder="Ej: Córdoba" placeholderTextColor={COLORS.text3}/>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Lugar / Recinto</Text>
+              <TextInput style={st.input} value={venue} onChangeText={setVenue} placeholder="Ej: Plaza de las Tendillas" placeholderTextColor={COLORS.text3}/>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Fecha *</Text>
+              <TextInput style={st.input} value={date} onChangeText={setDate} placeholder="DD/MM/AAAA" placeholderTextColor={COLORS.text3}/>
+              <View style={{flexDirection:'row',gap:8,marginTop:4}}>
+                <TouchableOpacity style={{flex:1,paddingVertical:10,borderRadius:10,alignItems:'center',borderWidth:1.5,
+                  borderColor:isFree?COLORS.success:COLORS.border,backgroundColor:isFree?COLORS.successLight:COLORS.bg}}
+                  onPress={()=>{setIsFree(true);setPriceFrom('');}}>
+                  <Text style={{fontSize:13,fontWeight:'600',color:isFree?COLORS.success:COLORS.text2}}>Gratis</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={{flex:1,paddingVertical:10,borderRadius:10,alignItems:'center',borderWidth:1.5,
+                  borderColor:!isFree?COLORS.primary:COLORS.border,backgroundColor:!isFree?COLORS.primaryLight:COLORS.bg}}
+                  onPress={()=>setIsFree(false)}>
+                  <Text style={{fontSize:13,fontWeight:'600',color:!isFree?COLORS.primary:COLORS.text2}}>De pago</Text>
+                </TouchableOpacity>
+              </View>
+              {!isFree&&(<><Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Precio desde (€)</Text>
+              <TextInput style={st.input} value={priceFrom} onChangeText={setPriceFrom} placeholder="0,00" placeholderTextColor={COLORS.text3} keyboardType="decimal-pad"/></>)}
+              <TouchableOpacity style={[st.nextBtn,(!city.trim()||!date.trim())&&{opacity:0.4}]}
+                onPress={()=>(city.trim()&&date.trim())&&setStep(2)} disabled={!city.trim()||!date.trim()}>
+                <Text style={{color:'#fff',fontWeight:'700',fontSize:16}}>Siguiente</Text>
+              </TouchableOpacity>
+            </View>)}
 
-          <Text style={am.label}>Descripción breve</Text>
-          <TextInput style={[am.input,{height:70,textAlignVertical:'top'}]} value={desc} onChangeText={v=>setDesc(v.slice(0,300))} placeholder="Descripción del evento..." multiline placeholderTextColor={COLORS.text3} maxLength={300}/>
-
-          {error ? <View style={am.errBox}><Text style={am.errTxt}>{error}</Text></View> : null}
-
-          <TouchableOpacity style={[am.submitBtn, loading && {opacity:0.7}]} onPress={submit} disabled={loading}>
-            {loading ? <ActivityIndicator color="#fff"/> : <><Ionicons name="calendar" size={17} color="#fff"/><Text style={am.submitTxt}> Publicar evento (+5 pts)</Text></>}
-          </TouchableOpacity>
-        </ScrollView>
+            {/* Step 2: Category + images + publish */}
+            {step===2&&(<View style={{gap:10}}>
+              <Text style={{fontSize:20,fontWeight:'700',color:COLORS.text,textAlign:'center'}}>Categoría y fotos</Text>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Categoría</Text>
+              <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
+                {CATS.filter(c=>c.key!=='all').map(c=>(
+                  <TouchableOpacity key={c.key} style={{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:7,borderRadius:10,
+                    borderWidth:1.5,borderColor:category===c.key?COLORS.primary:COLORS.border,backgroundColor:category===c.key?COLORS.primaryLight:COLORS.bg}}
+                    onPress={()=>setCategory(c.key)}>
+                    <Ionicons name={c.icon} size={13} color={category===c.key?COLORS.primary:COLORS.text2}/>
+                    <Text style={{fontSize:11,fontWeight:'600',color:category===c.key?COLORS.primary:COLORS.text2}}>{c.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text,marginTop:4}}>Fotos del evento</Text>
+              <View style={{flexDirection:'row',gap:10,flexWrap:'wrap'}}>
+                {images.map((img,i)=>(
+                  <View key={i} style={{width:90,height:90,borderRadius:12,overflow:'hidden',borderWidth:1,borderColor:COLORS.border}}>
+                    <Image source={{uri:img.uri}} style={{width:'100%',height:'100%'}} resizeMode="cover"/>
+                    <TouchableOpacity style={{position:'absolute',top:4,right:4,width:20,height:20,borderRadius:10,backgroundColor:'rgba(0,0,0,0.6)',alignItems:'center',justifyContent:'center'}}
+                      onPress={()=>setImages(prev=>prev.filter((_,j)=>j!==i))}><Ionicons name="close" size={12} color="#fff"/></TouchableOpacity>
+                  </View>
+                ))}
+                {images.length<3&&(
+                  <TouchableOpacity style={{width:90,height:90,borderRadius:12,borderWidth:2,borderColor:COLORS.border,borderStyle:'dashed',alignItems:'center',justifyContent:'center',backgroundColor:COLORS.bg3}}
+                    onPress={pickImage}><Ionicons name="camera-outline" size={24} color={COLORS.text3}/></TouchableOpacity>
+                )}
+              </View>
+              {error?<View style={{backgroundColor:COLORS.dangerLight,borderRadius:10,padding:10}}><Text style={{color:COLORS.danger,fontSize:13}}>{error}</Text></View>:null}
+              <TouchableOpacity style={[st.nextBtn,loading&&{opacity:0.7}]} onPress={submit} disabled={loading}>
+                {loading?<ActivityIndicator color="#fff"/>:(
+                  <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+                    <Ionicons name="checkmark-circle" size={20} color="#fff"/>
+                    <Text style={{color:'#fff',fontWeight:'700',fontSize:16}}>Publicar evento</Text>
+                  </View>)}
+              </TouchableOpacity>
+            </View>)}
+          </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </Modal>
   );
@@ -652,107 +452,12 @@ function AddEventModal({ visible, onClose, onSuccess }) {
 const s = StyleSheet.create({
   safe:{flex:1,backgroundColor:COLORS.bg},
   header:{backgroundColor:COLORS.bg2,borderBottomWidth:0.5,borderBottomColor:COLORS.border},
-  headerRow:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',paddingHorizontal:16,paddingTop:14,paddingBottom:8},
-  title:{fontSize:22,fontWeight:'700',color:COLORS.text},
-  sub:{fontSize:12,color:COLORS.text3,marginTop:1},
-  headerBtns:{flexDirection:'row',alignItems:'center',gap:8},
-  filterIconBtn:{padding:6,borderRadius:10,backgroundColor:COLORS.bg,borderWidth:1,borderColor:COLORS.border},
-  addBtn:{flexDirection:'row',alignItems:'center',gap:4,backgroundColor:COLORS.purple,borderRadius:99,paddingHorizontal:12,paddingVertical:7},
-  addBtnTxt:{color:'#fff',fontWeight:'700',fontSize:13},
-  sourceRow:{flexDirection:'row',gap:6,paddingHorizontal:12,paddingBottom:8,flexWrap:'wrap'},
-  sourceBtn:{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:5,borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg},
-  sourceBtnOn:{backgroundColor:COLORS.purple,borderColor:COLORS.purple},
-  sourceEmoji:{fontSize:13},
-  sourceTxt:{fontSize:12,fontWeight:'500',color:COLORS.text2},
-  officialBadge:{backgroundColor:'#EFF6FF',borderRadius:99,paddingHorizontal:9,paddingVertical:4,borderWidth:1,borderColor:'#BFDBFE'},
-  officialBadgeTxt:{fontSize:11,fontWeight:'600',color:COLORS.primary},
-  catBtn:{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:5,borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg},
-  catBtnOn:{backgroundColor:COLORS.purple,borderColor:COLORS.purple},
-  catEmoji:{fontSize:13},catTxt:{fontSize:12,fontWeight:'500',color:COLORS.text2},
-  filtersPanel:{backgroundColor:COLORS.bg,marginHorizontal:12,marginBottom:6,borderRadius:14,padding:12,borderWidth:1,borderColor:COLORS.border},
-  filterLabel:{fontSize:12,fontWeight:'700',color:COLORS.text,marginBottom:6,marginTop:4},
-  radRow:{flexDirection:'row',gap:6,flexWrap:'wrap',marginBottom:8},
-  sortBtn:{paddingHorizontal:12,paddingVertical:7,borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg2},
-  sortBtnOn:{backgroundColor:COLORS.purple,borderColor:COLORS.purple},
-  sortTxt:{fontSize:12,fontWeight:'600',color:COLORS.text2},
-  searchRow:{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg2,borderRadius:10,borderWidth:1,borderColor:COLORS.border,paddingHorizontal:10,paddingVertical:9},
-  searchInput:{flex:1,fontSize:14,color:COLORS.text},
-  officialBanner:{backgroundColor:'#EFF6FF',borderBottomWidth:0.5,borderBottomColor:'#BFDBFE',paddingHorizontal:14,paddingVertical:8,flexDirection:'row',gap:6,alignItems:'flex-start'},
-  officialBannerTxt:{flex:1,fontSize:12,color:COLORS.primary,lineHeight:17},
-  guestBanner:{backgroundColor:'#F3E8FF',borderBottomWidth:0.5,borderBottomColor:'#DDD6FE',paddingHorizontal:16,paddingVertical:9},
-  guestTxt:{fontSize:13,color:'#6D28D9',fontWeight:'500',textAlign:'center'},
+  headerRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:14,paddingTop:10,paddingBottom:6},
+  headerBtn:{width:36,height:36,borderRadius:18,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'},
+  card:{backgroundColor:COLORS.bg2,borderRadius:14,borderWidth:0.5,borderColor:COLORS.border,overflow:'hidden'},
 });
 
-const ec = StyleSheet.create({
-  card:{backgroundColor:COLORS.bg2,borderRadius:16,borderWidth:0.5,borderColor:COLORS.border,overflow:'hidden'},
-  officialStripe:{backgroundColor:COLORS.primary,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:12,paddingVertical:4},
-  officialStripeTxt:{fontSize:11,fontWeight:'600',color:'#fff'},
-  header:{flexDirection:'row'},
-  dateBadge:{width:72,backgroundColor:COLORS.purpleLight,alignItems:'center',justifyContent:'center',padding:12},
-  day:{fontSize:28,fontWeight:'800',color:COLORS.purple,lineHeight:30},
-  month:{fontSize:10,fontWeight:'700',color:COLORS.purple,textTransform:'uppercase'},
-  time:{fontSize:10,color:COLORS.purple,marginTop:2},
-  todayBadge:{backgroundColor:COLORS.purple,borderRadius:4,paddingHorizontal:6,paddingVertical:1,marginTop:3},
-  todayTxt:{fontSize:9,fontWeight:'800',color:'#fff'},
-  info:{flex:1,padding:12},
-  topRow:{flexDirection:'row',alignItems:'center',gap:6,marginBottom:4,flexWrap:'wrap'},
-  catBadge:{backgroundColor:COLORS.purpleLight,borderRadius:99,paddingHorizontal:8,paddingVertical:2},
-  catBadgeTxt:{fontSize:11,fontWeight:'600',color:COLORS.purple},
-  freeBadge:{backgroundColor:COLORS.successLight,borderRadius:99,paddingHorizontal:8,paddingVertical:2},
-  freeTxt:{fontSize:10,fontWeight:'800',color:COLORS.success},
-  paidBadge:{backgroundColor:COLORS.warningLight,borderRadius:99,paddingHorizontal:8,paddingVertical:2},
-  paidTxt:{fontSize:11,fontWeight:'600',color:COLORS.warning},
-  title:{fontSize:15,fontWeight:'700',color:COLORS.text,lineHeight:20},
-  venue:{fontSize:12,color:COLORS.text3,marginTop:3},
-  desc:{fontSize:12,color:COLORS.text2,marginTop:4,lineHeight:16},
-  footer:{flexDirection:'row',gap:6,padding:10,borderTopWidth:0.5,borderTopColor:COLORS.border,alignItems:'center'},
-  navBtn:{flex:1,backgroundColor:COLORS.primary,borderRadius:99,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:4,paddingVertical:8},
-  navBtnTxt:{fontSize:12,fontWeight:'600',color:'#fff'},
-  ticketBtn:{backgroundColor:COLORS.purpleLight,borderRadius:99,flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:12,paddingVertical:8,borderWidth:1,borderColor:COLORS.purple},
-  ticketBtnTxt:{fontSize:12,fontWeight:'600',color:COLORS.purple},
-  voteBtn:{paddingHorizontal:10,paddingVertical:7,borderRadius:99,borderWidth:0.5,borderColor:COLORS.border,backgroundColor:COLORS.bg},
-  voteTxt:{fontSize:13},
-  source:{fontSize:10,color:COLORS.text3,flex:1,textAlign:'right'},
-});
-
-const em = StyleSheet.create({
-  wrap:{alignItems:'center',paddingTop:60,paddingHorizontal:32,paddingBottom:40},
-  icon:{fontSize:52,textAlign:'center',marginBottom:12},
-  title:{fontSize:17,fontWeight:'700',color:COLORS.text,textAlign:'center',marginBottom:6},
-  desc:{fontSize:13,color:COLORS.text2,textAlign:'center',lineHeight:20,marginBottom:20},
-  btn:{backgroundColor:COLORS.purple,borderRadius:99,paddingHorizontal:24,paddingVertical:12,flexDirection:'row',alignItems:'center',gap:6},
-  btnTxt:{color:'#fff',fontWeight:'700',fontSize:15},
-  divider:{flexDirection:'row',alignItems:'center',gap:8,width:'100%',marginVertical:20},
-  dividerLine:{flex:1,height:0.5,backgroundColor:COLORS.border},
-  dividerTxt:{fontSize:11,color:COLORS.text3,fontStyle:'italic'},
-  linksTitle:{fontSize:12,fontWeight:'600',color:COLORS.text3,alignSelf:'flex-start',marginBottom:8},
-  linkBtn:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',width:'100%',backgroundColor:COLORS.bg2,borderRadius:10,paddingHorizontal:14,paddingVertical:12,marginBottom:6,borderWidth:0.5,borderColor:COLORS.border},
-  linkTxt:{fontSize:13,color:COLORS.primary,fontWeight:'500'},
-});
-
-const am = StyleSheet.create({
-  wrap:{flex:1,backgroundColor:COLORS.bg2},
-  handle:{width:40,height:4,borderRadius:99,backgroundColor:COLORS.border,alignSelf:'center',marginTop:10},
-  header:{flexDirection:'row',justifyContent:'space-between',alignItems:'center',padding:16,borderBottomWidth:0.5,borderBottomColor:COLORS.border},
-  title:{fontSize:18,fontWeight:'700',color:COLORS.text},
-  closeBtn:{width:32,height:32,borderRadius:99,backgroundColor:COLORS.bg,alignItems:'center',justifyContent:'center'},
-  form:{padding:16,paddingBottom:60},
-  infoBanner:{flexDirection:'row',gap:8,backgroundColor:COLORS.primaryLight,borderRadius:12,padding:12,marginBottom:12,alignItems:'flex-start'},
-  infoTxt:{flex:1,fontSize:12,color:COLORS.primary,lineHeight:17},
-  label:{fontSize:13,fontWeight:'600',color:COLORS.text,marginBottom:5,marginTop:8},
-  input:{backgroundColor:COLORS.bg,borderRadius:12,borderWidth:1.5,borderColor:COLORS.border,padding:12,fontSize:15,color:COLORS.text},
-  catGrid:{flexDirection:'row',flexWrap:'wrap',gap:6,marginBottom:6},
-  catBtn:{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:6,borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg},
-  catBtnOn:{backgroundColor:COLORS.purple,borderColor:COLORS.purple},
-  catEmoji:{fontSize:13},catTxt:{fontSize:12,fontWeight:'500',color:COLORS.text2},
-  gpsBtn:{flexDirection:'row',alignItems:'center',gap:8,backgroundColor:COLORS.primaryLight,borderRadius:12,padding:12,borderWidth:1,borderColor:COLORS.primary,marginVertical:6},
-  gpsBtnOn:{backgroundColor:COLORS.successLight,borderColor:COLORS.success},
-  gpsTxt:{fontSize:13,color:COLORS.primary,flex:1},
-  freeToggle:{paddingHorizontal:12,paddingVertical:10,borderRadius:12,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg,marginBottom:0},
-  freeToggleOn:{backgroundColor:COLORS.success,borderColor:COLORS.success},
-  freeToggleTxt:{fontSize:12,fontWeight:'600',color:COLORS.text2},
-  errBox:{backgroundColor:COLORS.dangerLight,borderRadius:10,padding:12,marginBottom:8},
-  errTxt:{color:COLORS.danger,fontSize:13},
-  submitBtn:{backgroundColor:COLORS.purple,borderRadius:99,padding:15,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,marginTop:8},
-  submitTxt:{color:'#fff',fontWeight:'700',fontSize:15},
+const st = StyleSheet.create({
+  input:{backgroundColor:COLORS.bg3,borderRadius:12,borderWidth:1,borderColor:COLORS.border,paddingHorizontal:14,paddingVertical:10,fontSize:14,color:COLORS.text},
+  nextBtn:{backgroundColor:COLORS.primary,borderRadius:14,padding:16,alignItems:'center',marginTop:12},
 });

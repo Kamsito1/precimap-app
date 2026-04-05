@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "MapaTacano",
+    "name": "Mapa Tacano",
     "slug": "precimap",
     "scheme": "com.kamsito.precimap",
-    "version": "2.0.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
@@ -13,26 +13,29 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#1D4ED8"
+      "backgroundColor": "#2563EB"
     },
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "92",
+      "buildNumber": "94",
       "requireFullScreen": true,
       "infoPlist": {
-        "CFBundleDisplayName": "MapaTacaño",
+        "CFBundleDisplayName": "Mapa Tacaño",
         "NSLocationWhenInUseUsageDescription": "MapaTacaño usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",
         "NSCameraUsageDescription": "MapaTacaño necesita la cámara para fotografiar precios y chollos.",
         "NSPhotoLibraryUsageDescription": "MapaTacaño necesita tu galería para subir fotos de chollos y tu avatar.",
         "NSPhotoLibraryAddUsageDescription": "MapaTacaño guarda fotos de precios en tu galería.",
+        "NSMicrophoneUsageDescription": "MapaTacaño no usa el micrófono.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "MapaTacaño usa tu ubicación solo mientras la app está abierta para mostrarte gasolineras y servicios cercanos.",
+        "NSLocationAlwaysUsageDescription": "MapaTacaño usa tu ubicación solo mientras la app está abierta para mostrarte gasolineras y servicios cercanos.",
         "ITSAppUsesNonExemptEncryption": false,
-        "NSUserTrackingUsageDescription": "MapaTacaño puede usar identificadores de publicidad para mostrarte anuncios más relevantes.",
         "LSApplicationQueriesSchemes": [
           "com.amazon.mobile.shopping.web",
           "amazon-spain",
           "amazon"
-        ]
+        ],
+        "NSPrivacyPolicyURL": "https://xn--mapatacao-s6a.es/privacidad.html"
       },
       "deploymentTarget": "15.1"
     },
@@ -42,7 +45,7 @@
         "backgroundColor": "#2563EB"
       },
       "package": "com.kamsito.precimap",
-      "versionCode": 1,
+      "versionCode": 5,
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
@@ -71,7 +74,8 @@
         }
       ],
       "expo-font",
-      "expo-apple-authentication"
+      "expo-apple-authentication",
+      "./plugins/withCarPlay"
     ],
     "extra": {
       "eas": {
@@ -90,8 +94,5 @@
       "farmacia",
       "ofertas"
     ]
-  },
-  "react-native-google-mobile-ads": {
-    "ios_app_id": "ca-app-pub-4854549477350471~3682160177"
   }
 }

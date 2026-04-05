@@ -5,14 +5,14 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, apiGet } from '../utils';
+import { COLORS, apiGet, fmtP } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
 import AdBanner from '../components/AdBanner';
 
 const PERIODS = [
-  { key:'week',  label:'Esta semana', emoji:'📅' },
-  { key:'month', label:'Este mes',    emoji:'🗓️' },
-  { key:'all',   label:'Histórico',   emoji:'🏆' },
+  { key:'week',  label:'Esta semana', icon:'calendar-outline' },
+  { key:'month', label:'Este mes',    icon:'today-outline' },
+  { key:'all',   label:'Histórico',   icon:'trophy-outline' },
 ];
 
 export default function RankingScreen() {
@@ -64,21 +64,27 @@ export default function RankingScreen() {
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       <View style={s.header}>
-        <Text style={s.title}>🏆 Ranking</Text>
+        <View style={{flexDirection:'row',alignItems:'center',gap:8,paddingHorizontal:16,paddingTop:14}}>
+          <Ionicons name="trophy" size={22} color={COLORS.primary}/>
+          <Text style={s.title}>Ranking</Text>
+        </View>
         <Text style={s.sub}>Los mejores ahorradores de España</Text>
 
         {/* Global stats */}
         {stats && (
           <View style={s.statsRow}>
             {[
-              [stats.users || 0,       '👤 Usuarios'],
-              [stats.prices || 0,      '💰 Precios'],
-              [stats.deals || 0,       '🔥 Chollos'],
-              [Number(stats.gasolineras||0).toLocaleString('es-ES')+'+', '⛽ Gasolinas'],
-            ].map(([n, l]) => (
+              [stats.users || 0,       'Usuarios',   'people-outline'],
+              [stats.prices || 0,      'Precios',    'pricetag-outline'],
+              [stats.deals || 0,       'Chollos',    'flame-outline'],
+              [Number(stats.gasolineras||0).toLocaleString('es-ES')+'+', 'Gasolinas', 'speedometer-outline'],
+            ].map(([n, l, ico]) => (
               <View key={l} style={s.statBox}>
                 <Text style={s.statN}>{typeof n==='number' ? Number(n).toLocaleString('es-ES') : n}</Text>
-                <Text style={s.statL}>{l}</Text>
+                <View style={{flexDirection:'row',alignItems:'center',gap:3,marginTop:2}}>
+                  <Ionicons name={ico} size={9} color={COLORS.text3}/>
+                  <Text style={s.statL}>{l}</Text>
+                </View>
               </View>
             ))}
           </View>
@@ -86,12 +92,13 @@ export default function RankingScreen() {
 
         {/* Main tab selector */}
         <View style={{flexDirection:'row',paddingHorizontal:12,paddingBottom:8,gap:8}}>
-          {[['ranking','🏆 Ranking'],['comunidad','🌍 Comunidad']].map(([key,label])=>(
+          {[['ranking','Ranking','trophy-outline'],['comunidad','Comunidad','globe-outline']].map(([key,label,ico])=>(
             <TouchableOpacity key={key}
-              style={{flex:1,paddingVertical:9,borderRadius:12,alignItems:'center',
+              style={{flex:1,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,paddingVertical:9,borderRadius:12,
                 backgroundColor:mainTab===key?COLORS.primary:COLORS.bg3,
                 borderWidth:1.5,borderColor:mainTab===key?COLORS.primary:COLORS.border}}
               onPress={()=>setMainTab(key)}>
+              <Ionicons name={ico} size={14} color={mainTab===key?'#fff':COLORS.text2}/>
               <Text style={{fontSize:13,fontWeight:'700',color:mainTab===key?'#fff':COLORS.text2}}>{label}</Text>
             </TouchableOpacity>
           ))}
@@ -103,7 +110,7 @@ export default function RankingScreen() {
             <TouchableOpacity key={p.key}
               style={[s.periodBtn, period === p.key && s.periodBtnOn]}
               onPress={() => setPeriod(p.key)}>
-              <Text style={s.periodEmoji}>{p.emoji}</Text>
+              <Ionicons name={p.icon} size={14} color={period===p.key?'#fff':COLORS.text2}/>
               <Text style={[s.periodTxt, period === p.key && { color: '#fff', fontWeight: '700' }]}>{p.label}</Text>
             </TouchableOpacity>
           ))}
@@ -116,16 +123,18 @@ export default function RankingScreen() {
           {!stats ? <ActivityIndicator color={COLORS.primary} style={{marginTop:40}}/> : (<>
           <Text style={{fontSize:13,color:COLORS.text3,marginBottom:4}}>Estadísticas de la comunidad MapaTacaño</Text>
           {[
-            ['⛽', Number(stats?.gasolineras||12213).toLocaleString('es-ES')+'+', 'Gasolineras indexadas','Del Ministerio de Energía (RITE)'],
-            ['👤', String(stats.users||0), 'Usuarios activos','Ahorradores registrados'],
-            ['💰', String(stats.prices||0), 'Precios reportados','Por la comunidad en el mapa'],
-            ['🔥', String(stats.deals||0), 'Chollos publicados','Ofertas verificadas'],
-            ['📅', String(stats.events||0), 'Eventos locales','En 9+ ciudades de España'],
-            ['📊', String(stats.price_history||300), 'Registros históricos','Evolución de precios en el tiempo'],
-            ['📍', String(stats.places||0), 'Lugares en el mapa','Supermercados, farmacias, restaurantes y más'],
-          ].map(([emoji, num, label, desc]) => (
+            ['speedometer-outline', Number(stats?.gasolineras||12213).toLocaleString('es-ES')+'+', 'Gasolineras indexadas','Del Ministerio de Energía'],
+            ['people-outline', String(stats.users||0), 'Usuarios activos','Ahorradores registrados'],
+            ['pricetag-outline', String(stats.prices||0), 'Precios reportados','Por la comunidad'],
+            ['flame-outline', String(stats.deals||0), 'Chollos publicados','Ofertas verificadas'],
+            ['calendar-outline', String(stats.events||0), 'Eventos locales','En ciudades de España'],
+            ['bar-chart-outline', String(stats.price_history||300), 'Registros históricos','Evolución de precios'],
+            ['location-outline', String(stats.places||0), 'Lugares en el mapa','Supermercados, farmacias y más'],
+          ].map(([ico, num, label, desc]) => (
             <View key={label} style={{backgroundColor:COLORS.bg2,borderRadius:14,padding:14,flexDirection:'row',alignItems:'center',gap:14,borderWidth:1,borderColor:COLORS.border}}>
-              <Text style={{fontSize:28}}>{emoji}</Text>
+              <View style={{width:48,height:48,borderRadius:14,backgroundColor:COLORS.primaryLight,alignItems:'center',justifyContent:'center'}}>
+                <Ionicons name={ico} size={24} color={COLORS.primary}/>
+              </View>
               <View style={{flex:1}}>
                 <Text style={{fontSize:22,fontWeight:'800',color:COLORS.primary}}>{num}</Text>
                 <Text style={{fontSize:13,fontWeight:'700',color:COLORS.text}}>{label}</Text>
@@ -140,7 +149,7 @@ export default function RankingScreen() {
               {[['🟢 Mínimo',stats.gas_stats.g95.min],['📊 Media',stats.gas_stats.g95.avg],['🔴 Máximo',stats.gas_stats.g95.max]].map(([l,v])=>(
                 <View key={l} style={{flexDirection:'row',justifyContent:'space-between',paddingVertical:4}}>
                   <Text style={{fontSize:13,color:COLORS.text2}}>{l}</Text>
-                  <Text style={{fontSize:13,fontWeight:'700',color:COLORS.text}}>{v?.toFixed(3)}€/L</Text>
+                  <Text style={{fontSize:13,fontWeight:'700',color:COLORS.text}}>{v?.toFixed(3).replace(".",",")}€/L</Text>
                 </View>
               ))}
             </View>
@@ -178,7 +187,7 @@ export default function RankingScreen() {
             ListHeaderComponent={<>
               {leaders.length > 0 && leaders[0]?.period_fallback && period !== 'all' ? (
               <View style={{backgroundColor:'#FEF3C7',borderRadius:12,padding:12,marginBottom:8,flexDirection:'row',gap:8,alignItems:'center'}}>
-                <Text style={{fontSize:18}}>📅</Text>
+                <Ionicons name="calendar-outline" size={18} color="#92400E"/>
                 <View style={{flex:1}}>
                   <Text style={{fontSize:13,fontWeight:'700',color:'#92400E'}}>
                     Sin actividad esta {period === 'week' ? 'semana' : 'mes'}
@@ -269,7 +278,7 @@ export default function RankingScreen() {
             }}
             ListEmptyComponent={
               <View style={s.empty}>
-                <Text style={{ fontSize: 52, textAlign: 'center', marginBottom: 12 }}>🚀</Text>
+                <Ionicons name="rocket-outline" size={52} color={COLORS.text3} style={{marginBottom:12}}/>
                 <Text style={s.emptyTitle}>¡Sé el primero!</Text>
                 <Text style={s.emptyDesc}>Reporta precios en el mapa o publica chollos para aparecer en el ranking.</Text>
               </View>
@@ -293,7 +302,6 @@ const s = StyleSheet.create({
   periodRow: { flexDirection: 'row', paddingHorizontal: 12, paddingBottom: 12, gap: 6 },
   periodBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingVertical: 9, borderRadius: 12, borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.bg },
   periodBtnOn: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  periodEmoji: { fontSize: 13 },
   periodTxt: { fontSize: 12, fontWeight: '500', color: COLORS.text2 },
   podium: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   podiumCard: { flex: 1, borderRadius: 16, padding: 12, alignItems: 'center', gap: 4, borderWidth: 1.5 },

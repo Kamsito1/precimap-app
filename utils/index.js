@@ -4,6 +4,12 @@ import { useColorScheme } from 'react-native';
 // ─── APP VERSION (single source of truth) ─────────────────────────────────────
 export const APP_VERSION = '2.0.0';
 
+// Format price with comma as decimal separator (Spanish locale)
+export function fmtP(num, decimals = 2) {
+  if (num == null || isNaN(num)) return '0,00';
+  return Number(num).toFixed(decimals).replace('.', ',');
+}
+
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
 // API URL — hardcoded para producción (Railway)
 // En desarrollo local usa la IP del Mac
@@ -130,6 +136,7 @@ export async function apiPost(path, body) {
   });
   if (r.status === 401) handleUnauthorized(401);
   const data = await r.json().catch(() => ({}));
+  if (!r.ok && data.error) return { error: data.error };
   if (!r.ok && !data.ok) { throw new Error(data.error || `HTTP ${r.status}`); }
   return data;
 }
@@ -275,20 +282,26 @@ export const FUEL_LABELS = {
 };
 
 export const CATEGORY_INFO = {
-  gasolinera:   { emoji: '⛽', bg: '#FEF3C7', text: '#92400E',  color: '#F59E0B', label: 'Gasolinera' },
-  supermercado: { emoji: '🛒', bg: '#ECFDF5', text: '#065F46',  color: '#16A34A', label: 'Supermercado' },
-  gimnasio:     { emoji: '💪', bg: '#EDE9FE', text: '#4C1D95',  color: '#7C3AED', label: 'Gimnasio' },
-  bar:          { emoji: '🍺', bg: '#FEF3C7', text: '#92400E',  color: '#D97706', label: 'Bar' },
-  cafe:         { emoji: '☕', bg: '#FFF7ED', text: '#9A3412',  color: '#EA580C', label: 'Café' },
-  farmacia:     { emoji: '💊', bg: '#EFF6FF', text: '#1E40AF',  color: '#2563EB', label: 'Farmacia' },
-  restaurante:  { emoji: '🍽️', bg: '#FFF1F2', text: '#9F1239',  color: '#E11D48', label: 'Bar / Restaurante' },
-  // Subtipos de restaurante — se usan cuando hay activeCatKey específico
-  restaurante_cafe:     { emoji: '☕', bg: '#FFF7ED', text: '#9A3412', color: '#EA580C', label: 'Café' },
-  restaurante_cerveza:  { emoji: '🍺', bg: '#FFFBEB', text: '#92400E', color: '#D97706', label: 'Bar' },
-  restaurante_menu:     { emoji: '🍽️', bg: '#FFF1F2', text: '#9F1239', color: '#E11D48', label: 'Restaurante' },
-  panaderia:    { emoji: '🥖', bg: '#FFFBEB', text: '#92400E',  color: '#B45309', label: 'Panadería' },
-  peluqueria:   { emoji: '💇', bg: '#FCE7F3', text: '#9D174D',  color: '#EC4899', label: 'Peluquería' },
-  peluqueria_canina: { emoji: '🐕', bg: '#FEF3C7', text: '#92400E', color: '#D97706', label: 'Peluquería Canina' },
-  veterinario:  { emoji: '🏥', bg: '#ECFDF5', text: '#065F46',  color: '#059669', label: 'Veterinario' },
-  default:      { emoji: '📍', bg: '#F8FAFC', text: '#475569',  color: '#64748B', label: 'Lugar' },
+  gasolinera:   { emoji: '⛽', icon: 'speedometer-outline', bg: '#FEF3C7', text: '#92400E',  color: '#F59E0B', label: 'Gasolinera' },
+  supermercado: { emoji: '🛒', icon: 'cart-outline', bg: '#ECFDF5', text: '#065F46',  color: '#16A34A', label: 'Supermercado' },
+  gimnasio:     { emoji: '💪', icon: 'barbell-outline', bg: '#EDE9FE', text: '#4C1D95',  color: '#7C3AED', label: 'Gimnasio' },
+  bar:          { emoji: '🍺', icon: 'beer-outline', bg: '#FEF3C7', text: '#92400E',  color: '#D97706', label: 'Bar' },
+  cafe:         { emoji: '☕', icon: 'cafe-outline', bg: '#FFF7ED', text: '#9A3412',  color: '#EA580C', label: 'Café' },
+  farmacia:     { emoji: '💊', icon: 'medkit-outline', bg: '#EFF6FF', text: '#1E40AF',  color: '#2563EB', label: 'Farmacia' },
+  restaurante:  { emoji: '🍽️', icon: 'restaurant-outline', bg: '#FFF1F2', text: '#9F1239',  color: '#E11D48', label: 'Bar / Restaurante' },
+  restaurante_cafe:     { emoji: '☕', icon: 'cafe-outline', bg: '#FFF7ED', text: '#9A3412', color: '#EA580C', label: 'Café' },
+  restaurante_cerveza:  { emoji: '🍺', icon: 'beer-outline', bg: '#FFFBEB', text: '#92400E', color: '#D97706', label: 'Bar' },
+  restaurante_menu:     { emoji: '🍽️', icon: 'restaurant-outline', bg: '#FFF1F2', text: '#9F1239', color: '#E11D48', label: 'Restaurante' },
+  panaderia:    { emoji: '🥖', icon: 'nutrition-outline', bg: '#FFFBEB', text: '#92400E',  color: '#B45309', label: 'Panadería' },
+  peluqueria:   { emoji: '💇', icon: 'cut-outline', bg: '#FCE7F3', text: '#9D174D',  color: '#EC4899', label: 'Peluquería' },
+  peluqueria_canina: { emoji: '🐕', icon: 'paw-outline', bg: '#FEF3C7', text: '#92400E', color: '#D97706', label: 'Peluquería Canina' },
+  veterinario:  { emoji: '🏥', icon: 'medical-outline', bg: '#ECFDF5', text: '#065F46',  color: '#059669', label: 'Veterinario' },
+  carniceria:   { emoji: '🥩', icon: 'flame-outline', bg: '#FEF2F2', text: '#991B1B',  color: '#DC2626', label: 'Carnicería' },
+  fruteria:     { emoji: '🍎', icon: 'leaf-outline', bg: '#ECFDF5', text: '#065F46',  color: '#16A34A', label: 'Frutería' },
+  panaderia:    { emoji: '🥖', icon: 'nutrition-outline', bg: '#FFFBEB', text: '#92400E',  color: '#B45309', label: 'Panadería' },
+  pescaderia:   { emoji: '🐟', icon: 'fish-outline', bg: '#EFF6FF', text: '#1E40AF',  color: '#2563EB', label: 'Pescadería' },
+  estanco:      { emoji: '🚬', icon: 'cube-outline', bg: '#F5F5F4', text: '#44403C',  color: '#78716C', label: 'Estanco' },
+  ferreteria:   { emoji: '🔧', icon: 'hammer-outline', bg: '#FFF7ED', text: '#9A3412',  color: '#EA580C', label: 'Ferretería' },
+  lavanderia:   { emoji: '👕', icon: 'water-outline', bg: '#EFF6FF', text: '#1E40AF',  color: '#3B82F6', label: 'Lavandería' },
+  default:      { emoji: '📍', icon: 'location-outline', bg: '#F8FAFC', text: '#475569',  color: '#64748B', label: 'Lugar' },
 };

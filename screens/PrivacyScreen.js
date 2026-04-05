@@ -4,13 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS, openURL } from '../utils';
 
-export default function PrivacyScreen({ onClose }) {
+export default function PrivacyScreen({ onClose, onBack }) {
+  const goBack = onClose || onBack;
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.bg2 }} edges={['top']}>
       <View style={s.header}>
         <Text style={s.title}>Política de Privacidad</Text>
-        {onClose && (
-          <TouchableOpacity onPress={onClose} style={s.closeBtn}>
+        {goBack && (
+          <TouchableOpacity onPress={goBack} style={s.closeBtn}>
             <Ionicons name="close" size={20} color={COLORS.text2}/>
           </TouchableOpacity>
         )}
@@ -22,7 +23,7 @@ export default function PrivacyScreen({ onClose }) {
         <Text style={s.p}>MapaTacaño es una aplicación de ahorro y comparación de precios. El responsable del tratamiento es el desarrollador de MapaTacaño.</Text>
 
         <Text style={s.h2}>2. Datos que recogemos</Text>
-        <Text style={s.p}>• Email y nombre de usuario al registrarte (o datos de Google/Apple si usas Google Sign-In o Sign in with Apple){'\n'}• Precios de productos que reportas voluntariamente{'\n'}• Ubicación aproximada (solo cuando abres el mapa, nunca en segundo plano){'\n'}• Fotos que subes voluntariamente al publicar chollos{'\n'}• ID de publicidad anónimo (para mostrar anuncios relevantes vía Google AdMob)</Text>
+        <Text style={s.p}>• Email y nombre de usuario al registrarte (o datos de Google/Apple si usas Google Sign-In o Sign in with Apple){'\n'}• Precios de productos que reportas voluntariamente{'\n'}• Ubicación aproximada (solo cuando abres el mapa, nunca en segundo plano){'\n'}• Fotos que subes voluntariamente al publicar chollos</Text>
 
         <Text style={s.h2}>3. Para qué usamos tus datos</Text>
         <Text style={s.p}>• Gestionar tu cuenta y autenticación{'\n'}• Mostrar tu actividad en el ranking comunitario{'\n'}• Enviarte notificaciones sobre tus reportes (en la app, no push){'\n'}• Mejorar la app con datos agregados y anónimos</Text>
@@ -34,14 +35,14 @@ export default function PrivacyScreen({ onClose }) {
         <Text style={s.p}>No vendemos ni compartimos tus datos con terceros. Los precios reportados son públicos por naturaleza (son el producto principal de la app). Tu email nunca es público.</Text>
 
         <Text style={s.h2}>6. Publicidad</Text>
-        <Text style={s.p}>MapaTacaño muestra anuncios a través de Google AdMob y banners propios de servicios afiliados. Los anuncios son no intrusivos (banners pequeños) y se pueden cerrar temporalmente. No vendemos tus datos a anunciantes. Google AdMob puede usar identificadores de publicidad anónimos para mostrar anuncios más relevantes.</Text>
+        <Text style={s.p}>MapaTacaño puede mostrar banners propios de servicios afiliados. Los anuncios son no intrusivos y se pueden cerrar temporalmente. No vendemos tus datos a anunciantes.</Text>
 
         <Text style={s.h2}>7. Cookies y almacenamiento</Text>
-        <Text style={s.p}>Solo almacenamos tu sesión localmente en tu dispositivo (AsyncStorage). Google AdMob puede almacenar cookies propias para el servicio de publicidad.</Text>
+        <Text style={s.p}>Solo almacenamos tu sesión localmente en tu dispositivo (AsyncStorage). No usamos cookies de terceros.</Text>
 
         <Text style={s.h2}>8. Contacto</Text>
         <Text style={s.p}>Para cualquier consulta sobre privacidad, escríbenos a:</Text>
-        <TouchableOpacity onPress={() => openURL('mailto:sitoexpositorodriguez@gmail.com')}>          <Text style={s.link}>sitoexpositorodriguez@gmail.com</Text>
+        <TouchableOpacity onPress={() => openURL('mailto:contacto@mapatacaño.es')}>          <Text style={s.link}>contacto@mapatacaño.es</Text>
         </TouchableOpacity>
 
         <Text style={s.h2}>9. Cambios en esta política</Text>

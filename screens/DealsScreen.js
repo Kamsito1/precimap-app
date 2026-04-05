@@ -1,976 +1,639 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
-  Image, ActivityIndicator, RefreshControl, Linking, Alert, TextInput, Modal, Share, ScrollView, Dimensions,
+  View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, ScrollView,
+  ActivityIndicator, RefreshControl, Alert, Image, TextInput, Linking,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, apiGet, apiPost, apiDelete, timeAgo, applyAffiliateTag, formatPrice, API_BASE, openURL } from '../utils';
+import { COLORS, apiGet, apiPost, apiPatch, apiDelete, timeAgo, openURL, fmtP } from '../utils';
 import { useAuth } from '../contexts/AuthContext';
+import * as ImagePicker from 'expo-image-picker';
 import AuthModal from '../components/AuthModal';
-import CommentsModal from '../components/CommentsModal';
 import AddDealModal from '../components/AddDealModal';
-import AdBanner from '../components/AdBanner';
+import CommentsModal from '../components/CommentsModal';
 
-const CARD_W = Dimensions.get('window').width - 24; // card width for carousel
-
-const CATS = [
-  { key:'all',          label:'Todos',        emoji:'🔥' },
-  { key:'tecnologia',   label:'Tech',          emoji:'💻' },
-  { key:'moda',         label:'Moda',          emoji:'👗' },
-  { key:'hogar',        label:'Hogar',         emoji:'🏠' },
-  { key:'alimentacion', label:'Súper',         emoji:'🛒' },
-  { key:'viajes',       label:'Viajes',        emoji:'✈️' },
-  { key:'juegos',       label:'Gaming',        emoji:'🎮' },
-  { key:'belleza',      label:'Belleza',       emoji:'💄' },
-  { key:'deportes',     label:'Deporte',       emoji:'⚽' },
-  { key:'libros',       label:'Libros',        emoji:'📚' },
-  { key:'coches',       label:'Motor',         emoji:'🚗' },
-  { key:'ocio',         label:'Ocio',          emoji:'🎭' },
-  { key:'salud',        label:'Salud',         emoji:'💊' },
-  { key:'mascotas',     label:'Mascotas',      emoji:'🐾' },
-  { key:'infantil',     label:'Infantil',      emoji:'👶' },
-  { key:'otros',        label:'Otros',         emoji:'🏷️' },
+const DEAL_CATEGORIES = [
+  { key:'todos', label:'Todos', icon:'grid-outline' },
+  { key:'tecnologia', label:'Tecnología', icon:'laptop-outline' },
+  { key:'hogar', label:'Hogar', icon:'home-outline' },
+  { key:'moda', label:'Moda', icon:'shirt-outline' },
+  { key:'alimentacion', label:'Alimentación', icon:'nutrition-outline' },
+  { key:'ocio', label:'Ocio', icon:'game-controller-outline' },
+  { key:'viajes', label:'Viajes', icon:'airplane-outline' },
+  { key:'servicios', label:'Servicios', icon:'construct-outline' },
+  { key:'otros', label:'Otros', icon:'ellipsis-horizontal-outline' },
 ];
 
-const SORTS = [
-  { key:'hot',   label:'🔥 Top',    desc:'Más votados' },
-  { key:'new',   label:'🆕 Nuevo',  desc:'Más recientes' },
-  { key:'top',   label:'👑 Mejor',  desc:'Históricamente mejor' },
-  { key:'price', label:'💰 Precio', desc:'Más baratos primero' },
+const FILTER_OPTS = [
+  { key:'nuevos', label:'Nuevos', icon:'time-outline' },
+  { key:'destacados', label:'Destacados', icon:'flame-outline' },
+  { key:'gratis', label:'Gratis', icon:'gift-outline' },
 ];
 
-// SafeImage: maneja onError sin setNativeProps (compatible con Hermes/iOS)
-function SafeImage({ uri, fallback, style }) {
-  const [src, setSrc] = React.useState(uri && uri.startsWith('http') ? uri : fallback);
-  React.useEffect(() => {
-    setSrc(uri && uri.startsWith('http') ? uri : fallback);
-  }, [uri, fallback]);
-  if (!src) return <View style={[style, {backgroundColor:'#f3f4f6'}]}/>;
-  return (
-    <Image
-      source={{ uri: src }}
-      style={style}
-      resizeMode="cover"
-      onError={() => { if (src !== fallback && fallback) setSrc(fallback); }}
-    />
-  );
-}
+const TIME_FILTERS = [
+  { key:'1d', label:'Hoy' },
+  { key:'7d', label:'Semana' },
+  { key:'30d', label:'Mes' },
+  { key:'365d', label:'Año' },
+  { key:'all', label:'Todos' },
+];
 
 export default function DealsScreen() {
   const { isLoggedIn, user } = useAuth();
-  const [deals, setDeals]         = useState([]);
-  const [trending, setTrending]   = useState([]);
-  const [cat, setCat]               = useState('all');
-  const [sort, setSort]             = useState('hot');
-  const [minDiscount, setMinDiscount] = useState(0); // 0=all, 20, 30, 50
-  const [search, setSearch]         = useState('');
-  const [myVotes, setMyVotes]       = useState({});
-  const [loading, setLoading]       = useState(true);
+  const [deals, setDeals] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [offset, setOffset]         = useState(0);
-  const [hasMore, setHasMore]       = useState(true);
-  const PAGE = 20;
-  const [showAuth, setShowAuth]     = useState(false);
-  const [showAdd, setShowAdd]       = useState(false);
-  const [commentsFor, setCommentsFor] = useState(null);
-  const [detailDeal, setDetailDeal] = useState(null); // full deal detail view
-  const [showSearch, setShowSearch] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [editDeal, setEditDeal]     = useState(null);  // deal being edited
-  const [editPrice, setEditPrice]   = useState('');
-  const [editTitle, setEditTitle]   = useState('');
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDeal, setSelectedDeal] = useState(null);
+  const [commentsDeal, setCommentsDeal] = useState(null);
+  const [editDeal, setEditDeal] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('todos');
+  const [activeFilter, setActiveFilter] = useState('nuevos');
+  const [timeFilter, setTimeFilter] = useState('all');
+  const [userVotes, setUserVotes] = useState({});
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const flatListRef = useRef(null);
 
-  useEffect(() => { resetAndLoad(); }, [cat, sort, minDiscount]);
+  useEffect(() => { loadDeals(true); loadVotes(); checkWelcome(); }, []);
+  useEffect(() => { loadDeals(true); }, [activeCategory, activeFilter, timeFilter]);
 
-  // Load trending on mount
-  useEffect(() => {
-    apiGet('/api/deals/trending').then(t => { if (Array.isArray(t)) setTrending(t); }).catch(()=>{});
-  }, []);
-
-  // Load user's persistent votes on mount
-  useEffect(() => {
-    if (isLoggedIn) {
-      apiGet('/api/users/me/votes').then(v => { if (v && typeof v === 'object') setMyVotes(v); }).catch(() => {});
-    }
-  }, [isLoggedIn]);
-
-  // Debounced search — skip on mount (initial load handled by the effect above)
-  const isMounted = useRef(false);
-  useEffect(() => {
-    if (!isMounted.current) { isMounted.current = true; return; }
-    const timer = setTimeout(() => { resetAndLoad(); }, 400);
-    return () => clearTimeout(timer);
-  }, [search]);
-
-  function resetAndLoad() {
-    setOffset(0); setHasMore(true); load(0, true);
+  async function checkWelcome() {
+    try {
+      const { default: AsyncStorage } = await import('@react-native-async-storage/async-storage');
+      const seen = await AsyncStorage.getItem('deals_welcome_seen');
+      if (!seen) { setShowWelcome(true); AsyncStorage.setItem('deals_welcome_seen','1'); }
+    } catch(_) {}
   }
 
-  async function load(off = 0, reset = false) {
-    if (reset) setLoading(true);
+  async function loadVotes() {
+    if (!isLoggedIn) return;
+    try { const v = await apiGet('/api/users/me/votes'); setUserVotes(v||{}); } catch(_) {}
+  }
+
+  async function loadDeals(reset=false) {
+    if (reset) { setPage(0); setLoading(true); }
     try {
-      let url = `/api/deals?cat=${cat}&sort=${sort}&limit=${PAGE}&offset=${off}`;
-      if (search.trim()) url += `&search=${encodeURIComponent(search.trim())}`;
-      if (minDiscount > 0) url += `&min_discount=${minDiscount}`;
+      const p = reset ? 0 : page;
+      let url = `/api/deals?offset=${p*20}&limit=20&sort=votes`;
+      if (activeCategory !== 'todos') url += `&category=${activeCategory}`;
+      if (activeFilter === 'gratis') url += `&max_price=0`;
+      if (activeFilter === 'nuevos') url = url.replace('sort=votes','sort=new');
+      if (timeFilter !== 'all') url += `&since=${timeFilter}`;
+      if (searchQuery.trim()) url += `&search=${encodeURIComponent(searchQuery.trim())}`;
       const data = await apiGet(url) || [];
       if (reset) setDeals(data);
       else setDeals(prev => [...prev, ...data]);
-      setHasMore(data.length === PAGE);
-      setOffset(off + data.length);
-    } catch(e) {
-      // network error — keep existing data
-    } finally {
-      setLoading(false); setRefreshing(false); setLoadingMore(false);
-    }
+      setHasMore(data.length >= 20);
+      setPage(reset ? 1 : p + 1);
+    } catch(_) {} finally { setLoading(false); setRefreshing(false); }
   }
 
-  const onRefresh = useCallback(() => { setRefreshing(true); resetAndLoad(); }, [cat, sort, search]);
-
-  function onEndReached() {
-    if (loadingMore || !hasMore || loading) return;
-    setLoadingMore(true);
-    load(offset, false);
-  }
-
-  async function vote(dealId, v) {
-    if (!isLoggedIn) return setShowAuth(true);
-    const prev = myVotes[dealId];
-    const newVote = prev === v ? 0 : v; // toggle off if same
-    setMyVotes(mv => ({ ...mv, [dealId]: newVote }));
-    // Optimistic update on deal count
-    setDeals(prev => prev.map(d => d.id === dealId ? {
-      ...d,
-      votes_up:   (d.votes_up||0)   + (newVote===1?1 : prev===1?-1:0),
-      votes_down: (d.votes_down||0) + (newVote===-1?1: prev===-1?-1:0),
-    } : d));
-    try { await apiPost(`/api/deals/${dealId}/vote`, { vote: v }); }
-    catch(_) { /* revert on error */ setMyVotes(mv => ({ ...mv, [dealId]: prev })); }
-  }
-
-  // Votar expirado — directo, sin Alert, con feedback visual
-  const [expireVoted, setExpireVoted] = React.useState({}); // dealId -> bool
-
-  async function reportExpired(deal) {
-    if (!isLoggedIn) return setShowAuth(true);
-    if (expireVoted[deal.id]) return; // ya votado en esta sesión
-    setExpireVoted(prev => ({ ...prev, [deal.id]: true }));
-    // Optimistic update
-    setDeals(prev => prev.map(d =>
-      d.id === deal.id ? { ...d, expire_reports: (d.expire_reports || 0) + 1 } : d
-    ));
+  async function voteDeal(dealId, vote) {
+    if (!isLoggedIn) { setShowAuth(true); return; }
     try {
-      const res = await apiPost(`/api/deals/${deal.id}/report-expired`, {});
-      if (res?.deactivated) {
-        setDeals(prev => prev.filter(d => d.id !== deal.id));
-      } else if (res?.expire_reports != null) {
-        setDeals(prev => prev.map(d =>
-          d.id === deal.id ? { ...d, expire_reports: res.expire_reports } : d
-        ));
-      }
-    } catch(_) {
-      // Revert optimistic on error
-      setExpireVoted(prev => ({ ...prev, [deal.id]: false }));
-      setDeals(prev => prev.map(d =>
-        d.id === deal.id ? { ...d, expire_reports: Math.max(0, (d.expire_reports||1)-1) } : d
-      ));
-    }
+      await apiPost(`/api/deals/${dealId}/vote`, { vote });
+      setUserVotes(prev => ({ ...prev, [dealId]: vote }));
+      setDeals(prev => prev.map(d => {
+        if (d.id !== dealId) return d;
+        const oldVote = userVotes[dealId];
+        let up = d.votes_up || 0, down = d.votes_down || 0;
+        if (oldVote === 'up') up--; if (oldVote === 'down') down--;
+        if (vote === 'up') up++; if (vote === 'down') down++;
+        return { ...d, votes_up: up, votes_down: down };
+      }));
+    } catch(_) {}
   }
 
-  function temperature(up = 0, down = 0) {
-    const score = up - down;
-    if (score >= 50) return { label: '🔥🔥🔥 Ardiendo', color: '#DC2626' };
-    if (score >= 20) return { label: '🔥🔥 Muy caliente', color: '#EA580C' };
-    if (score >= 5)  return { label: '🔥 Caliente', color: '#D97706' };
-    if (score >= 0)  return { label: '😐 Tibio', color: '#6B7280' };
-    return { label: '🧊 Frío', color: '#3B82F6' };
+  async function reportScam(dealId) {
+    if (!isLoggedIn) { setShowAuth(true); return; }
+    Alert.alert('Reportar timo','¿Estás seguro de que este chollo es falso o engañoso?',[
+      {text:'Cancelar',style:'cancel'},
+      {text:'Reportar',style:'destructive',onPress:async()=>{
+        try { await apiPost(`/api/deals/${dealId}/report-scam`); Alert.alert('Reportado','Gracias por avisar. Lo revisaremos.'); } catch(_) {}
+      }},
+    ]);
   }
+
+  async function reportExpired(dealId) {
+    if (!isLoggedIn) { setShowAuth(true); return; }
+    Alert.alert('Oferta agotada','¿Se ha agotado o expirado esta oferta?',[
+      {text:'Cancelar',style:'cancel'},
+      {text:'Sí, se ha agotado',onPress:async()=>{
+        try { await apiPost(`/api/deals/${dealId}/report-expired`); Alert.alert('Reportado','Gracias. Lo revisaremos y lo retiraremos si se confirma.'); } catch(_) {}
+      }},
+    ]);
+  }
+
+  const onRefresh = useCallback(()=>{ setRefreshing(true); loadDeals(true); loadVotes(); },[activeCategory,activeFilter]);
+
+  const filteredDeals = searchQuery.trim()
+    ? deals.filter(d=>(d.title||'').toLowerCase().includes(searchQuery.toLowerCase()))
+    : deals;
 
   return (
     <SafeAreaView style={s.safe} edges={['top']}>
       {/* Header */}
       <View style={s.header}>
-        <View style={s.headerTop}>
-          <View>
-            <Text style={s.title}>🔥 Chollos</Text>
-            {trending.length > 0 && (
-              <View style={{flexDirection:'row',alignItems:'center',gap:4,marginTop:2}}>
-                <Text style={{fontSize:10,color:COLORS.danger,fontWeight:'700'}}>TENDENCIA:</Text>
-                <Text style={{fontSize:10,color:COLORS.text2}} numberOfLines={1}>
-                  {trending[0]?.temperature} {(trending[0]?.title || '').substring(0,30)}...
-                </Text>
-              </View>
-            )}
-            <Text style={s.sub}>
-              {deals.length > 0
-                ? (() => {
-                    const discs = deals.filter(d => d.discount_percent != null && d.discount_percent > 0).map(d => Number(d.discount_percent));
-                    const filterTxt = minDiscount > 0 ? ` · filtro -${minDiscount}%+` : '';
-                    const searchTxt = search.trim() ? ` · "${search.trim()}"` : '';
-                    const bestDisc = discs.length > 0 ? Math.round(Math.max(...discs) || 0) : 0;
-                    return `${deals.length} ofertas${bestDisc > 0 ? ' · mejor -' + bestDisc + '%' : ''}${filterTxt}${searchTxt}`;
-                  })()
-                : loading ? '⏳ Cargando chollos...' : deals.length > 0 ? `${deals.length} chollos · desliza para ver más` : 'Sin chollos con ese filtro'
-              }
-            </Text>
+        <View style={s.headerRow}>
+          <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
+            <Ionicons name="flame" size={20} color="#DC2626"/>
+            <Text style={s.logo}>Chollos</Text>
           </View>
-          <TouchableOpacity style={s.addBtn} onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}>
-            <Ionicons name="add" size={18} color="#fff"/>
-            <Text style={s.addBtnTxt}>Publicar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={{padding:6}} onPress={() => setShowSearch(!showSearch)}>
-            <Ionicons name="search-outline" size={20} color={showSearch ? COLORS.danger : COLORS.text2}/>
-          </TouchableOpacity>
-          <TouchableOpacity style={{padding:6}} onPress={() => setShowSettings(!showSettings)}>
-            <Ionicons name="options-outline" size={20} color={showSettings ? COLORS.danger : COLORS.text2}/>
-          </TouchableOpacity>
-        </View>
-
-        {/* Search bar — toggled by search icon */}
-        {showSearch && (
-        <View style={s.searchRow}>
-          <Ionicons name="search-outline" size={16} color={COLORS.text3} style={{marginRight:8}}/>
-          <TextInput
-            style={s.searchInput}
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Buscar chollos... (ej: iPhone, zapatillas, vuelo)"
-            placeholderTextColor={COLORS.text3}
-            returnKeyType="search"
-            autoCorrect={false}
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color={COLORS.text3}/>
+          <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+            <TouchableOpacity style={s.headerBtn} onPress={()=>setShowSearch(!showSearch)}>
+              <Ionicons name={showSearch?'close':'search-outline'} size={20} color={COLORS.text2}/>
             </TouchableOpacity>
-          )}
+            <TouchableOpacity style={s.headerBtn} onPress={()=>setShowSettings(true)}>
+              <Ionicons name="options-outline" size={20} color={COLORS.text2}/>
+            </TouchableOpacity>
+          </View>
         </View>
-        )}
-
-        {/* Settings panel — filters for categories, sorts, discount */}
-        {showSettings && (
-          <View style={{backgroundColor:COLORS.bg2,borderBottomWidth:0.5,borderBottomColor:COLORS.border,padding:12}}>
-            <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
-              <Text style={{fontSize:14,fontWeight:'700',color:COLORS.text}}>Filtros</Text>
-              <TouchableOpacity onPress={() => setShowSettings(false)} style={{width:26,height:26,borderRadius:13,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
-                <Ionicons name="close" size={14} color={COLORS.text2}/>
-              </TouchableOpacity>
-            </View>
-
-            {/* Sort */}
-            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>ORDENAR</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,marginBottom:10}}>
-              {SORTS.map(so => (
-                <TouchableOpacity key={so.key}
-                  style={{paddingHorizontal:14,paddingVertical:8,borderRadius:20,borderWidth:1.5,
-                    borderColor: sort===so.key ? COLORS.danger : COLORS.border,
-                    backgroundColor: sort===so.key ? COLORS.danger : COLORS.bg}}
-                  onPress={() => setSort(so.key)}>
-                  <Text style={{fontSize:12,fontWeight:'700',color: sort===so.key ? '#fff' : COLORS.text2}}>{so.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-
-            {/* Discount filter */}
-            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>DESCUENTO MÍNIMO</Text>
-            <View style={{flexDirection:'row',gap:6,marginBottom:10}}>
-              {[0,20,30,50].map(d => (
-                <TouchableOpacity key={d}
-                  style={{paddingHorizontal:12,paddingVertical:6,borderRadius:16,borderWidth:1.5,
-                    borderColor: minDiscount===d ? COLORS.danger : COLORS.border,
-                    backgroundColor: minDiscount===d ? COLORS.danger : COLORS.bg}}
-                  onPress={() => setMinDiscount(d)}>
-                  <Text style={{fontSize:12,fontWeight:'700',color: minDiscount===d ? '#fff' : COLORS.text2}}>
-                    {d===0 ? 'Todos' : `-${d}%+`}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            {/* Categories */}
-            <Text style={{fontSize:11,fontWeight:'600',color:COLORS.text3,marginBottom:4}}>CATEGORÍA</Text>
-            <View style={{flexDirection:'row',flexWrap:'wrap',gap:6}}>
-              {CATS.map(c => (
-                <TouchableOpacity key={c.key} style={{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:5,borderRadius:99,
-                    borderWidth:1.5,borderColor: cat===c.key ? COLORS.danger : COLORS.border,
-                    backgroundColor: cat===c.key ? COLORS.danger : COLORS.bg}}
-                  onPress={()=>setCat(c.key)}>
-                  <Text style={{fontSize:11}}>{c.emoji}</Text>
-                  <Text style={{fontSize:11,fontWeight:'600',color: cat===c.key ? '#fff' : COLORS.text2}}>{c.label}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+        {/* Search bar */}
+        {showSearch && (
+          <View style={{flexDirection:'row',alignItems:'center',marginHorizontal:14,marginBottom:8,backgroundColor:COLORS.bg3,borderRadius:10,paddingHorizontal:10,gap:6,borderWidth:1,borderColor:COLORS.border}}>
+            <Ionicons name="search-outline" size={16} color={COLORS.text3}/>
+            <TextInput style={{flex:1,paddingVertical:8,fontSize:14,color:COLORS.text}}
+              value={searchQuery} onChangeText={t=>{setSearchQuery(t);}} placeholder="Buscar chollos..."
+              placeholderTextColor={COLORS.text3} returnKeyType="search" onSubmitEditing={()=>loadDeals(true)} autoFocus/>
+            {searchQuery?<TouchableOpacity onPress={()=>{setSearchQuery('');loadDeals(true);}}><Ionicons name="close-circle" size={16} color={COLORS.text3}/></TouchableOpacity>:null}
           </View>
         )}
 
-        {/* Sort tabs — row 1 (visible when settings closed) */}
-        {!showSettings && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{paddingHorizontal:12,gap:8,paddingBottom:6}}>
-          {SORTS.map(so => (
-            <TouchableOpacity key={so.key}
-              style={[{paddingHorizontal:16,paddingVertical:9,borderRadius:20,borderWidth:1.5,
-                borderColor: sort===so.key ? COLORS.danger : COLORS.border,
-                backgroundColor: sort===so.key ? COLORS.danger : COLORS.bg}]}
-              onPress={() => setSort(so.key)}>
-              <Text style={{fontSize:13,fontWeight:'700',color: sort===so.key ? '#fff' : COLORS.text2}}>{so.label}</Text>
+        {/* Filter pills */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:14,gap:6,paddingBottom:8}}>
+          {FILTER_OPTS.map(f=>(
+            <TouchableOpacity key={f.key} style={[s.pill,activeFilter===f.key&&s.pillOn]} onPress={()=>setActiveFilter(f.key)}>
+              <Ionicons name={f.icon} size={13} color={activeFilter===f.key?'#fff':COLORS.text2}/>
+              <Text style={[s.pillTxt,activeFilter===f.key&&{color:'#fff'}]}>{f.label}</Text>
             </TouchableOpacity>
           ))}
-          <View style={{width:1,height:1}}/>
+          <View style={{width:1,backgroundColor:COLORS.border,marginHorizontal:4}}/>
+          {TIME_FILTERS.map(t=>(
+            <TouchableOpacity key={t.key} style={[s.pill,timeFilter===t.key&&{backgroundColor:COLORS.bg3,borderColor:COLORS.primary}]}
+              onPress={()=>setTimeFilter(t.key)}>
+              <Text style={[s.pillTxt,timeFilter===t.key&&{color:COLORS.primary}]}>{t.label}</Text>
+            </TouchableOpacity>
+          ))}
         </ScrollView>
-        )}
       </View>
 
-      {!isLoggedIn && (
-        <TouchableOpacity style={s.guestBanner} onPress={() => setShowAuth(true)}>
-          <Text style={s.guestTxt}>🔥 Inicia sesión para votar y comentar →</Text>
-        </TouchableOpacity>
-      )}
-
-      {loading ? (
-        <View style={{padding:12,gap:12}}>
-          {[1,2,3].map(i=>(
-            <View key={i} style={[s.card,{overflow:'hidden'}]}>
-              <View style={{height:140,backgroundColor:COLORS.bg3}}/>
-              <View style={{padding:14,gap:8}}>
-                <View style={{height:14,backgroundColor:COLORS.bg3,borderRadius:7,width:'80%'}}/>
-                <View style={{height:14,backgroundColor:COLORS.bg3,borderRadius:7,width:'60%'}}/>
-                <View style={{height:24,backgroundColor:COLORS.bg3,borderRadius:7,width:'40%'}}/>
+      {/* Settings Modal */}
+      <Modal visible={showSettings} animationType="fade" transparent onRequestClose={()=>setShowSettings(false)}>
+        <TouchableOpacity style={{flex:1,backgroundColor:'rgba(0,0,0,0.4)'}} activeOpacity={1} onPress={()=>setShowSettings(false)}>
+          <View style={{position:'absolute',top:100,right:16,backgroundColor:COLORS.bg2,borderRadius:18,padding:16,width:280,
+            shadowColor:'#000',shadowOpacity:0.2,shadowRadius:20,elevation:10,borderWidth:1,borderColor:COLORS.border}}>
+            <TouchableOpacity activeOpacity={1} onPress={e=>e.stopPropagation()}>
+              <View style={{flexDirection:'row',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+                <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>Filtrar por categoría</Text>
+                <TouchableOpacity onPress={()=>setShowSettings(false)} style={{width:30,height:30,borderRadius:15,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+                  <Ionicons name="close" size={18} color={COLORS.text2}/>
+                </TouchableOpacity>
               </View>
-            </View>
-          ))}
-        </View>
-      ) : (
-        <FlatList
-          data={deals} keyExtractor={d=>String(d.id)}
-          contentContainerStyle={{padding:12,gap:12,paddingBottom:100}}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.danger}/>}
-          onEndReached={onEndReached}
-          onEndReachedThreshold={0.3}
-          ListHeaderComponent={(trending.length > 0 && sort === 'hot' && cat === 'all') ? (
-            <View style={{marginBottom:8}}>
-              <Text style={{fontSize:11,fontWeight:'700',color:COLORS.text3,marginBottom:6,letterSpacing:0.5}}>🔥 TENDENCIAS HOY</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}
-                nestedScrollEnabled={true}
-                contentContainerStyle={{gap:8}}>
-                {trending.slice(0,5).map(t=>(
-                  <TouchableOpacity key={t.id} style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:10,width:180,borderWidth:1,borderColor:COLORS.border,gap:4}}
-                    onPress={()=>t.url && openURL(applyAffiliateTag(t.url))}>
-                    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between'}}>
-                      <Text style={{fontSize:9,fontWeight:'800',color:COLORS.danger}}>{t.temperature} TRENDING</Text>
-                      <Text style={{fontSize:9,color:COLORS.text3}}>👍{t.votes_up||0}</Text>
-                    </View>
-                    <Text style={{fontSize:12,fontWeight:'700',color:COLORS.text}} numberOfLines={2}>{t.title}</Text>
-                    <View style={{flexDirection:'row',alignItems:'center',gap:4}}>
-                      <Text style={{fontSize:14,fontWeight:'800',color:COLORS.primary}}>{t.deal_price != null ? (t.deal_price === 0 ? (t.discount_code ? `🏷️ -${Math.round(t.discount_percent||0)}%` : '¡GRATIS!') : t.deal_price.toFixed(2)+'€') : '—'}</Text>
-                      {t.discount_percent != null && t.discount_percent > 0 && <View style={{backgroundColor:'#FEE2E2',borderRadius:4,paddingHorizontal:4}}>
-                        <Text style={{fontSize:10,fontWeight:'700',color:COLORS.danger}}>-{Math.round(Number(t.discount_percent)||0)}%</Text>
-                      </View>}
-                    </View>
-                    {t.store && <Text style={{fontSize:9,color:COLORS.text3}}>{t.store}</Text>}
+              <View style={{gap:4}}>
+                {DEAL_CATEGORIES.map(c=>(
+                  <TouchableOpacity key={c.key} style={{flexDirection:'row',alignItems:'center',gap:8,paddingVertical:8,paddingHorizontal:8,borderRadius:10,
+                    backgroundColor:activeCategory===c.key?COLORS.primaryLight:'transparent'}}
+                    onPress={()=>{setActiveCategory(c.key);setShowSettings(false);}}>
+                    <Ionicons name={c.icon} size={16} color={activeCategory===c.key?COLORS.primary:COLORS.text2}/>
+                    <Text style={{flex:1,fontSize:13,fontWeight:'600',color:activeCategory===c.key?COLORS.primary:COLORS.text}}>{c.label}</Text>
+                    {activeCategory===c.key&&<Ionicons name="checkmark-circle" size={16} color={COLORS.primary}/>}
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
-            </View>
-          ) : null}
-          ListFooterComponent={loadingMore ? (
-            <View style={{paddingVertical:20,alignItems:'center'}}>
-              <ActivityIndicator color={COLORS.danger}/>
-              <Text style={{fontSize:12,color:COLORS.text3,marginTop:6}}>Cargando más chollos...</Text>
-            </View>
-          ) : (!hasMore && deals.length > 0) ? (
-            <View style={{paddingVertical:20,alignItems:'center'}}>
-              <Text style={{fontSize:12,color:COLORS.text3}}>— Has visto todos los chollos —</Text>
-            </View>
-          ) : null}
-          renderItem={({item:deal}) => {
-            const temp = deal.temperature
-              ? { label: deal.temperature, color: deal.temp_color || '#6B7280' }
-              : temperature(deal.votes_up, deal.votes_down);
-            const tempColor = temp.color || '#6B7280';
-            const affUrl = applyAffiliateTag(deal.url);
-            const catEmoji = CATS.find(c=>c.key===deal.category)?.emoji || '🏷️';
-            const catLabel = CATS.find(c=>c.key===deal.category)?.label || deal.category || 'otros';
-            const catColor = {tecnologia:'#3B82F6',moda:'#EC4899',hogar:'#F59E0B',alimentacion:'#22C55E',viajes:'#6366F1',juegos:'#8B5CF6',belleza:'#F43F5E',deportes:'#14B8A6',libros:'#78716C',coches:'#64748B',ocio:'#A855F7',salud:'#06B6D4',mascotas:'#F97316',infantil:'#F59E0B',otros:'#94A3B8'}[deal.category] || '#94A3B8';
-            return (
-              <View style={s.card}>
-                {/* Temp badge */}
-                <View style={[s.tempBadge, {backgroundColor: tempColor+'20'}]}>
-                  <Text style={[s.tempTxt, {color: tempColor}]}>{temp.label}</Text>
-                </View>
-
-                {/* Image carousel — supports multiple images */}
-                {(() => {
-                  const imgs = Array.isArray(deal.images) && deal.images.length > 0
-                    ? deal.images
-                    : deal.image_url ? [deal.image_url] : [];
-                  if (imgs.length === 0) return (
-                    <View style={[s.imgPlaceholder, {backgroundColor: catColor+'18'}]}>
-                      <Text style={{fontSize:52}}>{catEmoji}</Text>
-                      {deal.store && <Text style={{fontSize:13,color:catColor,fontWeight:'700',marginTop:8}}>{deal.store}</Text>}
-                    </View>
-                  );
-                  const fallbackUri = `https://ui-avatars.com/api/?name=${encodeURIComponent(deal.store||deal.category||'?')}&size=400&background=random`;
-                  if (imgs.length === 1) return (
-                    <TouchableOpacity onPress={() => setDetailDeal(deal)} activeOpacity={0.9}>
-                      <SafeImage uri={imgs[0] && imgs[0].startsWith('/') ? `${API_BASE}${imgs[0]}` : (imgs[0]||'')} fallback={fallbackUri} style={s.img}/>
-                    </TouchableOpacity>
-                  );
-                  // Multi-image carousel — nestedScrollEnabled para evitar crash en iOS
-                  return (
-                    <View style={{position:'relative'}}>
-                      <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}
-                        nestedScrollEnabled={true}
-                        style={{width: CARD_W}} contentContainerStyle={{width: CARD_W * imgs.length}}>
-                        {imgs.map((uri,idx) => (
-                          <TouchableOpacity key={idx} onPress={() => setDetailDeal(deal)} activeOpacity={0.9}>
-                            <SafeImage uri={uri && uri.startsWith('/') ? `${API_BASE}${uri}` : (uri||'')} fallback={fallbackUri} style={[s.img, {width: CARD_W}]}/>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                      <View style={{position:'absolute',bottom:8,left:0,right:0,flexDirection:'row',justifyContent:'center',gap:4}}>
-                        {imgs.map((_,idx) => (
-                          <View key={idx} style={{width:6,height:6,borderRadius:3,backgroundColor:'rgba(255,255,255,0.9)'}}/>
-                        ))}
-                      </View>
-                      <View style={{position:'absolute',top:8,right:8,backgroundColor:'rgba(0,0,0,0.5)',borderRadius:99,paddingHorizontal:8,paddingVertical:3}}>
-                        <Text style={{color:'#fff',fontSize:11,fontWeight:'700'}}>📷 {imgs.length}</Text>
-                      </View>
-                    </View>
-                  );
-                })()}
-
-                <View style={s.cardBody}>
-                  {/* Store + category + age — compact single line */}
-                  <View style={s.metaRow}>
-                    {deal.store && <View style={s.storeBadge}><Text style={[s.storeTxt,{maxWidth:90}]} numberOfLines={1}>{deal.store}</Text></View>}
-                    <View style={s.catTag}><Text style={s.catTagTxt}>{catEmoji} {catLabel}</Text></View>
-                    {(() => {
-                      const hoursOld = (Date.now() - new Date(deal.detected_at)) / 3600000;
-                      if (hoursOld < 24) return <View style={{backgroundColor:COLORS.success,borderRadius:4,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,fontWeight:'700',color:'#fff'}}>NUEVO</Text></View>;
-                      return null;
-                    })()}
-                    {(deal.votes_up||0) >= 20 && <View style={{backgroundColor:'#DC2626',borderRadius:4,paddingHorizontal:5,paddingVertical:1}}><Text style={{fontSize:9,fontWeight:'800',color:'#fff'}}>🔥TOP</Text></View>}
-                    <Text style={[s.ageTag,{flex:1,textAlign:'right'}]} numberOfLines={1}>{timeAgo(deal.detected_at)}</Text>
-                  </View>
-
-                  {/* Title — max 2 lines, tap to see detail */}
-                  <TouchableOpacity onPress={() => setDetailDeal(deal)} activeOpacity={0.7}>
-                    <Text style={s.dealTitle} numberOfLines={2}>{deal.title}</Text>
-                  </TouchableOpacity>
-
-                  {/* Price — enhanced layout */}
-                  <View style={s.priceRow}>
-                    <Text style={s.dealPrice}>{formatPrice(deal.deal_price)}</Text>
-                    {deal.original_price != null && deal.original_price > 0 && <Text style={s.origPrice}>{formatPrice(deal.original_price)}</Text>}
-                    {deal.discount_percent != null && deal.discount_percent >= 5 && (
-                      <View style={[s.discBadge,
-                        deal.discount_percent >= 50 ? {backgroundColor:'#7C3AED'} :
-                        deal.discount_percent >= 30 ? {backgroundColor:'#DC2626'} :
-                        {backgroundColor:'#FEE2E2'}
-                      ]}>
-                        <Text style={[s.discTxt, deal.discount_percent >= 30 && {color:'#fff'}]}>-{Math.round(Number(deal.discount_percent)||0)}%</Text>
-                      </View>
-                    )}
-                    {deal.original_price && deal.deal_price && (
-                      <Text style={{fontSize:11,color:COLORS.success,fontWeight:'600',marginLeft:4}}>
-                        ahorras {formatPrice(deal.original_price - deal.deal_price)}
-                      </Text>
-                    )}
-                  </View>
-
-                  {/* Discount code badge */}
-                  {deal.discount_code && (
-                    <TouchableOpacity style={{flexDirection:'row',alignItems:'center',gap:6,backgroundColor:'#EFF6FF',borderRadius:8,paddingHorizontal:10,paddingVertical:6,marginBottom:6,borderWidth:1,borderColor:'#BFDBFE'}}
-                      onPress={async () => {
-                        await Clipboard.setStringAsync(deal.discount_code);
-                        Alert.alert('📋 Código copiado', deal.discount_code);
-                      }}>
-                      <Ionicons name="pricetag-outline" size={14} color={COLORS.primary}/>
-                      <Text style={{fontSize:13,fontWeight:'700',color:COLORS.primary,letterSpacing:1}}>{deal.discount_code}</Text>
-                      <Text style={{fontSize:10,color:COLORS.text3}}>· toca para copiar</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Description preview */}
-                  {deal.description && (
-                    <Text style={{fontSize:12,color:COLORS.text2,lineHeight:17,marginBottom:6}} numberOfLines={2}>{deal.description}</Text>
-                  )}
-
-                  {/* Availability badge */}
-                  {deal.availability && deal.availability !== 'online' && (
-                    <View style={{flexDirection:'row',alignItems:'center',gap:4,marginBottom:6}}>
-                      <Ionicons name={deal.availability === 'tienda' ? 'storefront-outline' : 'globe-outline'} size={12} color={COLORS.text3}/>
-                      <Text style={{fontSize:10,color:COLORS.text3}}>
-                        {deal.availability === 'tienda' ? `🏪 Solo en tienda${deal.store_location ? ' · '+deal.store_location : ''}` : '🔄 Online y tienda'}
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Reporter */}
-                  <View style={s.reporterRow}>
-                    <View style={s.reporterAvatar}>
-                      {deal.users?.avatar_url
-                        ? <SafeImage uri={deal.users.avatar_url} fallback={null} style={{width:18,height:18,borderRadius:9}}/>
-                        : <Text style={{fontSize:10,color:COLORS.primary,fontWeight:'700'}}>{(deal.users?.name||'?')[0]}</Text>
-                      }
-                    </View>
-                    <Text style={s.reporterName}>por {deal.users?.name || 'Anónimo'}</Text>
-                    {deal.expires_at && (() => {
-                      const d2 = Math.ceil((new Date(deal.expires_at) - Date.now()) / 86400000);
-                      if (d2 > 0 && d2 <= 3) return <Text style={s.expireTag}>⏰ {d2}d</Text>;
-                      return null;
-                    })()}
-                  </View>
-                </View>
-
-                {/* CTA principal — Ver oferta (arriba del actions, ocupa todo el ancho) */}
-                {affUrl && (
-                  <TouchableOpacity style={s.goBtnFull} onPress={() => openURL(affUrl)}>
-                    <Text style={s.goBtnTxt}>Ver oferta</Text>
-                    <Ionicons name="open-outline" size={14} color="#fff"/>
-                  </TouchableOpacity>
-                )}
-
-                {/* Actions — voto + comentar + share + expirar */}
-                <View style={s.actions}>
-                  {/* Voto caliente / frío */}
-                  <View style={s.voteGroup}>
-                    <TouchableOpacity
-                      style={[s.voteBtn, myVotes[deal.id]===1 && {backgroundColor:'#FEE2E2'}]}
-                      onPress={() => vote(deal.id, 1)}>
-                      <Ionicons name={myVotes[deal.id]===1 ? "flame" : "flame-outline"} size={18} color={COLORS.danger}/>
-                      <Text style={[s.voteNum, {color:COLORS.danger}]}>{deal.votes_up||0}</Text>
-                    </TouchableOpacity>
-                    <View style={s.voteDivider}/>
-                    <TouchableOpacity
-                      style={[s.voteBtn, myVotes[deal.id]===-1 && {backgroundColor:'#EFF6FF'}]}
-                      onPress={() => vote(deal.id, -1)}>
-                      <Ionicons name={myVotes[deal.id]===-1 ? "snow" : "snow-outline"} size={18} color={COLORS.primary}/>
-                      <Text style={[s.voteNum, {color:COLORS.primary}]}>{deal.votes_down||0}</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Separador flexible */}
-                  <View style={{flex:1}}/>
-
-                  {/* Comentarios */}
-                  <TouchableOpacity style={s.iconBtn} onPress={() => setCommentsFor(deal)}>
-                    <Ionicons name="chatbubble-outline" size={18} color={COLORS.text2}/>
-                    {(deal.comment_count||0) > 0 && <Text style={s.iconBtnTxt}>{deal.comment_count}</Text>}
-                  </TouchableOpacity>
-
-                  {/* Compartir */}
-                  <TouchableOpacity style={s.iconBtn} onPress={async () => {
-                    const shareUrl = `https://web-production-a8023.up.railway.app/chollo/${deal.id}`;
-                    const text = `🔥 ${deal.title||''}\n💰 ${formatPrice(deal.deal_price)}${deal.discount_percent != null && deal.discount_percent > 0 ?` (-${Math.round(Number(deal.discount_percent)||0)}%)`:''}${deal.discount_code?'\n🏷️ Código: '+deal.discount_code:''}\n\n${shareUrl}`;
-                    try {
-                      if (typeof navigator !== 'undefined' && navigator.share) {
-                        await navigator.share({ title: deal.title||'', text, url: deal.url || '' });
-                      } else if (typeof navigator !== 'undefined' && navigator.clipboard) {
-                        await navigator.clipboard.writeText(text);
-                        Alert.alert('✅ Copiado', 'Enlace copiado al portapapeles');
-                      } else {
-                        await Share.share({ message: text });
-                      }
-                    } catch(_) {}
-                  }}>
-                    <Ionicons name="share-outline" size={18} color={COLORS.text2}/>
-                  </TouchableOpacity>
-
-                  {/* Editar (propietario/admin) */}
-                  {isLoggedIn && (deal.reported_by === user?.id || user?.is_admin) && (
-                    <TouchableOpacity style={s.iconBtn} onPress={() => {
-                      setEditDeal(deal);
-                      setEditPrice(String(deal.deal_price||''));
-                      setEditTitle(deal.title||'');
-                    }}>
-                      <Ionicons name="pencil-outline" size={16} color={COLORS.primary}/>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Admin: borrar directo */}
-                  {isLoggedIn && user?.is_admin && (
-                    <TouchableOpacity style={s.iconBtn} onPress={() => {
-                      Alert.alert('🛡️ Eliminar', '¿Eliminar este chollo?', [
-                        {text:'Cancelar',style:'cancel'},
-                        {text:'Eliminar',style:'destructive', onPress: async () => {
-                          try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch(_) {}
-                        }},
-                      ]);
-                    }}>
-                      <Ionicons name="shield" size={16} color="#DC2626"/>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Propietario: retirar su oferta */}
-                  {isLoggedIn && !user?.is_admin && deal.reported_by === user?.id && (
-                    <TouchableOpacity style={s.iconBtn} onPress={() => {
-                      Alert.alert('Tu chollo', '¿Retirar tu oferta?', [
-                        {text:'Cancelar',style:'cancel'},
-                        {text:'Retirar',style:'destructive', onPress: async () => {
-                          try { await apiDelete(`/api/deals/${deal.id}`); setDeals(prev => prev.filter(d => d.id !== deal.id)); } catch(_) {}
-                        }},
-                      ]);
-                    }}>
-                      <Ionicons name="trash-outline" size={16} color={COLORS.text3}/>
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* Pill "⏰ Expirado" — visible para todos (no propietario, no admin) — toque directo sin Alert */}
-                {isLoggedIn && !user?.is_admin && deal.reported_by !== user?.id && (
-                  <TouchableOpacity
-                    onPress={() => reportExpired(deal)}
-                    disabled={!!expireVoted[deal.id]}
-                    style={{
-                      flexDirection:'row', alignItems:'center', justifyContent:'center',
-                      gap:6, paddingVertical:8, marginHorizontal:12, marginBottom:10,
-                      borderRadius:99, borderWidth:1.5,
-                      borderColor: expireVoted[deal.id] ? '#D1D5DB' : '#FCA5A5',
-                      backgroundColor: expireVoted[deal.id] ? COLORS.bg3 : '#FEF2F2',
-                    }}>
-                    <Ionicons name="time-outline" size={14}
-                      color={expireVoted[deal.id] ? COLORS.text3 : '#DC2626'}/>
-                    <Text style={{
-                      fontSize:12, fontWeight:'700',
-                      color: expireVoted[deal.id] ? COLORS.text3 : '#DC2626',
-                    }}>
-                      {expireVoted[deal.id]
-                        ? `✓ Reportado · ${deal.expire_reports||0}/50`
-                        : `¿Expiró? · ${deal.expire_reports||0}/50`}
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* Report scam button */}
-                {isLoggedIn && !user?.is_admin && deal.reported_by !== user?.id && (
-                  <TouchableOpacity
-                    onPress={() => {
-                      Alert.alert('🚨 Reportar timo', '¿Este chollo es falso o engañoso?', [
-                        {text:'Cancelar',style:'cancel'},
-                        {text:'Sí, reportar',style:'destructive', onPress: async () => {
-                          try {
-                            await apiPost(`/api/deals/${deal.id}/report-scam`, { reason: 'timo' });
-                            Alert.alert('✅ Reportado', 'Gracias. Si acumula reportes se eliminará automáticamente.');
-                          } catch(_) {}
-                        }},
-                      ]);
-                    }}
-                    style={{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:4,paddingVertical:6,marginHorizontal:12,marginBottom:10}}>
-                    <Ionicons name="flag-outline" size={12} color={COLORS.text3}/>
-                    <Text style={{fontSize:11,color:COLORS.text3}}>Reportar timo</Text>
-                  </TouchableOpacity>
-                )}
               </View>
-            );
-          }}
-          ListEmptyComponent={loading ? null :
-            <View style={s.empty}>
-              {!search && minDiscount === 0 && cat === 'all' ? (
-                // Estado vacío principal — invita a publicar
-                <>
-                  <Text style={{fontSize:60,textAlign:'center',marginBottom:8}}>🔥</Text>
-                  <Text style={s.emptyTitle}>¡Sé el primero en publicar un chollo!</Text>
-                  <Text style={s.emptyDesc}>
-                    Esta comunidad vive de los mejores deals de España. Comparte una oferta increíble y ayuda a que todos ahorren.
-                  </Text>
-                  {/* Explicación de referido */}
-                  <View style={{backgroundColor:'#F0FDF4',borderRadius:14,padding:14,marginVertical:14,borderWidth:1,borderColor:'#86EFAC',width:'100%'}}>
-                    <Text style={{fontSize:15,fontWeight:'700',color:'#15803D',marginBottom:6}}>💸 ¿Tienes un enlace de referido?</Text>
-                    <Text style={{fontSize:13,color:'#166534',lineHeight:19}}>
-                      Si tienes referidos de Amazon, Zara, MediaMarkt u otras tiendas, publícalos aquí. Cada vez que alguien compre desde tu chollo, {'\n'}
-                      <Text style={{fontWeight:'700'}}>tú ganas comisión directamente.</Text>
-                    </Text>
-                  </View>
-                  <TouchableOpacity style={s.emptyBtn} onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}>
-                    <Text style={s.emptyBtnTxt}>🔥 Publicar mi primer chollo</Text>
-                  </TouchableOpacity>
-                  <Text style={{fontSize:11,color:COLORS.text3,marginTop:10,textAlign:'center'}}>
-                    Amazon · El Corte Inglés · Zara · MediaMarkt · AliExpress · y más
-                  </Text>
-                </>
-              ) : (
-                <>
-                  <Text style={{fontSize:52,textAlign:'center',marginBottom:12}}>
-                    {search ? '🔍' : minDiscount > 0 ? '🎯' : '🛍️'}
-                  </Text>
-                  <Text style={s.emptyTitle}>
-                    {search ? `Sin resultados para "${search}"` 
-                      : minDiscount > 0 ? `Sin chollos con ≥${minDiscount}% descuento`
-                      : 'Sin chollos en esta categoría'}
-                  </Text>
-                  <Text style={s.emptyDesc}>
-                    {search ? 'Prueba con otro término o borra la búsqueda.'
-                      : minDiscount > 0 ? 'Prueba con un umbral de descuento menor.'
-                      : 'Sé el primero en publicar una oferta en esta categoría.'}
-                  </Text>
-                  {!search && (
-                    <TouchableOpacity style={s.emptyBtn} onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}>
-                      <Text style={s.emptyBtnTxt}>Publicar chollo</Text>
-                    </TouchableOpacity>
-                  )}
-                </>
-              )}
-            </View>
-          }
-        />
-      )}
-
-      <AddDealModal visible={showAdd} onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); load(); }}/>
-      <CommentsModal visible={!!commentsFor} dealId={commentsFor?.id} dealTitle={commentsFor?.title} onClose={() => setCommentsFor(null)}/>
-      <AuthModal visible={showAuth} onClose={() => setShowAuth(false)}/>
-
-      {/* Deal detail modal — full info + comments + verify + report */}
-      <Modal visible={!!detailDeal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setDetailDeal(null)}>
-        {detailDeal && (() => {
-          const d = detailDeal;
-          const affUrl = applyAffiliateTag(d.url);
-          const imgs = Array.isArray(d.images) && d.images.length > 0 ? d.images : d.image_url ? [d.image_url] : [];
-          return (
-            <View style={{flex:1,backgroundColor:COLORS.bg}}>
-              <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:16,borderBottomWidth:0.5,borderBottomColor:COLORS.border,backgroundColor:COLORS.bg2}}>
-                <TouchableOpacity onPress={() => setDetailDeal(null)} style={{width:32,height:32,borderRadius:16,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
-                  <Ionicons name="close" size={20} color={COLORS.text2}/>
-                </TouchableOpacity>
-                <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text,flex:1,marginHorizontal:12}} numberOfLines={1}>{d.title}</Text>
-                <TouchableOpacity onPress={async () => {
-                  const text = `🔥 ${d.title}\n💰 ${formatPrice(d.deal_price)}${d.discount_code?'\n🏷️ Código: '+d.discount_code:''}\n\nhttps://web-production-a8023.up.railway.app/chollo/${d.id}`;
-                  try { await Share.share({ message: text }); } catch(_) {}
-                }}>
-                  <Ionicons name="share-outline" size={20} color={COLORS.text2}/>
-                </TouchableOpacity>
-              </View>
-              <ScrollView contentContainerStyle={{paddingBottom:100}}>
-                {/* Images */}
-                {imgs.length > 0 && (
-                  <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false}>
-                    {imgs.map((uri,i) => (
-                      <SafeImage key={i} uri={uri && uri.startsWith('/') ? `${API_BASE}${uri}` : (uri||'')}
-                        fallback={null} style={{width:Dimensions.get('window').width,height:260,backgroundColor:COLORS.bg3}}/>
-                    ))}
-                  </ScrollView>
-                )}
-                <View style={{padding:16,gap:10}}>
-                  {/* Title + store */}
-                  <Text style={{fontSize:20,fontWeight:'800',color:COLORS.text,lineHeight:26}}>{d.title}</Text>
-                  {d.store && <Text style={{fontSize:13,color:COLORS.primary,fontWeight:'600'}}>🏪 {d.store}</Text>}
-
-                  {/* Price */}
-                  <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-                    <Text style={{fontSize:28,fontWeight:'900',color:COLORS.danger}}>{formatPrice(d.deal_price)}</Text>
-                    {d.original_price > 0 && <Text style={{fontSize:16,color:COLORS.text3,textDecorationLine:'line-through'}}>{formatPrice(d.original_price)}</Text>}
-                    {d.discount_percent >= 5 && (
-                      <View style={{backgroundColor:'#DC2626',borderRadius:6,paddingHorizontal:8,paddingVertical:3}}>
-                        <Text style={{fontSize:14,fontWeight:'800',color:'#fff'}}>-{Math.round(d.discount_percent)}%</Text>
-                      </View>
-                    )}
-                  </View>
-
-                  {/* Discount code */}
-                  {d.discount_code && (
-                    <TouchableOpacity style={{flexDirection:'row',alignItems:'center',gap:8,backgroundColor:'#EFF6FF',borderRadius:12,padding:12,borderWidth:1.5,borderColor:'#BFDBFE'}}
-                      onPress={async () => { await Clipboard.setStringAsync(d.discount_code); Alert.alert('📋 Código copiado', d.discount_code); }}>
-                      <Ionicons name="pricetag" size={18} color={COLORS.primary}/>
-                      <Text style={{fontSize:18,fontWeight:'800',color:COLORS.primary,letterSpacing:2}}>{d.discount_code}</Text>
-                      <Text style={{fontSize:12,color:COLORS.text3}}>Toca para copiar</Text>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Description */}
-                  {d.description && (
-                    <View style={{backgroundColor:COLORS.bg2,borderRadius:12,padding:14,borderWidth:1,borderColor:COLORS.border}}>
-                      <Text style={{fontSize:14,color:COLORS.text,lineHeight:21}}>{d.description}</Text>
-                    </View>
-                  )}
-
-                  {/* Availability */}
-                  {d.availability && (
-                    <View style={{flexDirection:'row',alignItems:'center',gap:6}}>
-                      <Ionicons name={d.availability==='online'?'globe-outline':d.availability==='tienda'?'storefront-outline':'sync-outline'} size={16} color={COLORS.text3}/>
-                      <Text style={{fontSize:13,color:COLORS.text2}}>
-                        {d.availability==='online'?'Disponible online':d.availability==='tienda'?`Solo en tienda${d.store_location?' · '+d.store_location:''}`:'Online y en tienda'}
-                      </Text>
-                    </View>
-                  )}
-
-                  {/* Reporter + date */}
-                  <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
-                    <Text style={{fontSize:12,color:COLORS.text3}}>por {d.users?.name || 'Anónimo'} · {timeAgo(d.detected_at)}</Text>
-                  </View>
-
-                  {/* CTA — Ir al chollo */}
-                  {affUrl && (
-                    <TouchableOpacity style={{backgroundColor:COLORS.danger,borderRadius:14,paddingVertical:16,alignItems:'center',flexDirection:'row',justifyContent:'center',gap:8,
-                      shadowColor:COLORS.danger,shadowOpacity:0.4,shadowRadius:12,shadowOffset:{width:0,height:4}}}
-                      onPress={() => openURL(affUrl)}>
-                      <Text style={{color:'#fff',fontWeight:'800',fontSize:18}}>Ir al chollo</Text>
-                      <Ionicons name="open-outline" size={18} color="#fff"/>
-                    </TouchableOpacity>
-                  )}
-
-                  {/* Verify + Report */}
-                  <View style={{flexDirection:'row',gap:8}}>
-                    <TouchableOpacity style={{flex:1,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,paddingVertical:10,borderRadius:10,backgroundColor:'#F0FDF4',borderWidth:1,borderColor:'#86EFAC'}}
-                      onPress={() => { vote(d.id, 1); setDetailDeal({...d, votes_up:(d.votes_up||0)+1}); }}>
-                      <Ionicons name="checkmark-circle-outline" size={18} color="#16A34A"/>
-                      <Text style={{fontSize:13,fontWeight:'700',color:'#16A34A'}}>Chollo real ({d.votes_up||0})</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={{flex:1,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,paddingVertical:10,borderRadius:10,backgroundColor:'#FEF2F2',borderWidth:1,borderColor:'#FECACA'}}
-                      onPress={() => { vote(d.id, -1); setDetailDeal({...d, votes_down:(d.votes_down||0)+1}); }}>
-                      <Ionicons name="close-circle-outline" size={18} color="#DC2626"/>
-                      <Text style={{fontSize:13,fontWeight:'700',color:'#DC2626'}}>No vale ({d.votes_down||0})</Text>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Report scam */}
-                  <TouchableOpacity style={{alignItems:'center',paddingVertical:8}}
-                    onPress={() => Alert.alert('🚨 Reportar timo','¿Este chollo es falso o engañoso?',[
-                      {text:'Cancelar',style:'cancel'},
-                      {text:'Sí, reportar',style:'destructive',onPress:async()=>{
-                        try { await apiPost(`/api/deals/${d.id}/report-scam`,{reason:'timo'}); Alert.alert('✅','Reportado. Gracias.'); } catch(_) {}
-                      }},
-                    ])}>
-                    <Text style={{fontSize:12,color:COLORS.text3}}>🚩 Reportar timo</Text>
-                  </TouchableOpacity>
-
-                  {/* Comments section */}
-                  <View style={{marginTop:8}}>
-                    <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-                      <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>💬 Comentarios</Text>
-                      <TouchableOpacity onPress={() => { setDetailDeal(null); setTimeout(() => setCommentsFor(d), 300); }}
-                        style={{paddingHorizontal:12,paddingVertical:6,backgroundColor:COLORS.primaryLight,borderRadius:8}}>
-                        <Text style={{fontSize:12,fontWeight:'600',color:COLORS.primary}}>Ver todos / Comentar</Text>
-                      </TouchableOpacity>
-                    </View>
-                    {(d.comment_count||0) === 0 ? (
-                      <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center',paddingVertical:16}}>Sin comentarios aún. ¡Sé el primero!</Text>
-                    ) : (
-                      <Text style={{fontSize:13,color:COLORS.text2,textAlign:'center',paddingVertical:8}}>{d.comment_count} comentario{d.comment_count!==1?'s':''} · Toca "Ver todos" para leer</Text>
-                    )}
-                  </View>
-                </View>
-              </ScrollView>
-            </View>
-          );
-        })()}
-      </Modal>
-
-      {/* Edit deal modal */}
-      <Modal visible={!!editDeal} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setEditDeal(null)}>
-        <View style={{flex:1,backgroundColor:COLORS.bg2}}>
-          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:16,borderBottomWidth:0.5,borderBottomColor:COLORS.border}}>
-            <Text style={{fontSize:17,fontWeight:'700',color:COLORS.text}}>✏️ Editar chollo</Text>
-            <TouchableOpacity onPress={() => setEditDeal(null)} style={{width:32,height:32,borderRadius:16,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
-              <Ionicons name="close" size={20} color={COLORS.text2}/>
             </TouchableOpacity>
           </View>
-          <View style={{padding:16,gap:14}}>
-            <View>
-              <Text style={{fontSize:13,fontWeight:'600',color:COLORS.text,marginBottom:6}}>Título</Text>
-              <TextInput style={{backgroundColor:COLORS.bg3,borderRadius:10,borderWidth:1.5,borderColor:COLORS.border,paddingHorizontal:12,paddingVertical:10,fontSize:14,color:COLORS.text}}
-                value={editTitle} onChangeText={setEditTitle} placeholder="Título del chollo" placeholderTextColor={COLORS.text3} maxLength={120}/>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Welcome popup */}
+      <Modal visible={showWelcome} animationType="fade" transparent onRequestClose={()=>setShowWelcome(false)}>
+        <View style={{flex:1,backgroundColor:'rgba(0,0,0,0.5)',justifyContent:'center',alignItems:'center',padding:24}}>
+          <View style={{backgroundColor:COLORS.bg2,borderRadius:20,padding:24,width:'100%',maxWidth:340,alignItems:'center'}}>
+            <View style={{width:60,height:60,borderRadius:30,backgroundColor:'#FEF2F2',alignItems:'center',justifyContent:'center',marginBottom:16}}>
+              <Ionicons name="flame" size={32} color="#DC2626"/>
             </View>
-            <View>
-              <Text style={{fontSize:13,fontWeight:'600',color:COLORS.text,marginBottom:6}}>Precio (€)</Text>
-              <TextInput style={{backgroundColor:COLORS.bg3,borderRadius:10,borderWidth:1.5,borderColor:COLORS.border,paddingHorizontal:12,paddingVertical:10,fontSize:22,fontWeight:'700',color:COLORS.primary}}
-                value={editPrice} onChangeText={setEditPrice} keyboardType="numeric" placeholder="0.00" placeholderTextColor={COLORS.text3}/>
+            <Text style={{fontSize:20,fontWeight:'800',color:COLORS.text,textAlign:'center',marginBottom:8}}>Chollos de la comunidad</Text>
+            <Text style={{fontSize:14,color:COLORS.text2,textAlign:'center',lineHeight:20,marginBottom:16}}>
+              Comparte ofertas que encuentres y gana dinero con tus enlaces de referido. Cuantos más votos reciba tu chollo, más visible será.
+            </Text>
+            <View style={{flexDirection:'row',gap:12,width:'100%'}}>
+              <View style={{flex:1,alignItems:'center',padding:10,backgroundColor:COLORS.bg3,borderRadius:12}}>
+                <Ionicons name="link-outline" size={20} color={COLORS.primary}/>
+                <Text style={{fontSize:11,color:COLORS.text2,marginTop:4,textAlign:'center'}}>Comparte tu enlace</Text>
+              </View>
+              <View style={{flex:1,alignItems:'center',padding:10,backgroundColor:COLORS.bg3,borderRadius:12}}>
+                <Ionicons name="flame-outline" size={20} color="#DC2626"/>
+                <Text style={{fontSize:11,color:COLORS.text2,marginTop:4,textAlign:'center'}}>La comunidad vota</Text>
+              </View>
+              <View style={{flex:1,alignItems:'center',padding:10,backgroundColor:COLORS.bg3,borderRadius:12}}>
+                <Ionicons name="cash-outline" size={20} color={COLORS.success}/>
+                <Text style={{fontSize:11,color:COLORS.text2,marginTop:4,textAlign:'center'}}>Ganas con referidos</Text>
+              </View>
             </View>
-            <TouchableOpacity
-              style={{backgroundColor:COLORS.primary,borderRadius:12,paddingVertical:14,alignItems:'center'}}
-              onPress={async () => {
-                if (!editTitle.trim() || !editPrice) return Alert.alert('Error','Rellena todos los campos');
-                const parsedEditPrice = parseFloat(editPrice);
-                if (isNaN(parsedEditPrice) || parsedEditPrice < 0) return Alert.alert('Error','Introduce un precio válido');
-                try {
-                  await apiPost(`/api/deals/${editDeal.id}/edit`,{title:editTitle.trim(),deal_price:parsedEditPrice});
-                  setDeals(prev=>prev.map(d=>d.id===editDeal.id?{...d,title:editTitle.trim(),deal_price:parsedEditPrice}:d));
-                  setEditDeal(null);
-                } catch(_) { Alert.alert('Error','No se pudo guardar'); }
-              }}>
-              <Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>Guardar cambios</Text>
+            <TouchableOpacity style={{backgroundColor:COLORS.primary,borderRadius:14,paddingVertical:14,width:'100%',alignItems:'center',marginTop:16}}
+              onPress={()=>setShowWelcome(false)}>
+              <Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>Entendido</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      <AdBanner screen="deals"/>
+      {/* Deal list */}
+      <FlatList
+        ref={flatListRef}
+        data={filteredDeals}
+        keyExtractor={d=>`deal_${d.id}`}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary}/>}
+        contentContainerStyle={{padding:12,gap:10,paddingBottom:80}}
+        onEndReached={()=>{ if(hasMore&&!loading) loadDeals(); }}
+        onEndReachedThreshold={0.3}
+        renderItem={({item:d})=>{
+          const myVote = userVotes[d.id];
+          const votes = (d.votes_up||0)-(d.votes_down||0);
+          const disc = d.discount_percent ? Math.round(d.discount_percent) : null;
+          return (
+            <View style={s.card}>
+              <TouchableOpacity activeOpacity={0.85} onPress={()=>setSelectedDeal(d)}>
+              <View style={{flexDirection:'row',gap:12}}>
+                {/* Image */}
+                <View style={s.cardImg}>
+                  {d.image_url ? (
+                    <Image source={{uri:d.image_url.startsWith('http')?d.image_url:`https://web-production-a8023.up.railway.app${d.image_url}`}}
+                      style={{width:'100%',height:'100%',borderRadius:10}} resizeMode="cover"/>
+                  ) : (
+                    <Ionicons name="image-outline" size={30} color={COLORS.text3}/>
+                  )}
+                  {disc && (
+                    <View style={s.discBadge}>
+                      <Text style={s.discTxt}>-{disc}%</Text>
+                    </View>
+                  )}
+                </View>
 
-      {/* FAB — Publicar chollo */}
-      <TouchableOpacity
-        style={s.fab}
-        onPress={() => isLoggedIn ? setShowAdd(true) : setShowAuth(true)}
-        activeOpacity={0.85}>
+                {/* Info */}
+                <View style={{flex:1,justifyContent:'space-between'}}>
+                  {d.store && <Text style={{fontSize:11,fontWeight:'600',color:COLORS.primary}} numberOfLines={1}>{d.store}</Text>}
+                  <Text style={s.cardTitle} numberOfLines={2}>{d.title}</Text>
+                  <View style={{flexDirection:'row',alignItems:'baseline',gap:6,marginTop:4}}>
+                    <Text style={s.cardPrice}>{d.deal_price===0?'GRATIS':`${d.deal_price?.toFixed(2).replace(".",",")}€`}</Text>
+                    {d.original_price>0 && <Text style={s.cardOldPrice}>{d.original_price?.toFixed(2).replace(".",",")}€</Text>}
+                  </View>
+                </View>
+              </View>
+              </TouchableOpacity>
+              <View style={{flexDirection:'row',alignItems:'center',gap:10,marginTop:8,paddingTop:8,borderTopWidth:0.5,borderTopColor:COLORS.border}}>
+                <TouchableOpacity style={[s.voteBtn,myVote==='up'&&{backgroundColor:'#FEE2E2'}]}
+                  onPress={()=>voteDeal(d.id,myVote==='up'?'none':'up')}>
+                  <Ionicons name={myVote==='up'?'flame':'flame-outline'} size={16} color={myVote==='up'?'#DC2626':COLORS.text3}/>
+                  <Text style={[s.voteTxt,myVote==='up'&&{color:'#DC2626'}]}>{d.votes_up||0}</Text>
+                </TouchableOpacity>
+                <Text style={{fontSize:12,fontWeight:'700',color:votes>0?COLORS.success:votes<0?COLORS.danger:COLORS.text3}}>
+                  {votes>0?'+':''}{votes}
+                </Text>
+                <TouchableOpacity style={[s.voteBtn,myVote==='down'&&{backgroundColor:'#DBEAFE'}]}
+                  onPress={()=>voteDeal(d.id,myVote==='down'?'none':'down')}>
+                  <Ionicons name={myVote==='down'?'snow':'snow-outline'} size={14} color={myVote==='down'?'#2563EB':COLORS.text3}/>
+                </TouchableOpacity>
+                <View style={{flex:1}}/>
+                {d.url && (
+                  <TouchableOpacity style={s.goBtn} onPress={()=>openURL(d.url)}>
+                    <Text style={s.goTxt}>Ir al chollo</Text>
+                    <Ionicons name="open-outline" size={12} color="#fff"/>
+                  </TouchableOpacity>
+                )}
+              </View>
+              <Text style={{fontSize:10,color:COLORS.text3,marginTop:4,paddingLeft:2}}>{timeAgo(d.created_at)}</Text>
+            </View>
+          );
+        }}
+
+        ListEmptyComponent={
+          loading ? <ActivityIndicator color={COLORS.primary} style={{marginTop:40}}/> : (
+            <View style={{alignItems:'center',paddingTop:50,gap:8}}>
+              <Ionicons name="flame-outline" size={40} color={COLORS.text3}/>
+              <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text}}>No hay chollos todavía</Text>
+              <Text style={{fontSize:13,color:COLORS.text3,textAlign:'center',paddingHorizontal:30}}>
+                Sé el primero en compartir una oferta. Pulsa + para publicar un chollo.
+              </Text>
+            </View>
+          )
+        }
+        ListFooterComponent={hasMore&&deals.length>0?<ActivityIndicator color={COLORS.primary} style={{paddingVertical:20}}/>:null}
+      />
+
+      {/* FAB — add deal */}
+      <TouchableOpacity style={s.fab} onPress={()=>{
+        if(!isLoggedIn){setShowAuth(true);return;}
+        setShowAdd(true);
+      }}>
         <Ionicons name="add" size={28} color="#fff"/>
-        <Text style={s.fabTxt}>Chollo</Text>
       </TouchableOpacity>
 
+      {/* Deal detail modal */}
+      <Modal visible={!!selectedDeal} animationType="slide" presentationStyle="pageSheet" onRequestClose={()=>setSelectedDeal(null)}>
+        {selectedDeal && <DealDetail deal={selectedDeal} onClose={()=>setSelectedDeal(null)}
+          userVote={userVotes[selectedDeal.id]} onVote={voteDeal} onReport={reportScam} onReportExpired={reportExpired}
+          onComments={()=>{setCommentsDeal(selectedDeal);setSelectedDeal(null);}} isLoggedIn={isLoggedIn} onAuth={()=>setShowAuth(true)}
+          isAdmin={user?.is_admin} userId={user?.id} onDelete={async(id)=>{
+            try{await apiDelete(`/api/deals/${id}/admin`);setSelectedDeal(null);loadDeals();}catch(_){Alert.alert('Error','No se pudo eliminar');}
+          }} onEdit={()=>{setEditDeal(selectedDeal);setSelectedDeal(null);}}/>}
+      </Modal>
+
+      {/* Comments modal */}
+      <CommentsModal visible={!!commentsDeal} dealId={commentsDeal?.id} onClose={()=>setCommentsDeal(null)}/>
+      <EditDealModal visible={!!editDeal} deal={editDeal} onClose={()=>setEditDeal(null)}
+        onSave={async(id,data)=>{
+          try{const r=await apiPatch(`/api/deals/${id}`,data);if(r?.error){Alert.alert('Error',r.error);}else{setEditDeal(null);loadDeals();}}catch(e){Alert.alert('Error',e.message||'Error desconocido');}
+        }}/>
+
+      {/* Add deal modal */}
+      <AddDealModal visible={showAdd} onClose={()=>setShowAdd(false)}
+        onSuccess={()=>{setShowAdd(false);loadDeals(true);}}/>
+
+      <AuthModal visible={showAuth} onClose={()=>setShowAuth(false)}/>
     </SafeAreaView>
+  );
+}
+
+// === DEAL DETAIL ===
+function DealDetail({ deal, onClose, userVote, onVote, onReport, onReportExpired, onComments, isLoggedIn, onAuth, isAdmin, onDelete, userId, onEdit }) {
+  const d = deal;
+  const votes = (d.votes_up||0)-(d.votes_down||0);
+  const disc = d.discount_percent ? Math.round(d.discount_percent) : null;
+  const images = Array.isArray(d.images) && d.images.length > 0 ? d.images : (d.image_url ? [d.image_url] : []);
+
+  return (
+    <View style={{flex:1,backgroundColor:COLORS.bg2}}>
+      <View style={{width:40,height:4,borderRadius:99,backgroundColor:COLORS.border,alignSelf:'center',marginTop:10}}/>
+      <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:16,borderBottomWidth:0.5,borderBottomColor:COLORS.border}}>
+        <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text,flex:1}} numberOfLines={1}>Detalle del chollo</Text>
+        <TouchableOpacity onPress={onClose} style={{width:32,height:32,borderRadius:16,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+          <Ionicons name="close" size={20} color={COLORS.text2}/>
+        </TouchableOpacity>
+      </View>
+      <ScrollView contentContainerStyle={{padding:16,paddingBottom:40}}>
+        {/* Images */}
+        {images.length > 0 && (
+          <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{marginBottom:16,borderRadius:14,overflow:'hidden',height:200}}>
+            {images.map((img,i) => (
+              <Image key={i} source={{uri:img.startsWith('http')?img:`https://web-production-a8023.up.railway.app${img}`}}
+                style={{width:300,height:200,marginRight:8,borderRadius:14}} resizeMode="cover"/>
+            ))}
+          </ScrollView>
+        )}
+
+        {d.store && <Text style={{fontSize:13,fontWeight:'600',color:COLORS.primary,marginBottom:4}}>{d.store}</Text>}
+        <Text style={{fontSize:20,fontWeight:'800',color:COLORS.text,marginBottom:8}}>{d.title}</Text>
+        <View style={{flexDirection:'row',alignItems:'baseline',gap:8,marginBottom:12}}>
+          <Text style={{fontSize:28,fontWeight:'900',color:d.deal_price===0?COLORS.success:COLORS.danger}}>
+            {d.deal_price===0?'GRATIS':`${d.deal_price?.toFixed(2).replace(".",",")}€`}
+          </Text>
+          {d.original_price>0&&<Text style={{fontSize:16,color:COLORS.text3,textDecorationLine:'line-through'}}>{d.original_price?.toFixed(2).replace(".",",")}€</Text>}
+          {disc&&<View style={{backgroundColor:'#DC2626',borderRadius:6,paddingHorizontal:8,paddingVertical:3}}><Text style={{fontSize:14,fontWeight:'800',color:'#fff'}}>-{disc}%</Text></View>}
+        </View>
+        {d.discount_code && (
+          <View style={{flexDirection:'row',alignItems:'center',gap:8,backgroundColor:'#FEF3C7',borderRadius:10,padding:10,marginBottom:12,borderWidth:1,borderColor:'#FCD34D'}}>
+            <Ionicons name="ticket-outline" size={16} color="#92400E"/>
+            <Text style={{flex:1,fontSize:13,fontWeight:'600',color:'#92400E'}}>Código: {d.discount_code}</Text>
+          </View>
+        )}
+        {d.description && <Text style={{fontSize:14,color:COLORS.text2,lineHeight:20,marginBottom:12}}>{d.description}</Text>}
+        {d.availability && (
+          <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8}}>
+            <Ionicons name={d.availability==='online'?'globe-outline':'storefront-outline'} size={14} color={COLORS.text3}/>
+            <Text style={{fontSize:12,color:COLORS.text3}}>{d.availability==='online'?'Disponible online':'Tienda física'}{d.store_location?` · ${d.store_location}`:''}</Text>
+          </View>
+        )}
+        {(d.starts_at||d.expires_at) && (
+          <View style={{flexDirection:'row',alignItems:'center',gap:6,marginBottom:12}}>
+            <Ionicons name="calendar-outline" size={14} color={COLORS.text3}/>
+            <Text style={{fontSize:12,color:COLORS.text3}}>
+              {d.starts_at?`Desde ${new Date(d.starts_at).toLocaleDateString('es-ES')}`:''}{d.starts_at&&d.expires_at?' · ':''}{d.expires_at?`Hasta ${new Date(d.expires_at).toLocaleDateString('es-ES')}`:''}
+            </Text>
+          </View>
+        )}
+
+        {/* Votes & verify */}
+        <View style={{backgroundColor:COLORS.bg3,borderRadius:14,padding:14,marginBottom:14,gap:10}}>
+          <Text style={{fontSize:13,fontWeight:'700',color:COLORS.text}}>¿Es cierto este chollo?</Text>
+          <View style={{flexDirection:'row',alignItems:'center',gap:12}}>
+            <TouchableOpacity style={[s.voteBtn,{paddingHorizontal:16,paddingVertical:10},userVote==='up'&&{backgroundColor:'#DCFCE7'}]}
+              onPress={()=>onVote(d.id,userVote==='up'?'none':'up')}>
+              <Ionicons name={userVote==='up'?'thumbs-up':'thumbs-up-outline'} size={18} color={userVote==='up'?COLORS.success:COLORS.text3}/>
+              <Text style={{fontSize:14,fontWeight:'700',color:userVote==='up'?COLORS.success:COLORS.text2}}>{d.votes_up||0}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[s.voteBtn,{paddingHorizontal:16,paddingVertical:10},userVote==='down'&&{backgroundColor:'#FEE2E2'}]}
+              onPress={()=>onVote(d.id,userVote==='down'?'none':'down')}>
+              <Ionicons name={userVote==='down'?'thumbs-down':'thumbs-down-outline'} size={18} color={userVote==='down'?COLORS.danger:COLORS.text3}/>
+              <Text style={{fontSize:14,fontWeight:'700',color:userVote==='down'?COLORS.danger:COLORS.text2}}>{d.votes_down||0}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:8,backgroundColor:'#FEF3C7',borderRadius:10}}
+              onPress={()=>onReportExpired(d.id)}>
+              <Ionicons name="time-outline" size={14} color="#92400E"/>
+              <Text style={{fontSize:11,fontWeight:'600',color:'#92400E'}}>Agotada</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:10,paddingVertical:8,backgroundColor:'#FEF2F2',borderRadius:10}}
+              onPress={()=>onReport(d.id)}>
+              <Ionicons name="alert-circle-outline" size={14} color={COLORS.danger}/>
+              <Text style={{fontSize:11,fontWeight:'600',color:COLORS.danger}}>Reportar timo</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Actions */}
+        {d.url && (
+          <TouchableOpacity style={{backgroundColor:COLORS.primary,borderRadius:14,padding:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,marginBottom:10}}
+            onPress={()=>openURL(d.url)}>
+            <Ionicons name="open-outline" size={18} color="#fff"/>
+            <Text style={{color:'#fff',fontWeight:'700',fontSize:15}}>Ir al chollo</Text>
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity style={{backgroundColor:COLORS.bg3,borderRadius:14,padding:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8}}
+          onPress={onComments}>
+          <Ionicons name="chatbubble-outline" size={18} color={COLORS.text2}/>
+          <Text style={{color:COLORS.text2,fontWeight:'700',fontSize:15}}>Comentarios</Text>
+        </TouchableOpacity>
+        {(isAdmin || d.reported_by===userId)&&(
+          <TouchableOpacity style={{backgroundColor:COLORS.primaryLight,borderRadius:14,padding:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,marginTop:8,borderWidth:1,borderColor:COLORS.primary}}
+            onPress={()=>onEdit?.()}>
+            <Ionicons name="create-outline" size={18} color={COLORS.primary}/>
+            <Text style={{color:COLORS.primary,fontWeight:'700',fontSize:15}}>Editar chollo</Text>
+          </TouchableOpacity>
+        )}
+        {isAdmin&&(
+          <TouchableOpacity style={{backgroundColor:'#FEF2F2',borderRadius:14,padding:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:8,marginTop:8,borderWidth:1,borderColor:COLORS.danger}}
+            onPress={()=>Alert.alert('Eliminar chollo','¿Seguro que quieres eliminar este chollo?',[{text:'Cancelar'},{text:'Eliminar',style:'destructive',onPress:()=>onDelete(d.id)}])}>
+            <Ionicons name="trash-outline" size={18} color={COLORS.danger}/>
+            <Text style={{color:COLORS.danger,fontWeight:'700',fontSize:15}}>Eliminar (Admin)</Text>
+          </TouchableOpacity>
+        )}
+      </ScrollView>
+    </View>
+  );
+}
+
+// ── EDIT DEAL MODAL (slides) ─────────────────────────────────────────────────
+function EditDealModal({ visible, deal, onClose, onSave }) {
+  const [step, setStep] = useState(0);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [dealPrice, setDealPrice] = useState('');
+  const [originalPrice, setOriginalPrice] = useState('');
+  const [store, setStore] = useState('');
+  const [url, setUrl] = useState('');
+  const [discountCode, setDiscountCode] = useState('');
+  const [category, setCategory] = useState('');
+  const [photos, setPhotos] = useState([]);
+
+  useEffect(() => {
+    if (deal) {
+      setTitle(deal.title||'');setDescription(deal.description||'');
+      setDealPrice(deal.deal_price!=null?String(deal.deal_price).replace('.',','):'');
+      setOriginalPrice(deal.original_price?String(deal.original_price).replace('.',','):'');
+      setStore(deal.store||'');setUrl(deal.url||'');setDiscountCode(deal.discount_code||'');
+      setCategory(deal.category||'');setStep(0);
+      const imgs = Array.isArray(deal.images)&&deal.images.length>0?deal.images:(deal.image_url?[deal.image_url]:[]);
+      setPhotos(imgs.map(u=>u.startsWith('http')?u:`https://web-production-a8023.up.railway.app${u}`));
+    }
+  }, [deal]);
+
+  async function pickPhoto(){
+    const r=await ImagePicker.launchImageLibraryAsync({mediaTypes:['images'],quality:0.7,base64:true});
+    if(!r.canceled&&r.assets?.[0]){
+      const asset=r.assets[0];
+      if(asset.base64){setPhotos(prev=>[...prev,`data:image/jpeg;base64,${asset.base64}`]);}
+      else{setPhotos(prev=>[...prev,asset.uri]);}
+    }
+  }
+
+  const inp={backgroundColor:COLORS.bg3,borderRadius:12,paddingHorizontal:14,paddingVertical:10,fontSize:14,color:COLORS.text,borderWidth:1,borderColor:COLORS.border};
+  const STEPS=3;
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={{flex:1}} behavior={Platform.OS==='ios'?'padding':'height'}>
+        <View style={{flex:1,backgroundColor:COLORS.bg2}}>
+          <View style={{flexDirection:'row',alignItems:'center',justifyContent:'space-between',padding:16,borderBottomWidth:.5,borderBottomColor:COLORS.border}}>
+            <TouchableOpacity onPress={step>0?()=>setStep(step-1):onClose} style={{width:32,height:32,borderRadius:16,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'}}>
+              <Ionicons name={step>0?'arrow-back':'close'} size={20} color={COLORS.text2}/>
+            </TouchableOpacity>
+            <Text style={{fontSize:18,fontWeight:'700',color:COLORS.text}}>Editar chollo</Text>
+            <Text style={{fontSize:12,color:COLORS.text3}}>Paso {step+1}/{STEPS}</Text>
+          </View>
+          <View style={{flexDirection:'row',paddingHorizontal:16,paddingVertical:6,gap:4}}>
+            {[0,1,2].map(i=>(<View key={i} style={{flex:1,height:3,borderRadius:2,backgroundColor:i<=step?COLORS.primary:COLORS.border}}/>))}
+          </View>
+          <ScrollView contentContainerStyle={{padding:16,paddingBottom:60,gap:10}} keyboardShouldPersistTaps="handled">
+            {step===0&&(<>
+              <Text style={{fontSize:20,fontWeight:'700',color:COLORS.text,textAlign:'center'}}>Información</Text>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Título *</Text>
+              <TextInput style={inp} value={title} onChangeText={setTitle} placeholder="Título del chollo" placeholderTextColor={COLORS.text3}/>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Tienda</Text>
+              <TextInput style={inp} value={store} onChangeText={setStore} placeholder="Tienda" placeholderTextColor={COLORS.text3}/>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Descripción</Text>
+              <TextInput style={[inp,{height:80,textAlignVertical:'top'}]} value={description} onChangeText={setDescription} placeholder="Descripción..." placeholderTextColor={COLORS.text3} multiline/>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Enlace</Text>
+              <TextInput style={inp} value={url} onChangeText={setUrl} placeholder="https://..." placeholderTextColor={COLORS.text3} autoCapitalize="none"/>
+              <TouchableOpacity style={{backgroundColor:COLORS.primary,borderRadius:14,padding:16,alignItems:'center',marginTop:8}} onPress={()=>setStep(1)}>
+                <Text style={{color:'#fff',fontWeight:'700',fontSize:16}}>Siguiente</Text>
+              </TouchableOpacity>
+            </>)}
+            {step===1&&(<>
+              <Text style={{fontSize:20,fontWeight:'700',color:COLORS.text,textAlign:'center'}}>Fotos</Text>
+              <Text style={{fontSize:12,color:COLORS.text3,textAlign:'center'}}>Añade o cambia las fotos del chollo</Text>
+              <View style={{flexDirection:'row',flexWrap:'wrap',gap:8,marginTop:8}}>
+                {photos.map((p,i)=>(
+                  <View key={i} style={{width:100,height:100,borderRadius:12,overflow:'hidden',position:'relative'}}>
+                    <Image source={{uri:p}} style={{width:'100%',height:'100%'}} resizeMode="cover"/>
+                    <TouchableOpacity onPress={()=>setPhotos(prev=>prev.filter((_,j)=>j!==i))}
+                      style={{position:'absolute',top:4,right:4,width:22,height:22,borderRadius:11,backgroundColor:'rgba(0,0,0,.6)',alignItems:'center',justifyContent:'center'}}>
+                      <Ionicons name="close" size={14} color="#fff"/>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+                <TouchableOpacity onPress={pickPhoto}
+                  style={{width:100,height:100,borderRadius:12,borderWidth:2,borderColor:COLORS.border,borderStyle:'dashed',alignItems:'center',justifyContent:'center',backgroundColor:COLORS.bg3}}>
+                  <Ionicons name="camera-outline" size={28} color={COLORS.text3}/>
+                  <Text style={{fontSize:10,color:COLORS.text3,marginTop:2}}>Añadir</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity style={{backgroundColor:COLORS.primary,borderRadius:14,padding:16,alignItems:'center',marginTop:12}} onPress={()=>setStep(2)}>
+                <Text style={{color:'#fff',fontWeight:'700',fontSize:16}}>Siguiente</Text>
+              </TouchableOpacity>
+            </>)}
+            {step===2&&(<>
+              <Text style={{fontSize:20,fontWeight:'700',color:COLORS.text,textAlign:'center'}}>Precios</Text>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Precio del chollo *</Text>
+              <View style={{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg3,borderRadius:12,paddingHorizontal:14,borderWidth:1,borderColor:COLORS.border}}>
+                <TextInput style={{flex:1,paddingVertical:10,fontSize:18,fontWeight:'700',color:COLORS.primary}} value={dealPrice} onChangeText={setDealPrice} placeholder="0,00" placeholderTextColor={COLORS.text3} keyboardType="decimal-pad"/>
+                <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text3}}>€</Text>
+              </View>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Precio original</Text>
+              <View style={{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg3,borderRadius:12,paddingHorizontal:14,borderWidth:1,borderColor:COLORS.border}}>
+                <TextInput style={{flex:1,paddingVertical:10,fontSize:16,color:COLORS.text}} value={originalPrice} onChangeText={setOriginalPrice} placeholder="0,00" placeholderTextColor={COLORS.text3} keyboardType="decimal-pad"/>
+                <Text style={{fontSize:16,fontWeight:'700',color:COLORS.text3}}>€</Text>
+              </View>
+              <Text style={{fontSize:12,fontWeight:'600',color:COLORS.text}}>Código de descuento</Text>
+              <TextInput style={inp} value={discountCode} onChangeText={setDiscountCode} placeholder="Código (opcional)" placeholderTextColor={COLORS.text3}/>
+              <TouchableOpacity style={{backgroundColor:COLORS.primary,borderRadius:14,padding:16,alignItems:'center',marginTop:12}}
+                onPress={async()=>{const body={title:title.trim(),description,store,url,discount_code:discountCode,category};
+                  body.deal_price=parseFloat(String(dealPrice).replace(',','.'));
+                  if(originalPrice)body.original_price=parseFloat(String(originalPrice).replace(',','.'));
+                  body.photos = photos.filter(p => p.startsWith('http'));
+                  // Upload new photos via base64
+                  const newPhotos = photos.filter(p => p.startsWith('data:'));
+                  if (newPhotos.length > 0) body.image_base64 = newPhotos[0];
+                  // Handle file:// URIs as fallback
+                  for (const p of photos) {
+                    if (!p.startsWith('http') && !p.startsWith('data:')) {
+                      try {
+                        const FileSystem = require('expo-file-system');
+                        const b64 = await FileSystem.readAsStringAsync(p, { encoding: FileSystem.EncodingType.Base64 });
+                        body.image_base64 = `data:image/jpeg;base64,${b64}`;
+                      } catch(e) { console.warn('b64 fail', e); }
+                    }
+                  }
+                  onSave?.(deal.id,body);}}>
+                <View style={{flexDirection:'row',alignItems:'center',gap:8}}>
+                  <Ionicons name="checkmark-circle" size={20} color="#fff"/>
+                  <Text style={{color:'#fff',fontWeight:'700',fontSize:16}}>Guardar cambios</Text>
+                </View>
+              </TouchableOpacity>
+            </>)}
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
 const s = StyleSheet.create({
   safe:{flex:1,backgroundColor:COLORS.bg},
   header:{backgroundColor:COLORS.bg2,borderBottomWidth:0.5,borderBottomColor:COLORS.border},
-  headerTop:{flexDirection:'row',justifyContent:'space-between',alignItems:'flex-start',paddingHorizontal:16,paddingTop:14,paddingBottom:10},
-  title:{fontSize:22,fontWeight:'700',color:COLORS.text},
-  sub:{fontSize:12,color:COLORS.text3,marginTop:1},
-  fab:{position:'absolute',bottom:80,right:16,backgroundColor:COLORS.danger,borderRadius:28,paddingHorizontal:18,paddingVertical:14,flexDirection:'row',alignItems:'center',gap:6,shadowColor:COLORS.danger,shadowOpacity:0.45,shadowRadius:12,shadowOffset:{width:0,height:4},elevation:8},
-  fabTxt:{color:'#fff',fontWeight:'800',fontSize:14},
-  addBtn:{flexDirection:'row',alignItems:'center',gap:4,backgroundColor:COLORS.danger,borderRadius:99,paddingHorizontal:14,paddingVertical:8},
-  addBtnTxt:{color:'#fff',fontWeight:'700',fontSize:13},
-  sortRow:{flexDirection:'row',paddingHorizontal:12,gap:6,paddingBottom:10},
-  sortBtn:{flex:1,paddingVertical:8,borderRadius:10,alignItems:'center',backgroundColor:COLORS.bg3,borderWidth:1,borderColor:COLORS.border},
-  sortBtnOn:{backgroundColor:COLORS.danger,borderColor:COLORS.danger},
-  sortTxt:{fontSize:13,fontWeight:'500',color:COLORS.text2},
-  catBtn:{flexDirection:'row',alignItems:'center',gap:5,paddingHorizontal:12,paddingVertical:6,borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg},
-  catBtnOn:{backgroundColor:COLORS.danger,borderColor:COLORS.danger},
-  catEmoji:{fontSize:13},catTxt:{fontSize:12,color:COLORS.text2},
-  guestBanner:{backgroundColor:'#FFF5F5',borderBottomWidth:0.5,borderBottomColor:'#FECACA',paddingHorizontal:16,paddingVertical:9},
-  guestTxt:{fontSize:13,color:COLORS.danger,fontWeight:'500',textAlign:'center'},
-  card:{backgroundColor:COLORS.bg2,borderRadius:16,overflow:'hidden',borderWidth:0.5,borderColor:COLORS.border,shadowColor:'#000',shadowOffset:{width:0,height:2},shadowOpacity:0.06,shadowRadius:8,elevation:2},
-  tempBadge:{alignSelf:'flex-start',paddingHorizontal:8,paddingVertical:3,margin:8,marginBottom:0,borderRadius:99},
-  tempTxt:{fontSize:11,fontWeight:'700'},
-  img:{width:'100%',height:180,backgroundColor:COLORS.bg3},
-  imgPlaceholder:{width:'100%',height:120,alignItems:'center',justifyContent:'center'},
-  cardBody:{padding:12},
-  metaRow:{flexDirection:'row',alignItems:'center',gap:4,marginBottom:6,flexWrap:'nowrap',overflow:'hidden'},
-  storeBadge:{backgroundColor:COLORS.primaryLight,borderRadius:4,paddingHorizontal:6,paddingVertical:2},
-  storeTxt:{fontSize:10,fontWeight:'700',color:COLORS.primary},
-  catTag:{backgroundColor:COLORS.bg3,borderRadius:4,paddingHorizontal:6,paddingVertical:2},
-  catTagTxt:{fontSize:10,color:COLORS.text2},
-  ageTag:{fontSize:10,color:COLORS.text3},
-  expiredBtn:{padding:6,borderRadius:6,backgroundColor:COLORS.bg3},
-  expireTag:{fontSize:9,color:COLORS.danger,fontWeight:'700',backgroundColor:'#FEF2F2',borderRadius:99,paddingHorizontal:5,paddingVertical:1},
-  dealTitle:{fontSize:14,fontWeight:'700',color:COLORS.text,lineHeight:20,marginBottom:6},
-  priceRow:{flexDirection:'row',alignItems:'center',gap:6,marginBottom:8},
-  dealPrice:{fontSize:20,fontWeight:'800',color:COLORS.danger},
-  origPrice:{fontSize:13,color:COLORS.text3,textDecorationLine:'line-through'},
-  discBadge:{backgroundColor:'#FEE2E2',borderRadius:6,paddingHorizontal:7,paddingVertical:3,justifyContent:'center'},
-  discTxt:{fontSize:13,fontWeight:'900',color:COLORS.danger,letterSpacing:-0.5},
-  reporterRow:{flexDirection:'row',alignItems:'center',gap:6},
-  reporterAvatar:{width:18,height:18,borderRadius:9,backgroundColor:COLORS.primaryLight,alignItems:'center',justifyContent:'center'},
-  reporterName:{fontSize:11,color:COLORS.text3},
-  // Actions — single row, 4 icon buttons max + votes pill
-  actions:{flexDirection:'row',alignItems:'center',gap:2,paddingHorizontal:12,paddingVertical:8,borderTopWidth:0.5,borderTopColor:COLORS.border},
-  voteGroup:{flexDirection:'row',alignItems:'center',borderRadius:99,borderWidth:1,borderColor:COLORS.border,overflow:'hidden'},
-  voteBtn:{flexDirection:'row',alignItems:'center',gap:3,paddingHorizontal:10,paddingVertical:7},
-  voteDivider:{width:0.5,height:22,backgroundColor:COLORS.border},
-  voteNum:{fontSize:13,fontWeight:'700'},
-  iconBtn:{padding:8,borderRadius:8},
-  iconBtnTxt:{fontSize:11,color:COLORS.text2,fontWeight:'600'},
-  goBtnFull:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:6,backgroundColor:COLORS.primary,borderRadius:10,paddingVertical:10,marginHorizontal:12,marginBottom:0},
-  goBtn:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:4,backgroundColor:COLORS.primary,borderRadius:99,paddingHorizontal:10,paddingVertical:7},
-  goBtnTxt:{color:'#fff',fontWeight:'700',fontSize:13},
-  empty:{alignItems:'center',paddingTop:60,paddingHorizontal:32},
-  emptyTitle:{fontSize:18,fontWeight:'700',color:COLORS.text,marginBottom:6},
-  emptyDesc:{fontSize:14,color:COLORS.text2,textAlign:'center',lineHeight:21,marginBottom:20},
-  emptyBtn:{backgroundColor:COLORS.danger,borderRadius:99,paddingHorizontal:24,paddingVertical:13},
-  emptyBtnTxt:{color:'#fff',fontWeight:'700',fontSize:14},
-  searchRow:{flexDirection:'row',alignItems:'center',backgroundColor:COLORS.bg3,borderRadius:12,borderWidth:1.5,borderColor:COLORS.border,paddingHorizontal:12,paddingVertical:9,marginHorizontal:12,marginBottom:10},
-  searchInput:{flex:1,fontSize:14,color:COLORS.text},
+  headerRow:{flexDirection:'row',alignItems:'center',justifyContent:'space-between',paddingHorizontal:14,paddingTop:10,paddingBottom:6},
+  logo:{fontSize:18,fontWeight:'800',color:COLORS.text},
+  headerBtn:{width:36,height:36,borderRadius:18,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center'},
+  pill:{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:12,paddingVertical:6,borderRadius:99,borderWidth:1.5,borderColor:COLORS.border,backgroundColor:COLORS.bg2},
+  pillOn:{backgroundColor:COLORS.primary,borderColor:COLORS.primary},
+  pillTxt:{fontSize:12,fontWeight:'600',color:COLORS.text2},
+  card:{backgroundColor:COLORS.bg2,borderRadius:14,padding:12,borderWidth:0.5,borderColor:COLORS.border},
+  cardImg:{width:100,height:100,borderRadius:10,backgroundColor:COLORS.bg3,alignItems:'center',justifyContent:'center',overflow:'hidden'},
+  cardTitle:{fontSize:14,fontWeight:'600',color:COLORS.text,lineHeight:18},
+  cardPrice:{fontSize:20,fontWeight:'900',color:COLORS.danger},
+  cardOldPrice:{fontSize:13,color:COLORS.text3,textDecorationLine:'line-through'},
+  discBadge:{position:'absolute',top:6,left:6,backgroundColor:'#DC2626',borderRadius:6,paddingHorizontal:6,paddingVertical:2},
+  discTxt:{fontSize:11,fontWeight:'800',color:'#fff'},
+  voteBtn:{flexDirection:'row',alignItems:'center',gap:4,paddingHorizontal:8,paddingVertical:5,borderRadius:8,backgroundColor:COLORS.bg3},
+  voteTxt:{fontSize:12,fontWeight:'700',color:COLORS.text2},
+  goBtn:{flexDirection:'row',alignItems:'center',gap:4,backgroundColor:COLORS.primary,borderRadius:8,paddingHorizontal:10,paddingVertical:5,marginLeft:'auto'},
+  goTxt:{fontSize:11,fontWeight:'700',color:'#fff'},
+  fab:{position:'absolute',bottom:16,right:16,width:52,height:52,borderRadius:99,backgroundColor:'#DC2626',alignItems:'center',justifyContent:'center',
+    shadowColor:'#000',shadowOpacity:0.25,shadowRadius:8,elevation:6},
 });

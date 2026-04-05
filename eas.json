@@ -36,6 +36,10 @@
         "appleId": "sitoexpositorodriguez@gmail.com",
         "ascAppId": "6761061197",
         "appleTeamId": "6G97KZY6FD"
+      },
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
       }
     }
   }
