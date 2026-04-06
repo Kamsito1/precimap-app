@@ -142,17 +142,6 @@ function AppNavigator() {
 }
 
 export default function App() {
-  // Initialize CarPlay — only on iOS production builds
-  useEffect(() => {
-    if (Platform.OS !== 'ios') return;
-    try {
-      const Constants = require('expo-constants').default;
-      const isExpoGo = Constants.executionEnvironment === 'storeClient';
-      if (isExpoGo) return;
-      const { initCarPlay } = require('./carplay/CarPlaySetup');
-      initCarPlay();
-    } catch(_) { /* CarPlay not available */ }
-  }, []);
   const scheme = useColorScheme();
   return (
     <AuthProvider>

@@ -35,7 +35,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>94</string>
+	<string>95</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>LSApplicationQueriesSchemes</key>
@@ -63,8 +63,6 @@
 	<string>MapaTacaño usa tu ubicación solo mientras la app está abierta para mostrarte gasolineras y servicios cercanos.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MapaTacaño usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>MapaTacaño no usa el micrófono.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>MapaTacaño guarda fotos de precios en tu galería.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -73,36 +71,6 @@
 	<string>https://xn--mapatacao-s6a.es/privacidad.html</string>
 	<key>RCTNewArchEnabled</key>
 	<false/>
-	<key>UIApplicationSceneManifest</key>
-	<dict>
-		<key>UIApplicationSupportsMultipleScenes</key>
-		<true/>
-		<key>UISceneConfigurations</key>
-		<dict>
-			<key>CPTemplateApplicationSceneSessionRoleApplication</key>
-			<array>
-				<dict>
-					<key>UISceneClassName</key>
-					<string>CPTemplateApplicationScene</string>
-					<key>UISceneConfigurationName</key>
-					<string>CarPlay</string>
-					<key>UISceneDelegateClassName</key>
-					<string>$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate</string>
-				</dict>
-			</array>
-			<key>UIWindowSceneSessionRoleApplication</key>
-			<array>
-				<dict>
-					<key>UISceneClassName</key>
-					<string>UIWindowScene</string>
-					<key>UISceneConfigurationName</key>
-					<string>Phone</string>
-					<key>UISceneDelegateClassName</key>
-					<string>$(PRODUCT_MODULE_NAME).PhoneSceneDelegate</string>
-				</dict>
-			</array>
-		</dict>
-	</dict>
 	<key>UILaunchStoryboardName</key>
 	<string>SplashScreen</string>
 	<key>UIRequiredDeviceCapabilities</key>

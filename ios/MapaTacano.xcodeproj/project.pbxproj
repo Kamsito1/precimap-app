@@ -11,8 +11,6 @@
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
 		5A4503101558F9725EFA9E7A /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2EFEB2039EA8D8935F766FF2 /* ExpoModulesProvider.swift */; };
 		8F395CB8A7E66DEA016F847B /* Pods_MapaTacano.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 585A9E73E217FF11406CDA46 /* Pods_MapaTacano.framework */; };
-		9C0000000000000000000011 /* PhoneSceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0000000000000000000010 /* PhoneSceneDelegate.swift */; };
-		9C0000000000000000000021 /* CarPlaySceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C0000000000000000000020 /* CarPlaySceneDelegate.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 		F6436FE7C480D6AACDEB7400 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = ABF71AB9DA16E1F1126F51DF /* PrivacyInfo.xcprivacy */; };
@@ -26,14 +24,11 @@
 		2EFEB2039EA8D8935F766FF2 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-MapaTacano/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		585A9E73E217FF11406CDA46 /* Pods_MapaTacano.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_MapaTacano.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		91E41D50C557D7F758C5B317 /* Pods-MapaTacano.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-MapaTacano.debug.xcconfig"; path = "Target Support Files/Pods-MapaTacano/Pods-MapaTacano.debug.xcconfig"; sourceTree = "<group>"; };
-		9C0000000000000000000010 /* PhoneSceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PhoneSceneDelegate.swift; path = MapaTacano/PhoneSceneDelegate.swift; sourceTree = "<group>"; };
-		9C0000000000000000000020 /* CarPlaySceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CarPlaySceneDelegate.swift; path = MapaTacano/CarPlaySceneDelegate.swift; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = MapaTacano/SplashScreen.storyboard; sourceTree = "<group>"; };
 		ABF71AB9DA16E1F1126F51DF /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = MapaTacano/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = MapaTacano/AppDelegate.swift; sourceTree = "<group>"; };
-		F11748442D0722820044C1D9 /* MapaTacano-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "MapaTacano-Bridging-Header.h"; path = "MapaTacano/MapaTacano-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -52,9 +47,6 @@
 			isa = PBXGroup;
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
-				9C0000000000000000000020 /* CarPlaySceneDelegate.swift */,
-				9C0000000000000000000010 /* PhoneSceneDelegate.swift */,
-				F11748442D0722820044C1D9 /* MapaTacano-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
@@ -336,8 +328,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				9C0000000000000000000011 /* PhoneSceneDelegate.swift in Sources */,
-				9C0000000000000000000021 /* CarPlaySceneDelegate.swift in Sources */,
 				5A4503101558F9725EFA9E7A /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -373,7 +363,6 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
 				PRODUCT_BUNDLE_IDENTIFIER = com.kamsito.precimap;
 				PRODUCT_NAME = MapaTacano;
-				SWIFT_OBJC_BRIDGING_HEADER = "MapaTacano/MapaTacano-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -404,7 +393,6 @@
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
 				PRODUCT_BUNDLE_IDENTIFIER = com.kamsito.precimap;
 				PRODUCT_NAME = MapaTacano;
-				SWIFT_OBJC_BRIDGING_HEADER = "MapaTacano/MapaTacano-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";

@@ -18,7 +18,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "94",
+      "buildNumber": "95",
       "requireFullScreen": true,
       "infoPlist": {
         "CFBundleDisplayName": "Mapa Tacaño",
@@ -26,7 +26,6 @@
         "NSCameraUsageDescription": "MapaTacaño necesita la cámara para fotografiar precios y chollos.",
         "NSPhotoLibraryUsageDescription": "MapaTacaño necesita tu galería para subir fotos de chollos y tu avatar.",
         "NSPhotoLibraryAddUsageDescription": "MapaTacaño guarda fotos de precios en tu galería.",
-        "NSMicrophoneUsageDescription": "MapaTacaño no usa el micrófono.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "MapaTacaño usa tu ubicación solo mientras la app está abierta para mostrarte gasolineras y servicios cercanos.",
         "NSLocationAlwaysUsageDescription": "MapaTacaño usa tu ubicación solo mientras la app está abierta para mostrarte gasolineras y servicios cercanos.",
         "ITSAppUsesNonExemptEncryption": false,
@@ -74,8 +73,7 @@
         }
       ],
       "expo-font",
-      "expo-apple-authentication",
-      "./plugins/withCarPlay"
+      "expo-apple-authentication"
     ],
     "extra": {
       "eas": {
