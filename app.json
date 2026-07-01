@@ -1,40 +1,36 @@
 {
   "expo": {
-    "name": "Mapa Tacano",
-    "slug": "precimap",
-    "scheme": "com.kamsito.precimap",
+    "name": "Vitadex",
+    "slug": "vitadex",
+    "scheme": "com.kamsito.vitadex",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": false,
-    "description": "Encuentra lo más barato cerca de ti: gasolina, supermercados, chollos, eventos y más. La app de ahorro de España.",
-    "primaryColor": "#2563EB",
+    "description": "Colecciona experiencias de vida como cartas únicas. Sube de rango. Carpe Diem.",
+    "primaryColor": "#7B2FBE",
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#2563EB"
+      "backgroundColor": "#0A0A14"
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.kamsito.precimap",
-      "buildNumber": "95",
+      "bundleIdentifier": "com.kamsito.vitadex",
+      "buildNumber": "1",
       "requireFullScreen": true,
       "infoPlist": {
-        "CFBundleDisplayName": "Mapa Tacaño",
-        "NSLocationWhenInUseUsageDescription": "MapaTacaño usa tu ubicación para mostrarte las gasolineras más baratas y lugares cercanos.",
-        "NSCameraUsageDescription": "MapaTacaño necesita la cámara para fotografiar precios y chollos.",
-        "NSPhotoLibraryUsageDescription": "MapaTacaño necesita tu galería para subir fotos de chollos y tu avatar.",
-        "NSPhotoLibraryAddUsageDescription": "MapaTacaño guarda fotos de precios en tu galería.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "MapaTacaño usa tu ubicación solo mientras la app está abierta para mostrarte gasolineras y servicios cercanos.",
-        "NSLocationAlwaysUsageDescription": "MapaTacaño usa tu ubicación solo mientras la app está abierta para mostrarte gasolineras y servicios cercanos.",
+        "CFBundleDisplayName": "Vitadex",
+        "NSLocationWhenInUseUsageDescription": "Vitadex usa tu ubicación para mostrarte experiencias cercanas en el mapa.",
+        "NSCameraUsageDescription": "Vitadex necesita la cámara para añadir tu foto a las cartas de experiencias.",
+        "NSPhotoLibraryUsageDescription": "Vitadex necesita tu galería para añadir tu foto a las cartas y tu avatar de perfil.",
+        "NSPhotoLibraryAddUsageDescription": "Vitadex guarda tus cartas de experiencias en la galería.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Vitadex usa tu ubicación solo mientras la app está abierta.",
+        "NSLocationAlwaysUsageDescription": "Vitadex usa tu ubicación solo mientras la app está abierta.",
         "ITSAppUsesNonExemptEncryption": false,
-        "LSApplicationQueriesSchemes": [
-          "com.amazon.mobile.shopping.web",
-          "amazon-spain",
-          "amazon"
-        ],
-        "NSPrivacyPolicyURL": "https://xn--mapatacao-s6a.es/privacidad.html"
+        "LSApplicationQueriesSchemes": [],
+        "NSPrivacyPolicyURL": "https://vitadex.app/privacidad"
       },
       "deploymentTarget": "15.1"
     },
@@ -43,7 +39,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2563EB"
       },
-      "package": "com.kamsito.precimap",
+      "package": "com.kamsito.vitadex",
       "versionCode": 5,
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
@@ -59,11 +55,13 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "MapaTacaño necesita acceso a tu galería para subir fotos de chollos.",
-          "cameraPermission": "MapaTacaño necesita acceso a la cámara para fotografiar precios."
+          "photosPermission": "Vitadex necesita tu galería para añadir fotos a tus cartas de experiencias.",
+          "cameraPermission": "Vitadex necesita la cámara para capturar tus experiencias."
         }
       ],
       "expo-web-browser",
+      "expo-font",
+      "expo-apple-authentication",
       [
         "expo-build-properties",
         {
@@ -72,8 +70,7 @@
           }
         }
       ],
-      "expo-font",
-      "expo-apple-authentication"
+      "expo-linear-gradient"
     ],
     "extra": {
       "eas": {
@@ -83,14 +80,15 @@
     "owner": "kamsito1",
     "privacy": "public",
     "keywords": [
-      "gasolina",
-      "supermercado",
-      "precios",
-      "ahorro",
-      "España",
-      "chollos",
-      "farmacia",
-      "ofertas"
+      "vitadex",
+      "experiencias",
+      "coleccionable",
+      "cartas",
+      "aventura",
+      "gamificado",
+      "lifestyle",
+      "social",
+      "España"
     ]
   }
 }
