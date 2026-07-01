@@ -147,9 +147,9 @@ function RootNavigator() {
       <View style={{ flex: 1, backgroundColor: COLORS.bg, alignItems: 'center', justifyContent: 'center' }}>
         <View style={{ alignItems: 'center', gap: 16 }}>
           <Text style={{ fontSize: 36, fontWeight: '900', color: COLORS.textPrimary, letterSpacing: -1 }}>
-            ✦ VIVID
+            ✦ VITADEX
           </Text>
-          <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>Colecciona tu vida</Text>
+          <Text style={{ fontSize: 14, color: COLORS.textSecondary }}>Carpe Diem. Colecciónalo.</Text>
           <ActivityIndicator color={COLORS.primary} style={{ marginTop: 8 }} />
         </View>
       </View>

@@ -1,14 +1,14 @@
 {
   "expo": {
-    "name": "Vivid",
-    "slug": "vivid-experiences",
-    "scheme": "com.kamsito.vivid",
+    "name": "Vitadex",
+    "slug": "vitadex",
+    "scheme": "com.kamsito.vitadex",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "newArchEnabled": false,
-    "description": "Colecciona experiencias de vida como cartas únicas. Sube de rango. Comparte con el mundo.",
+    "description": "Colecciona experiencias de vida como cartas únicas. Sube de rango. Carpe Diem.",
     "primaryColor": "#7B2FBE",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -17,20 +17,20 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.kamsito.vivid",
+      "bundleIdentifier": "com.kamsito.vitadex",
       "buildNumber": "1",
       "requireFullScreen": true,
       "infoPlist": {
-        "CFBundleDisplayName": "Vivid",
-        "NSLocationWhenInUseUsageDescription": "Vivid usa tu ubicación para mostrarte experiencias cercanas en el mapa.",
-        "NSCameraUsageDescription": "Vivid necesita la cámara para añadir tu foto a las cartas de experiencias.",
-        "NSPhotoLibraryUsageDescription": "Vivid necesita tu galería para añadir tu foto a las cartas y tu avatar de perfil.",
-        "NSPhotoLibraryAddUsageDescription": "Vivid guarda tus cartas de experiencias en la galería.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "Vivid usa tu ubicación solo mientras la app está abierta para mostrarte experiencias cercanas.",
-        "NSLocationAlwaysUsageDescription": "Vivid usa tu ubicación solo mientras la app está abierta.",
+        "CFBundleDisplayName": "Vitadex",
+        "NSLocationWhenInUseUsageDescription": "Vitadex usa tu ubicación para mostrarte experiencias cercanas en el mapa.",
+        "NSCameraUsageDescription": "Vitadex necesita la cámara para añadir tu foto a las cartas de experiencias.",
+        "NSPhotoLibraryUsageDescription": "Vitadex necesita tu galería para añadir tu foto a las cartas y tu avatar de perfil.",
+        "NSPhotoLibraryAddUsageDescription": "Vitadex guarda tus cartas de experiencias en la galería.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Vitadex usa tu ubicación solo mientras la app está abierta.",
+        "NSLocationAlwaysUsageDescription": "Vitadex usa tu ubicación solo mientras la app está abierta.",
         "ITSAppUsesNonExemptEncryption": false,
         "LSApplicationQueriesSchemes": [],
-        "NSPrivacyPolicyURL": "https://vivid.app/privacidad"
+        "NSPrivacyPolicyURL": "https://vitadex.app/privacidad"
       },
       "deploymentTarget": "15.1"
     },
@@ -39,7 +39,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#2563EB"
       },
-      "package": "com.kamsito.vivid",
+      "package": "com.kamsito.vitadex",
       "versionCode": 5,
       "permissions": [
         "android.permission.ACCESS_FINE_LOCATION",
@@ -55,8 +55,8 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Vivid necesita tu galería para añadir fotos a tus cartas de experiencias.",
-          "cameraPermission": "Vivid necesita la cámara para capturar tus experiencias."
+          "photosPermission": "Vitadex necesita tu galería para añadir fotos a tus cartas de experiencias.",
+          "cameraPermission": "Vitadex necesita la cámara para capturar tus experiencias."
         }
       ],
       "expo-web-browser",
@@ -80,6 +80,7 @@
     "owner": "kamsito1",
     "privacy": "public",
     "keywords": [
+      "vitadex",
       "experiencias",
       "coleccionable",
       "cartas",
